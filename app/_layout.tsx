@@ -1,29 +1,47 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
+import HomeScreen from '@/src/screens/home/home';
+import { View, Text, SafeAreaView } from 'react-native';
+import SelectInstrumentScreen from '@/src/screens/selectInstrument/selectInstrument';
+import { useState } from 'react';
+import GameScreen from '@/src/screens/game/game';
+import LeaderboardScreen from '@/src/screens/leaderboard/leaderboard';
+import MenuScreen from '@/src/screens/menu/menu';
+import StatsScreen from '@/src/screens/stats/stats';
+import SampleScreen from '@/src/screens/sample/sample';
+type Screen = "welcome" | "selectInstrument";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  const [currentScreen, setCurrentScreen] = useState<Screen>("welcome");
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
+  const handleGetStarted = () => {
+    setCurrentScreen("selectInstrument");
+  };
+
+  const handleBack = () => {
+    setCurrentScreen("welcome");
+  };
+
+  const handleInstrumentSelect = (instrument: "guitar" | "piano") => {
+    console.log(`User selected: ${instrument}`);
+    // Navigate to next screen or handle instrument selection
+  };
+
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case "welcome":
+        return <HomeScreen onGetStarted={handleGetStarted} />;
+      case "selectInstrument":
+        return <SelectInstrumentScreen onBack={handleBack} onInstrumentSelect={handleInstrumentSelect} />;
+      default:
+        return <HomeScreen onGetStarted={handleGetStarted} />;
+    }
+  };
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <SafeAreaView className="flex-1 bg-slate-800">
+      {/* {renderScreen()} */}
+      <LeaderboardScreen/>
+    </SafeAreaView>
   );
 }
+
