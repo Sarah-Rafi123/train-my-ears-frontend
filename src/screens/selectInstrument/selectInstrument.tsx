@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from "react-native"
+import { View, Text, ScrollView, SafeAreaView } from "react-native"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import InstrumentCard from "@/src/components/widgets/InstrumentCard"
 
@@ -14,7 +14,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-row items-center mt-10 px-6 pb-8">
         <BackButton onPress={onBack} />
         <View className="flex-1">
@@ -27,6 +27,6 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
           <InstrumentCard instrument="piano" onPress={() => handleInstrumentSelect("piano")} />
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   )
 }

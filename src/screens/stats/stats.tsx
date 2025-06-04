@@ -1,4 +1,4 @@
-import { View, ScrollView } from "react-native"
+import { View, ScrollView, SafeAreaView } from "react-native"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import StatCard from "@/src/components/widgets/StatsCard"
 import PlayAgainButton from "@/src/components/ui/buttons/PlayAgainButton"
@@ -24,7 +24,7 @@ export default function StatsScreen({
   onRegister,
 }: AdvancedStatsScreenProps) {
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-row items-center px-6 pb-8">
         <BackButton onPress={onBack} />
       </View>
@@ -62,6 +62,6 @@ export default function StatsScreen({
       <View className="pb-8 pt-4">
         <View className="w-32 h-1 bg-black rounded-full self-center" />
       </View>
-    </View>
+    </SafeAreaView>
   )
 }

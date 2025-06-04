@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from "react-native"
+import { View, Text, ScrollView, SafeAreaView } from "react-native"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import AudioWaveform from "@/src/components/widgets/AudioWaveForm"
 import NoteButton from "@/src/components/ui/buttons/NoteButton"
@@ -17,7 +17,7 @@ export default function SampleScreen({ onBack, onNotePress, onUpgrade }: ViewSam
   ]
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-row items-center px-6 pb-8">
         <BackButton onPress={onBack} />
         <View className="flex-1">
@@ -53,6 +53,6 @@ export default function SampleScreen({ onBack, onNotePress, onUpgrade }: ViewSam
       <View className="pb-8 pt-4">
         <View className="w-32 h-1 bg-black rounded-full self-center" />
       </View>
-    </View>
+    </SafeAreaView>
   )
 }

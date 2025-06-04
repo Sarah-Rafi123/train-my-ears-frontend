@@ -4,6 +4,7 @@ import StatCard from "@/src/components/widgets/StatsCard"
 import PlayAgainButton from "@/src/components/ui/buttons/PlayAgainButton"
 import NoteGrid from "@/src/components/widgets/NoteGrid"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 interface GameResultScreenProps {
   onBack?: () => void
@@ -23,7 +24,7 @@ export default function GameScreen({
   onRegister,
 }: GameResultScreenProps) {
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
 
       {/* Header */}
       <View className="flex-row items-center px-6 pb-8">
@@ -52,6 +53,6 @@ export default function GameScreen({
       <View className="pb-8 pt-4">
         <View className="w-32 h-1 bg-black rounded-full self-center" />
       </View>
-    </View>
+    </SafeAreaView>
   )
 }

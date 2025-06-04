@@ -1,4 +1,4 @@
-import { View, ScrollView } from "react-native"
+import { View, ScrollView, SafeAreaView } from "react-native"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import MenuOption from "@/src/components/widgets/MenuOption"
 
@@ -11,7 +11,7 @@ interface MoreMenuScreenProps {
 
 export default function MenuScreen({ onBack, onViewSample, onViewStats, onLeaderboard }: MoreMenuScreenProps) {
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-row items-center px-6 pb-8">
         <BackButton onPress={onBack} />
       </View>
@@ -28,6 +28,6 @@ export default function MenuScreen({ onBack, onViewSample, onViewStats, onLeader
       <View className="pb-8 pt-4">
         <View className="w-32 h-1 bg-black rounded-full self-center" />
       </View>
-    </View>
+    </SafeAreaView>
   )
 }

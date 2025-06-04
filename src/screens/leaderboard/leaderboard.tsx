@@ -3,6 +3,7 @@ import BackButton from "@/src/components/ui/buttons/BackButton"
 import Dropdown from "@/src/components/ui/dropdown/dropdown"
 import PodiumPlayer from "@/src/components/widgets/PodiumPlayer"
 import LeaderboardRow from "@/src/components/widgets/LeaderBoardRow"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 interface LeaderboardScreenProps {
   onBack?: () => void
@@ -23,7 +24,7 @@ export default function LeaderboardScreen({ onBack, showPodium = true }: Leaderb
   ]
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-row items-center px-6 pb-8">
         <BackButton onPress={onBack} />
         <View className="flex-1">
@@ -82,6 +83,6 @@ export default function LeaderboardScreen({ onBack, showPodium = true }: Leaderb
       <View className="pb-8 pt-4">
         <View className="w-32 h-1 bg-black rounded-full self-center" />
       </View>
-    </View>
+    </SafeAreaView>
   )
 }
