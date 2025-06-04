@@ -1,6 +1,7 @@
-import { View, Text, ScrollView, SafeAreaView } from "react-native"
+import { View, Text, SafeAreaView, Image } from "react-native"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import InstrumentCard from "@/src/components/widgets/InstrumentCard"
+import musicbg from "@/src/assets/images/musicbg.png"
 
 interface SelectInstrumentScreenProps {
   onBack?: () => void
@@ -14,19 +15,31 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center mt-10 px-6 pb-8">
+    <SafeAreaView className="flex-1 bg-white">
+      {/* Header with back button */}
+      <View className="flex-row items-center px-6 py-4">
         <BackButton onPress={onBack} />
         <View className="flex-1">
-          <Text className="text-slate-800 text-xl font-semibold text-center mt-5 mr-10">Select an Instrument</Text>
+          <Text className="text-[#003049] text-lg font-semibold text-center mr-10">Select an Instrument</Text>
         </View>
       </View>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="pt-8">
+      <View className="h-64 mt-20 w-full">
+        <Image source={musicbg} className="w-full h-full" resizeMode="contain" />
+      </View>
+
+      {/* Content below the image */}
+      <View className="flex mt-auto px-6 pt-8">
+        <View className="mb-8">
+          <Text className="text-[#003049] text-3xl font-bold text-center mb-4">SELECT AN INSTRUMENT</Text>
+          <Text className="text-[#003049] text-lg text-center">Select which instrument you want to learn.</Text>
+        </View>
+
+        <View className="mb-8">
           <InstrumentCard instrument="guitar" onPress={() => handleInstrumentSelect("guitar")} />
           <InstrumentCard instrument="piano" onPress={() => handleInstrumentSelect("piano")} />
         </View>
-      </ScrollView>
+        <View className="w-32 h-1 bg-black rounded-full self-center mb-8" />
+      </View>
     </SafeAreaView>
   )
 }

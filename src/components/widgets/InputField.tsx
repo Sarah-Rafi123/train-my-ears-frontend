@@ -1,44 +1,23 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput } from 'react-native';
+import { View, Text, TextInput, type TextInputProps } from "react-native"
 
-interface InputFieldProps {
-  label: string;
-  className?: string;
-
+interface InputFieldProps extends TextInputProps {
+  label: string
 }
 
-const InputField: React.FC<InputFieldProps> = ({ label, className = '', ...props }) => {
-  const [isFocused, setIsFocused] = useState(false);
-
-  const handleFocus = () => setIsFocused(true);
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    setIsFocused(false);
-    if (props.onBlur) {
-      props.onBlur(e);
-    }
-  };
-
+export default function InputField({ label, ...props }: InputFieldProps) {
   return (
     <View className="mb-6 relative">
-      <View className="relative border-2 border-gray-300 rounded-lg transition-colors duration-200 focus-within:border-blue-500">
-        {/* Replace <label> with <Text> */}
-        <Text
-          className={`absolute -top-3 left-4 text-sm font-medium bg-white px-1 transition-colors duration-200 ${
-            isFocused ? 'text-blue-500' : 'text-gray-500'
-          }`}
-        >
-          {label}
-        </Text>
-        {/* Use <TextInput> from React Native instead of <input> */}
+      <View className="border border-[#D1D5DB] rounded-lg overflow-hidden">
+        <View className="absolute -top-3 left-4 bg-white px-1 z-10">
+          <Text className="text-[#003049] text-base">{label}</Text>
+        </View>
         <TextInput
-          className={`w-full px-4 py-4 text-lg text-gray-800 bg-transparent outline-none ${className}`}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          className="p-4 text-lg text-[#1F2937]"
+          placeholderTextColor="#9CA3AF"
+          autoCorrect={false}
           {...props}
         />
       </View>
     </View>
-  );
-};
-
-export default InputField;
+  )
+}

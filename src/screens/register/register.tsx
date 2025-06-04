@@ -32,29 +32,24 @@ export default function RegisterScreen() {
           <Text className="text-[#003049] text-sm mt-1">Hello there, sign in to continue!</Text>
         </View>
 
-        <View className="mt-10">
+        <View className="mt-8">
           <InputField label="Name" value={name} onChangeText={setName} placeholder="Enter your name" />
 
-         <InputField
+          <InputField
             label="Email"
-            type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="abdul.moeed@scaleup.io"
+            onChangeText={setEmail}
+            placeholder="email@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
 
-         
-          <PasswordInput
-            label="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Create a password"
-          />
+          <PasswordInput label="Password" value={password} onChangeText={setPassword} placeholder="Create a password" />
         </View>
 
-        <PrimaryButton title="Create your account" onPress={handleRegister} className="mt-8" />
+        <PrimaryButton title="Create your account" onPress={handleRegister} className="mt-6" />
 
-        <View className="mt-10">
+        <View className="mt-8">
           <Text className="text-center text-gray-500 mb-4">Sign up with</Text>
           <SocialButtons />
         </View>
@@ -62,7 +57,7 @@ export default function RegisterScreen() {
         <View className="flex-row justify-center mt-auto mb-4">
           <Text className="text-black text-sm">Already have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate("Login" as never)}>
-            <Text className="text-[#006AE6] text-sm font-semibold">Sign In</Text>
+            <Text className="text-[#006AE6] font-semibold">Sign In</Text>
           </TouchableOpacity>
         </View>
       </View>

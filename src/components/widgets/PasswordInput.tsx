@@ -1,51 +1,33 @@
+import { useState } from "react"
+import { View, Text, TextInput, TouchableOpacity } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
 
-import React, { useState } from 'react';
-import { EyeOff, Eye } from 'lucide-react';
-
-interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  label: string;
+interface PasswordInputProps {
+  label: string
+  value: string
+  onChangeText: (text: string) => void
+  placeholder?: string
 }
 
-const PasswordInput: React.FC<PasswordInputProps> = ({ label, className = '', ...props }) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const handleFocus = () => setIsFocused(true);
-  
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    setIsFocused(false);
-    if (props.onBlur) {
-      props.onBlur(e);
-    }
-  };
+export default function PasswordInput({ label, value, onChangeText, placeholder }: PasswordInputProps) {
+  const [showPassword, setShowPassword] = useState(false)
 
   return (
-    <div className="mb-6 relative">
-      <div className="relative border-2 border-gray-300 rounded-lg transition-colors duration-200 focus-within:border-blue-500">
-        <label
-          className={`absolute -top-3 left-4 text-sm font-medium bg-white px-1 transition-colors duration-200 ${
-            isFocused ? 'text-blue-500' : 'text-gray-500'
-          }`}
-        >
-          {label}
-        </label>
-        <input
-          type={showPassword ? 'text' : 'password'}
-          className={`w-full px-4 py-4 pr-12 text-lg text-gray-800 bg-transparent outline-none ${className}`}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          {...props}
+    <View className="mb-4">
+      <Text className="text-[#003049] text-sm mb-1">{label}</Text>
+      <View className="relative">
+        <TextInput
+          className="border border-gray-300 rounded-md p-3 pr-10 text-base"
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          secureTextEntry={!showPassword}
+          placeholderTextColor="#9CA3AF"
         />
-        <button
-          type="button"
-          onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default PasswordInput;
+        <TouchableOpacity className="absolute right-3 top-3" onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={24} color="#9CA3AF" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+}

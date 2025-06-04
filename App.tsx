@@ -19,7 +19,7 @@ export default function RootLayout() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="SocialRegister"
+        initialRouteName="Home"
         screenOptions={{
           headerShown: false, 
         }}
