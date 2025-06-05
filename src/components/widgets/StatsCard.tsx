@@ -4,17 +4,24 @@ interface StatCardProps {
   value: string
   label: string
   valueColor?: "green" | "blue"
+  size?: "small" | "large"
 }
 
-export default function StatCard({ value, label, valueColor = "blue" }: StatCardProps) {
-  const textColorClass = valueColor === "green" ? "text-green-600" : "text-slate-800"
+export default function StatCard({ value, label, valueColor = "blue", size = "large" }: StatCardProps) {
+  const textColorClass = valueColor === "green" ? "text-green-600" : "text-[#003049]"
+
+  // Different sizes for different cards
+  const cardSize = size === "large" ? "w-24 h-24" : "w-20 h-20"
+  const textSize = size === "large" ? "text-2xl" : "text-xl"
 
   return (
-    <View className="flex-1 items-center">
-      <View className="bg-white border border-gray-300 rounded-xl p-4 mb-2 min-w-[80px] min-h-[80px] justify-center items-center">
-        <Text className={`text-2xl font-bold ${textColorClass}`}>{value}</Text>
+    <View className="items-center">
+      <View
+        className={`bg-white border border-gray-200 rounded-2xl p-4 mb-3 ${cardSize} justify-center items-center shadow-sm`}
+      >
+        <Text className={`${textSize} font-bold ${textColorClass}`}>{value}</Text>
       </View>
-      <Text className="text-slate-800 text-base font-medium">{label}</Text>
+      <Text className="text-[#003049] text-base font-medium">{label}</Text>
     </View>
   )
 }

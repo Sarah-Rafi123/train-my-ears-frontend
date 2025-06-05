@@ -10,7 +10,7 @@ export default function RegisterLoginButton({ onPress, className = "" }: Registe
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`bg-[#1e3a5f] rounded-full py-4 px-6 flex-row items-center justify-center mb-4 ${className}`}
+      className={`bg-[#1e3a5f] rounded-2xl py-4 px-6 flex-row items-center justify-center mb-4 ${className}`}
       accessibilityRole="button"
       accessibilityLabel="Register or Login"
     >

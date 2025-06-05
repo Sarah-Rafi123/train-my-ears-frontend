@@ -33,7 +33,7 @@ export default function SocialButton({
 
   return (
     <TouchableOpacity
-      className={`w-full rounded-2xl py-3 px-4 flex-row items-center justify-center ${className}`}
+      className={`w-full rounded-2xl py-3 px-4 border-black flex-row items-center justify-center ${className}`}
       onPress={onPress}
     >
       <View className="mr-2">{getIcon()}</View>

@@ -1,33 +1,28 @@
 import { TouchableOpacity, Text, View } from "react-native"
+import { Feather } from "@expo/vector-icons"
 
 interface ActionButtonProps {
   title: string
   variant?: "outline" | "filled"
-  icon?: "dots" | "arrow-down"
+  icon?: "dots" | "arrow-down" | "arrow-up"
   onPress?: () => void
 }
 
 export default function ActionButton({ title, variant = "outline", icon, onPress }: ActionButtonProps) {
-  const buttonClass = variant === "filled" ? "bg-slate-800" : "bg-white border border-gray-300"
-
-  const textClass = variant === "filled" ? "text-white" : "text-slate-800"
+  const buttonClass = variant === "filled" ? "bg-[#003049]" : "bg-white border border-gray-200"
+  const textClass = variant === "filled" ? "text-white" : "text-[#003049]"
 
   const renderIcon = () => {
+    const iconColor = variant === "filled" ? "white" : "#003049"
+
     if (icon === "dots") {
-      return (
-        <View className="flex-row space-x-1">
-          <View className="w-1 h-1 bg-slate-800 rounded-full" />
-          <View className="w-1 h-1 bg-slate-800 rounded-full" />
-          <View className="w-1 h-1 bg-slate-800 rounded-full" />
-        </View>
-      )
+      return <Feather name="more-horizontal" size={20} color={iconColor} />
     }
     if (icon === "arrow-down") {
-      return (
-        <View className="w-4 h-4 justify-center items-center">
-          <View className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-slate-800" />
-        </View>
-      )
+      return <Feather name="chevron-down" size={20} color={iconColor} />
+    }
+    if (icon === "arrow-up") {
+      return <Feather name="chevron-up" size={20} color={iconColor} />
     }
     return null
   }
@@ -35,11 +30,12 @@ export default function ActionButton({ title, variant = "outline", icon, onPress
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`${buttonClass} rounded-xl py-4 px-8 mx-6 mb-4 flex-row justify-center items-center space-x-2`}
+      className={`${buttonClass} rounded-2xl py-4 px-8 flex-row justify-center items-center shadow-sm`}
+      accessibilityRole="button"
+      accessibilityLabel={title}
     >
-      <View>{renderIcon()}</View>
+      {icon && <View className="mr-2">{renderIcon()}</View>}
       <Text className={`${textClass} text-lg font-semibold`}>{title}</Text>
-     
     </TouchableOpacity>
   )
 }

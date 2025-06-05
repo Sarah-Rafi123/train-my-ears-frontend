@@ -17,7 +17,7 @@ export default function PrimaryButton({
 }: PrimaryButtonProps) {
   return (
     <TouchableOpacity
-      className={`bg-[#003049] rounded-md py-4 items-center ${disabled ? "opacity-50" : ""} ${className}`}
+      className={`bg-[#003049] rounded-xl py-4 items-center ${disabled || loading ? "opacity-50" : ""} ${className}`}
       onPress={onPress}
       disabled={disabled || loading}
     >

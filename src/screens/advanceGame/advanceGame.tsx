@@ -1,49 +1,37 @@
 "use client"
 
-import { View, Text, ScrollView } from "react-native"
+import { View, ScrollView, SafeAreaView, Text } from "react-native"
 import { useState } from "react"
 import { useNavigation } from "@react-navigation/native"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import StatCard from "@/src/components/widgets/StatsCard"
 import PlayAgainButton from "@/src/components/ui/buttons/PlayAgainButton"
+import CircularIndicator from "@/src/components/widgets/CircularIndicator"
 import NoteGrid from "@/src/components/widgets/NoteGrid"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
-import { SafeAreaView } from "react-native-safe-area-context"
 
-interface GameResultScreenProps {
+interface AdvancedStatsScreenProps {
   onBack?: () => void
   onPlayAgain?: () => void
   onNotePress?: (note: string) => void
   onLevelDown?: () => void
   onLevelUp?: () => void
   onMoreDetails?: () => void
-  onSaveProgress?: () => void
+  onRegister?: () => void
 }
 
-export default function GameScreen({
+export default function AdvanceGameScreen({
   onBack,
   onPlayAgain,
   onNotePress,
   onLevelDown,
   onLevelUp,
   onMoreDetails,
-  onSaveProgress,
-}: GameResultScreenProps) {
+  onRegister,
+}: AdvancedStatsScreenProps) {
   const navigation = useNavigation()
   const [currentLevel, setCurrentLevel] = useState(1) // Start with level 1 (1 row)
   const [selectedNote, setSelectedNote] = useState<string | null>(null)
-
-  const handleMoreDetails = () => {
-    console.log("More Details pressed")
-    onMoreDetails?.()
-    navigation.navigate("Menu" as never, {
-      accuracy: "53%",
-      level: currentLevel,
-      streaks: 10,
-      selectedNote: selectedNote,
-      gameResult: "correct",
-    })
-  }
 
   const handlePlayAgain = () => {
     console.log("Play Again pressed")
@@ -74,59 +62,72 @@ export default function GameScreen({
     onNotePress?.(note)
   }
 
-  const handleSaveProgress = () => {
-    console.log("Save Progress pressed")
-    onSaveProgress?.()
+  const handleMoreDetails = () => {
+    console.log("More Details pressed")
+    onMoreDetails?.()
+    navigation.navigate("Menu" as never)
+  }
+
+  const handleRegister = () => {
+    console.log("Register pressed")
+    onRegister?.()
     navigation.navigate("Register" as never)
   }
 
-  return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Header with back button */}
-      <View className="flex-row items-center px-6 py-4">
-        <BackButton onPress={onBack} />
-      </View>
+  const handleBack = () => {
+    console.log("Back pressed")
+    onBack?.()
+    navigation.goBack()
+  }
 
+  // Calculate accuracy based on level for demo purposes
+  const getAccuracy = () => {
+    const baseAccuracy = 23
+    const levelBonus = (currentLevel - 1) * 15
+    return Math.min(baseAccuracy + levelBonus, 95)
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <View className="flex-row items-center mt-8 px-6 pb-8">
+        <BackButton onPress={handleBack} />
+      </View>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Stats Row */}
         <View className="flex-row justify-center px-6 mb-8 gap-x-6">
-          <StatCard value="53%" label="Accuracy" size="small" valueColor="blue" />
+          <StatCard value={`${getAccuracy()}%`} label="Accuracy" size="small" valueColor="blue" />
           <StatCard value={currentLevel.toString()} label="Level" size="large" />
           <StatCard value="10" label="Streaks" size="small" />
         </View>
-
-        {/* Play Again Button */}
         <View className="px-6 mb-6">
           <PlayAgainButton onPress={handlePlayAgain} />
         </View>
-
-        {/* Correct Text */}
-        {/* <Text className="text-[#003049] text-2xl font-bold text-center mb-8">Correct!</Text> */}
-
-        {/* Note Grid */}
+        <View className="flex-row justify-center gap-x-4 mb-8">
+          <CircularIndicator type={currentLevel >= 2 ? "success" : "error"} />
+          <CircularIndicator type={currentLevel >= 3 ? "success" : currentLevel >= 2 ? "error" : "empty"} />
+          <CircularIndicator type={currentLevel >= 4 ? "success" : currentLevel >= 3 ? "error" : "empty"} />
+        </View>
         <NoteGrid selectedNote={selectedNote} onNotePress={handleNotePress} visibleRows={currentLevel} />
-
-        {/* Level Control Buttons */}
         <View className="px-6 mb-4 gap-y-3">
           {currentLevel > 1 && <ActionButton title="Level Up" icon="arrow-up" onPress={handleLevelDown} />}
-          {currentLevel < 4 && <ActionButton title="Level Down" icon="arrow-down" onPress={handleLevelUp} />}
+          {currentLevel < 4 && <ActionButton  title="Level Down" icon="arrow-down" onPress={handleLevelUp} />}
         </View>
 
-        {/* Save Progress Text */}
-       
         {/* Extra space to ensure content doesn't get hidden behind fixed button */}
         <View className="h-20" />
       </ScrollView>
 
-      {/* Fixed More Details Button at bottom */}
-      <View className="px-6 pb-8 pt-4 bg-white border-t border-gray-100">
-        <ActionButton title="More Details" icon="dots" onPress={handleMoreDetails} variant="filled" />
-        {/* Bottom indicator */}
+      {/* Fixed Action Buttons at bottom */}
+      <View className="px-6 pb-8 pt-4 bg-gray-50 border-t border-gray-200">
+        <View className="space-y-3">
+          <ActionButton title="More Details" icon="dots" onPress={handleMoreDetails} />
+
+        </View>
+
+        {/* Home indicator */}
         <View className="pt-4">
-           <Text className="text-[#006AE6] text-lg font-semibold text-center" onPress={handleSaveProgress}>
+   <Text className="text-[#006AE6] text-lg font-semibold text-center" >
           Save your progress
         </Text>
-
         </View>
       </View>
     </SafeAreaView>

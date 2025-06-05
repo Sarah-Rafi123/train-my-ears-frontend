@@ -4,8 +4,9 @@ import SelectInstrumentScreen from "@/src/screens/selectInstrument/selectInstrum
 import GameScreen from "@/src/screens/game/game"
 import LeaderboardScreen from "@/src/screens/leaderboard/leaderboard"
 import MenuScreen from "@/src/screens/menu/menu"
-import StatsScreen from "@/src/screens/stats/stats"
+import AdvanceGameScreen from "./src/screens/advanceGame/advanceGame"
 import SampleScreen from "@/src/screens/sample/sample"
+import UserStatsScreen from "./src/screens/userStats/userStats"
 import LoginScreen from "@/src/screens/login/login"
 import RegisterScreen from "@/src/screens/register/register"
 import SocialRegisterScreen from "@/src/screens/socialRegister/socialRegister"
@@ -30,9 +31,10 @@ export default function RootLayout() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="SelectInstrument" component={SelectInstrumentScreen} />
         <Stack.Screen name="Game" component={GameScreen} />
-        <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
         <Stack.Screen name="Menu" component={MenuScreen} />
-        <Stack.Screen name="Stats" component={StatsScreen} />
+        <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+        <Stack.Screen name="Stats" component={UserStatsScreen} />
+        <Stack.Screen name="Advance" component={AdvanceGameScreen} />
         <Stack.Screen name="Sample" component={SampleScreen} />
       </Stack.Navigator>
     </NavigationContainer>

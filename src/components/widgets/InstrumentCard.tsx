@@ -1,5 +1,6 @@
 import { TouchableOpacity, Text, View } from "react-native"
-import { Feather } from "@expo/vector-icons"
+import GuitarSvg from "@/src/assets/svgs/Guitar"
+import PianoSvg from "@/src/assets/svgs/Piano"
 
 interface InstrumentCardProps {
   instrument: "guitar" | "piano"
@@ -8,27 +9,23 @@ interface InstrumentCardProps {
 
 export default function InstrumentCard({ instrument, onPress }: InstrumentCardProps) {
   const getInstrumentIcon = () => {
-    return instrument === "guitar" ? "music" : "piano"
+    return instrument === "guitar" ? <GuitarSvg /> : <PianoSvg />
   }
 
   const getInstrumentName = () => {
     return instrument === "guitar" ? "Guitar Chords" : "Piano Chords"
   }
 
-  const getIconColor = () => {
-    return instrument === "guitar" ? "#DC2626" : "#1F2937"
-  }
-
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="bg-white border-2 border-gray-200 rounded-full py-5 px-8 mb-4 shadow-sm active:bg-gray-50"
+      className="bg-white border border-[#00304940] rounded-2xl py-5 px-8 mb-4 shadow-sm active:bg-gray-50"
       accessibilityRole="button"
       accessibilityLabel={`Select ${getInstrumentName()}`}
       activeOpacity={0.8}
     >
       <View className="flex-row items-center justify-center">
-        <Feather name={getInstrumentIcon()} size={28} color={getIconColor()} />
+        {getInstrumentIcon()}
         <Text className="text-[#003049] text-xl font-semibold ml-4">{getInstrumentName()}</Text>
       </View>
     </TouchableOpacity>

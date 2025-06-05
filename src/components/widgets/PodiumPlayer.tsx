@@ -1,18 +1,22 @@
 import { View, Text } from "react-native"
+import CrownSvg from "@/src/assets/svgs/Crown"
+import FirstSvg from "@/src/assets/svgs/First"
+import SecondSvg from "@/src/assets/svgs/Second"
+import ThirdSvg from "@/src/assets/svgs/Third"
 
 interface PodiumPlayerProps {
   name: string
+  initials: string
   position: 1 | 2 | 3
-  hasStars?: boolean
 }
 
-export default function PodiumPlayer({ name, position, hasStars = false }: PodiumPlayerProps) {
+export default function PodiumPlayer({ name, initials, position }: PodiumPlayerProps) {
   const getPositionColor = () => {
     switch (position) {
       case 1:
-        return "border-slate-800"
+        return "border-yellow-400"
       case 2:
-        return "border-slate-600"
+        return "border-gray-400"
       case 3:
         return "border-orange-400"
       default:
@@ -20,40 +24,48 @@ export default function PodiumPlayer({ name, position, hasStars = false }: Podiu
     }
   }
 
-  const getCircleSize = () => {
-    return position === 1 ? "w-20 h-20" : "w-16 h-16"
+  const renderBadge = () => {
+    switch (position) {
+      case 1:
+        return <FirstSvg width={24} height={24} />
+      case 2:
+        return <SecondSvg width={24} height={24} />
+      case 3:
+        return <ThirdSvg width={24} height={24} />
+      default:
+        return null
+    }
   }
 
   return (
     <View className="items-center">
-      <View className="relative mb-2">
-        {position === 1 && (
-          <View className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-            <View className="w-8 h-6 bg-yellow-400" />
-          </View>
-        )}
-        <View
-          className={`${getCircleSize()} ${getPositionColor()} border-4 rounded-full bg-white justify-center items-center`}
-        >
-          <View className="w-6 h-6 bg-slate-800 rounded-full" />
+      {/* Crown for 1st place */}
+      {position === 1 && (
+        <View className="">
+          <CrownSvg width={32} height={24} />
         </View>
-        {hasStars && (
-          <View className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-            <View className="w-6 h-6 bg-yellow-400 rounded-full justify-center items-center">
-              <Text className="text-white text-xs">★</Text>
-            </View>
-          </View>
-        )}
-        {position === 3 && (
-          <View className="absolute -bottom-2 right-0">
-            <View className="w-6 h-6 bg-orange-400 rounded-full justify-center items-center">
-              <Text className="text-white text-xs">★</Text>
-            </View>
-          </View>
-        )}
+      )}
+
+      {/* Player card */}
+      <View
+        className={`w-20 h-20 ${getPositionColor()} border-4 rounded-3xl bg-white items-center justify-center mb-2 relative`}
+      >
+        <Text className="text-[#003049] text-xl font-bold">{initials}</Text>
+
+        <View
+          className={`absolute -bottom-2 ${
+            position === 1 ? "left-1/2 -translate-x-1/2" : position === 2 ? "left-1/2 -translate-x-1/2" : "left-1/2 -translate-x-1/2"
+          }`}
+        >
+          {renderBadge()}
+        </View>
       </View>
-      <Text className="text-2xl font-bold text-slate-800 mb-1">{position}</Text>
-      <Text className="text-slate-800 text-sm text-center">{name}</Text>
+
+      {/* Position number */}
+      <Text className="text-[#003049] text-3xl font-bold mb-1">{position}</Text>
+
+      {/* Player name */}
+      <Text className="text-[#003049] text-base font-medium">{name}</Text>
     </View>
   )
 }

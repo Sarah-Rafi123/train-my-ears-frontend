@@ -10,11 +10,11 @@ export default function NoteButton({ note, isSelected = false, onPress }: NoteBu
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`w-16 h-16 rounded-xl justify-center items-center ${
+      className={`w-24 h-24 rounded-xl justify-center items-center ${
         isSelected ? "bg-white border-2 border-slate-800" : "bg-gray-200"
       }`}
     >
-      <Text className="text-slate-800 text-lg font-semibold">{note}</Text>
+      <Text className="text-slate-800 text-2xl font-semibold">{note}</Text>
     </TouchableOpacity>
   )
 }

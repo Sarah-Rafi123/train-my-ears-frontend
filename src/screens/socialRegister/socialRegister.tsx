@@ -27,7 +27,7 @@ export default function SocialRegisterScreen() {
             <SocialButton
               provider="google"
               title="Sign up with Google"
-              className="bg-white border border-gray-300 mt-4"
+              className="bg-white border border-black mt-4"
               textClassName="text-black"
             />
 
@@ -39,7 +39,7 @@ export default function SocialRegisterScreen() {
             />
 
             <TouchableOpacity
-              className="w-full bg-white border border-gray-300 rounded-2xl py-3 px-4 mt-4 items-center"
+              className="w-full bg-white border border-black rounded-2xl py-3 px-4 mt-4 items-center"
               onPress={() => navigation.navigate("Register" as never)}
             >
               <Text className="text-black font-medium">Continue with email</Text>

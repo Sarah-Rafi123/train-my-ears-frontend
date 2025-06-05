@@ -1,46 +1,50 @@
 import { TouchableOpacity, Text, View } from "react-native"
+import { Feather } from "@expo/vector-icons"
+import ViewSampleSvg from "@/src/assets/svgs/ViewSample"
+import AdvanceModeSvg from "@/src/assets/svgs/AdvanceMode"
+import ViewStatsSvg from "@/src/assets/svgs/ViewStats"
+import LeadershipBoardSvg from "@/src/assets/svgs/LeadershipBoard"
+import ShareSvg from "@/src/assets/svgs/Share"
 
 interface MenuOptionProps {
   title: string
-  icon: "play" | "stats" | "medal"
+  icon: "play" | "sliders" | "stats" | "medal" | "share"
   onPress?: () => void
 }
 
 export default function MenuOption({ title, icon, onPress }: MenuOptionProps) {
   const renderIcon = () => {
+    const iconSize = 24
+    const iconColor = "#003049"
+
     switch (icon) {
       case "play":
-        return (
-          <View className="w-6 h-6 mr-3">
-            <View className="w-0 h-0 border-l-[12px] border-l-slate-800 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent ml-1" />
-          </View>
-        )
+        return <ViewSampleSvg size={iconSize} color={iconColor} />
+      case "sliders":
+        return <AdvanceModeSvg size={iconSize} color={iconColor} />
       case "stats":
-        return (
-          <View className="w-6 h-6 mr-3 flex-row items-end space-x-1">
-            <View className="w-1 h-3 bg-slate-800" />
-            <View className="w-1 h-4 bg-slate-800" />
-            <View className="w-1 h-5 bg-slate-800" />
-            <View className="w-1 h-6 bg-slate-800" />
-          </View>
-        )
+        return <ViewStatsSvg size={iconSize} color={iconColor} />
       case "medal":
-        return (
-          <View className="w-6 h-6 mr-3">
-            <View className="w-5 h-5 border-2 border-slate-800 rounded-full" />
-            <View className="absolute bottom-0 left-1 w-3 h-2 bg-slate-800" />
-          </View>
-        )
+        return <LeadershipBoardSvg size={iconSize} color={iconColor} />
+      case "share":
+        return <ShareSvg size={iconSize} color={iconColor} />
+      default:
+        return <Feather name="circle" size={iconSize} color={iconColor} />
     }
   }
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="bg-white border border-gray-300 rounded-2xl py-6 px-6 mx-6 mb-6 flex-row items-center"
+      className="items-center justify-center px-6 py-6 border rounded-2xl border-[#00304940] bg-white mx-4 mb-4"
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      activeOpacity={0.7}
     >
-      {renderIcon()}
-      <Text className="text-slate-800 text-lg font-semibold">{title}</Text>
+      <View className= " flex flex-row justify-start items-center">
+      <View className="w-12 h-12 items-center justify-center mr-2">{renderIcon()}</View>
+      <Text className="text-[#003049] text-lg font-medium text-center">{title}</Text>
+      </View>
     </TouchableOpacity>
   )
 }
