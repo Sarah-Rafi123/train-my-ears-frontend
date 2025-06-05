@@ -108,8 +108,8 @@ export default function GameScreen({
 
         {/* Level Control Buttons */}
         <View className="px-6 mb-4 gap-y-3">
-          {currentLevel > 1 && <ActionButton title="Level Up" icon="arrow-up" onPress={handleLevelDown} />}
-          {currentLevel < 4 && <ActionButton title="Level Down" icon="arrow-down" onPress={handleLevelUp} />}
+          {currentLevel > 1 && <ActionButton title="Level Down" icon="arrow-down" onPress={handleLevelDown} />}
+          {currentLevel < 4 && <ActionButton title="Level Up" icon="arrow-up" onPress={handleLevelUp} />}
         </View>
 
         {/* Save Progress Text */}
@@ -119,8 +119,8 @@ export default function GameScreen({
       </ScrollView>
 
       {/* Fixed More Details Button at bottom */}
-      <View className="px-6 pb-8 pt-4 bg-white border-t border-gray-100">
-        <ActionButton title="More Details" icon="dots" onPress={handleMoreDetails} variant="filled" />
+      <View className="px-6 pb-8 pt-4">
+        <ActionButton title="More Details" icon="dots" onPress={handleMoreDetails}/>
         {/* Bottom indicator */}
         <View className="pt-4">
            <Text className="text-[#006AE6] text-lg font-semibold text-center" onPress={handleSaveProgress}>

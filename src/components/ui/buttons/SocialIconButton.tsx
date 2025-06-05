@@ -13,11 +13,11 @@ export default function SocialIconButton({ provider, onPress }: SocialIconButton
   const renderIcon = () => {
     switch (provider) {
       case "apple":
-        return <AppleSvg width={32} height={32} />
+        return <AppleSvg width={40} height={40} />
       case "facebook":
-        return <FacebookSvg width={32} height={32} />
+        return <FacebookSvg width={40} height={40} />
       case "google":
-        return <GoogleSvg width={32} height={32} />
+        return <GoogleSvg width={40} height={40} />
       default:
         return null
     }

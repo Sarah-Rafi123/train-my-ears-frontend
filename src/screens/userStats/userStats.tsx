@@ -40,14 +40,14 @@ export default function UserStatsScreen({ onBack }: StatsScreenProps) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1e3a5f]">
+    <SafeAreaView className="flex-1 pt-8 bg-[#1e3a5f]">
       {/* Header with back button */}
 
         <BackButton onPress={handleBack} />
  
 
       {/* Blue background section with reduced height */}
-      <View className="h-20" />
+      <View className="h-28" />
 
       {/* Container for overlapping chord card and white section */}
       <View className="flex-1 relative">

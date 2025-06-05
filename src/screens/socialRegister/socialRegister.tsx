@@ -46,13 +46,13 @@ export default function SocialRegisterScreen() {
             </TouchableOpacity>
 
             <View className="mt-8 items-center">
-              <Text className="text-[#003049] text-sm text-center">Already have an account?</Text>
+              <Text className="text-[#003049] text-lg text-center">Already have an account?</Text>
               <TouchableOpacity className="mt-1" onPress={() => navigation.navigate("Login" as never)}>
-                <Text className="text-blue-500 font-semibold">Sign In</Text>
+                <Text className="text-blue-500 text-xl font-semibold">Sign In</Text>
               </TouchableOpacity>
             </View>
 
-            <Text className="text-[#797979] text-xs text-center mt-8">
+            <Text className="text-[#797979] text-sm text-center mt-8">
               By signing up you agree to our{"\n"}
               Terms of Service and acknowledge that you have{"\n"}
               read our Privacy Policy

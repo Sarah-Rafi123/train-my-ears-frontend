@@ -3,7 +3,7 @@ import Svg, { G, Mask, Path } from 'react-native-svg';
 
 const FacebookBlueSvg = () => {
   return(
-<Svg width="31" height="32" viewBox="0 0 31 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<Svg width="35" height="36" viewBox="0 0 31 32" fill="none" xmlns="http://www.w3.org/2000/svg">
 <Mask id="mask0_115_2094" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="31" height="32">
 <Path fill-rule="evenodd" clip-rule="evenodd" d="M0.149902 0.58551H30.9427V31.3783H0.149902V0.58551Z" fill="white"/>
 </Mask>

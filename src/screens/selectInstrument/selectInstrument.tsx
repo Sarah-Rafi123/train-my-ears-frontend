@@ -32,9 +32,9 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1  bg-white">
       {/* Header with back button */}
-      <View className="flex-row items-center mt-8 px-6 py-4">
+      <View className="flex-row items-center mt-8 px-6 py-8">
         <BackButton onPress={onBack} />
         <View className="flex-1">
           <Text className="text-[#003049] text-lg font-semibold text-center mt-5 mr-10">Select an Instrument</Text>
@@ -42,7 +42,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       </View>
 
       {/* Musical background image at the top */}
-      <View className="h-64 w-full mt-24">
+      <View className="h-64 w-full mt-28">
         <Image source={musicbg} className="w-full h-full" resizeMode="contain" />
       </View>
 

@@ -53,7 +53,7 @@ export default function SampleScreen({ onBack, onNotePress, onUpgrade }: ViewSam
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center mt-8 px-6 pb-8">
+      <View className="flex-row items-center mt-8 px-6 py-8">
         <BackButton onPress={onBack} />
         <View className="flex-1">
           <Text className="text-slate-800 text-xl font-semibold text-center mt-4 mr-10">
@@ -89,7 +89,7 @@ export default function SampleScreen({ onBack, onNotePress, onUpgrade }: ViewSam
           {currentLevel < 4 && (
             <ActionButton
               title={`Upgrade to level ${currentLevel + 1}`}
-              icon="arrow-down"
+              icon="arrow-up"
               onPress={handleLevelUp}
               variant="filled"
             />
@@ -97,7 +97,7 @@ export default function SampleScreen({ onBack, onNotePress, onUpgrade }: ViewSam
           {currentLevel > 1 && (
             <ActionButton
               title={`Downgrade to level ${currentLevel - 1}`}
-              icon="arrow-up"
+              icon="arrow-down"
               onPress={handleLevelDown}
             />
           )}

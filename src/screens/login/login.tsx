@@ -55,7 +55,7 @@ export default function LoginScreen() {
         <View className="px-6 py-4 flex-1">
           <BackButton />
 
-          <View className="mt-16">
+          <View className="mt-8">
             <Text className="text-2xl font-bold text-[#003049]">LOGIN WITH EMAIL</Text>
             <Text className="text-gray-600 mt-1">Hello there, sign in to continue!</Text>
           </View>
@@ -92,14 +92,14 @@ export default function LoginScreen() {
           <PrimaryButton title="Login" onPress={handleLogin} loading={loading} className="mt-6" />
 
           <View className="my-8">
-            <Text className="text-center text-gray-500 mb-4">Sign in with</Text>
+            <Text className="text-center text-lg text-gray-500 mb-4">Sign in with</Text>
             <SocialButtons />
           </View>
 
           <View className="flex-row justify-center mt-auto mb-4">
-            <Text className="text-gray-600">Don't have an account? </Text>
+            <Text className="text-gray-600 text-lg">Don't have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate("Register" as never)}>
-              <Text className="text-[#006AE6] font-semibold">Sign Up</Text>
+              <Text className="text-[#006AE6] text-lg font-semibold">Sign Up</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -36,7 +36,7 @@ export default function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header */}
-      <View className="flex-row items-center mt-8 px-6 py-4">
+      <View className="flex-row items-center px-6 py-4">
         <BackButton onPress={handleBack} />
         <View className="flex-1">
           <Text className="text-[#003049] text-2xl font-semibold text-center mt-4 mr-10">Leaderboard</Text>

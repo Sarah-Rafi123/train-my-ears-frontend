@@ -56,7 +56,7 @@ export default function RegisterScreen() {
         <View className="flex-1 px-6 py-4">
           <BackButton />
 
-          <View className="mt-16">
+          <View className="mt-8">
             <Text className="text-2xl font-bold text-[#003049]">CREATE YOUR ACCOUNT</Text>
             <Text className="text-[#003049] text-sm mt-1">Hello there, sign in to continue!</Text>
           </View>
@@ -107,7 +107,7 @@ export default function RegisterScreen() {
           </View>
 
           <View className="flex-row justify-center mt-auto mb-4">
-            <Text className="text-black text-sm">Already have an account? </Text>
+            <Text className="text-black text-lg">Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate("Login" as never)}>
               <Text className="text-[#006AE6] font-semibold">Sign In</Text>
             </TouchableOpacity>

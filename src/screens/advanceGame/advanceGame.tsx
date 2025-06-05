@@ -108,8 +108,8 @@ export default function AdvanceGameScreen({
         </View>
         <NoteGrid selectedNote={selectedNote} onNotePress={handleNotePress} visibleRows={currentLevel} />
         <View className="px-6 mb-4 gap-y-3">
-          {currentLevel > 1 && <ActionButton title="Level Up" icon="arrow-up" onPress={handleLevelDown} />}
-          {currentLevel < 4 && <ActionButton  title="Level Down" icon="arrow-down" onPress={handleLevelUp} />}
+          {currentLevel > 1 && <ActionButton title="Level Down" icon="arrow-down" onPress={handleLevelDown} />}
+          {currentLevel < 4 && <ActionButton  title="Level Up" icon="arrow-up" onPress={handleLevelUp} />}
         </View>
 
         {/* Extra space to ensure content doesn't get hidden behind fixed button */}
@@ -117,14 +117,14 @@ export default function AdvanceGameScreen({
       </ScrollView>
 
       {/* Fixed Action Buttons at bottom */}
-      <View className="px-6 pb-8 pt-4 bg-gray-50 border-t border-gray-200">
+      <View className="px-6 pb-8 pt-4">
         <View className="space-y-3">
           <ActionButton title="More Details" icon="dots" onPress={handleMoreDetails} />
 
         </View>
 
         {/* Home indicator */}
-        <View className="pt-4">
+        <View className="pt-4 mb-8">
    <Text className="text-[#006AE6] text-lg font-semibold text-center" >
           Save your progress
         </Text>
