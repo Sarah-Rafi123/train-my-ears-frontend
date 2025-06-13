@@ -24,7 +24,7 @@ export default function ProgressCard({ icon, value, suffix = "", className = "",
   }
 
   return (
-    <View className={`bg-white border justify-center items-centerborder-gray-200 rounded-2xl p-6 flex-row items-center shadow-sm ${className}`}>
+    <View className={`bg-white border justify-center items-center border-gray-200 rounded-2xl p-4 flex-row  shadow-sm ${className}`}>
       <View className="mr-3">{renderIcon()}</View>
       <Text className="text-[#003049] text-5xl font-bold">
         {value}

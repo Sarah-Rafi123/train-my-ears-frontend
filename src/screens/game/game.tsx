@@ -1,83 +1,305 @@
 "use client"
 
-import { View, Text, ScrollView } from "react-native"
-import { useState } from "react"
-import { useNavigation } from "@react-navigation/native"
+import { View, Text, ScrollView, ActivityIndicator } from "react-native"
+import { useState, useEffect } from "react"
+import { useNavigation, useRoute } from "@react-navigation/native"
+import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
+import { useAuth } from "@/src/context/AuthContext"
+import { startGame, submitAnswer, clearError, clearGameResult, setCurrentLevel } from "@/src/store/slices/gameSlice"
+import { audioService } from "@/src/services/audioService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import StatCard from "@/src/components/widgets/StatsCard"
 import PlayAgainButton from "@/src/components/ui/buttons/PlayAgainButton"
 import NoteGrid from "@/src/components/widgets/NoteGrid"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
+import { SubscriptionModal } from "@/src/components/ui/modal/subscription-modal"
+import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
-
-interface GameResultScreenProps {
+import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
+interface GameScreenProps {
   onBack?: () => void
-  onPlayAgain?: () => void
-  onNotePress?: (note: string) => void
-  onLevelDown?: () => void
-  onLevelUp?: () => void
   onMoreDetails?: () => void
   onSaveProgress?: () => void
 }
 
-export default function GameScreen({
-  onBack,
-  onPlayAgain,
-  onNotePress,
-  onLevelDown,
-  onLevelUp,
-  onMoreDetails,
-  onSaveProgress,
-}: GameResultScreenProps) {
+export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: GameScreenProps) {
   const navigation = useNavigation()
-  const [currentLevel, setCurrentLevel] = useState(1) // Start with level 1 (1 row)
-  const [selectedNote, setSelectedNote] = useState<string | null>(null)
+  const route = useRoute()
+  const dispatch = useAppDispatch()
 
-  const handleMoreDetails = () => {
-    console.log("More Details pressed")
-    onMoreDetails?.()
-    navigation.navigate("Menu" as never, {
-      accuracy: "53%",
-      level: currentLevel,
-      streaks: 10,
-      selectedNote: selectedNote,
-      gameResult: "correct",
-    })
+  // Get auth data
+  const { userId, guitarId, pianoId } = useAuth()
+
+  // Get game state from Redux
+  const {
+    currentGameRound,
+    gameResult,
+    isLoading,
+    isSubmittingAnswer,
+    error,
+    errorCode,
+    currentLevel,
+    responseStartTime,
+    currentStats, // Get current stats from Redux
+  } = useAppSelector((state) => state.game)
+
+  const [selectedChordId, setSelectedChordId] = useState<string | null>(null)
+  const [showResult, setShowResult] = useState(false)
+  const [audioError, setAudioError] = useState<string | null>(null)
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+  const [showGameErrorModal, setShowGameErrorModal] = useState(false)
+
+  // Get route params
+  const routeParams = route.params as any
+  const instrumentFromRoute = routeParams?.instrument
+  const instrumentIdFromRoute = routeParams?.instrumentId
+  const userIdFromRoute = routeParams?.userId
+
+  // Determine instrument ID based on route params or context
+  let finalInstrumentId = instrumentIdFromRoute
+  if (!finalInstrumentId && instrumentFromRoute) {
+    if (instrumentFromRoute === "guitar") {
+      finalInstrumentId = guitarId
+    } else if (instrumentFromRoute === "piano") {
+      finalInstrumentId = pianoId
+    }
   }
 
-  const handlePlayAgain = () => {
-    console.log("Play Again pressed")
-    setSelectedNote(null) // Reset selected note
-    onPlayAgain?.()
+  // Use IDs from route params or context
+  const finalUserId = userIdFromRoute || userId
+
+  // Initialize game when component mounts
+  useEffect(() => {
+    console.log("🎮 GameScreen: Initializing game with:", {
+      userId: finalUserId,
+      instrumentId: finalInstrumentId,
+      instrument: instrumentFromRoute,
+      level: currentLevel,
+    })
+
+    if (finalUserId && finalInstrumentId) {
+      dispatch(
+        startGame({
+          userId: finalUserId,
+          instrumentId: finalInstrumentId,
+          level: currentLevel,
+        }),
+      )
+    } else {
+      console.error("❌ GameScreen: Missing required data:", {
+        userId: finalUserId,
+        instrumentId: finalInstrumentId,
+      })
+      setShowGameErrorModal(true)
+    }
+  }, [dispatch, finalUserId, finalInstrumentId, currentLevel])
+
+  // Play audio when game round loads
+  useEffect(() => {
+    if (currentGameRound?.targetChord?.audioFileUrl) {
+      playAudioSafely(currentGameRound.targetChord.audioFileUrl)
+    }
+  }, [currentGameRound])
+
+  // Handle game result
+  useEffect(() => {
+    if (gameResult) {
+      setShowResult(true)
+
+      // Log the updated stats when we get a result
+      console.log("🎯 Game result received with stats:", {
+        isCorrect: gameResult.isCorrect,
+        streak: gameResult.stats.streak,
+        accuracy: gameResult.stats.accuracy,
+        totalAttempts: gameResult.stats.totalAttempts,
+        correctAnswers: gameResult.stats.correctAnswers,
+      })
+    }
+  }, [gameResult])
+
+  // Handle errors with appropriate modals
+  useEffect(() => {
+    if (error && errorCode) {
+      console.log("🔴 GameScreen: Handling error:", { error, errorCode })
+
+      if (errorCode === "SUBSCRIPTION_REQUIRED") {
+        setShowSubscriptionModal(true)
+      } else {
+        setShowGameErrorModal(true)
+      }
+    } else if (error && !errorCode) {
+      // Generic error without code
+      setShowGameErrorModal(true)
+    }
+  }, [error, errorCode])
+
+  const playAudioSafely = async (audioUrl: string) => {
+    try {
+      setAudioError(null)
+      console.log("🎵 GameScreen: Playing audio:", audioUrl)
+      await audioService.playAudio(audioUrl)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown audio error"
+      console.error("❌ GameScreen: Audio playback failed:", errorMessage)
+      setAudioError(errorMessage)
+    }
+  }
+
+  const handlePlayAgain = async () => {
+    if (currentGameRound?.targetChord?.audioFileUrl) {
+      await playAudioSafely(currentGameRound.targetChord.audioFileUrl)
+    }
+  }
+
+  const handleChordSelect = (chordId: string) => {
+    if (isSubmittingAnswer || !currentGameRound || !finalUserId) return
+
+    setSelectedChordId(chordId)
+
+    // Calculate response time
+    const responseTime = responseStartTime ? Date.now() - responseStartTime : 0
+
+    console.log("🎯 GameScreen: Submitting answer:", {
+      chordId,
+      responseTime,
+      gameRoundId: currentGameRound.gameRoundId,
+    })
+
+    // Submit answer
+    dispatch(
+      submitAnswer({
+        userId: finalUserId,
+        gameRoundId: currentGameRound.gameRoundId,
+        selectedChordId: chordId,
+        responseTimeMs: responseTime,
+      }),
+    )
   }
 
   const handleLevelDown = () => {
-    if (currentLevel > 1) {
-      setCurrentLevel(currentLevel - 1)
-      setSelectedNote(null) // Reset selected note when level changes
+    if (currentLevel > 1 && finalUserId && finalInstrumentId) {
+      const newLevel = currentLevel - 1
+      console.log("📉 GameScreen: Level down to:", newLevel)
+      dispatch(setCurrentLevel(newLevel))
+      dispatch(clearGameResult())
+      setShowResult(false)
+      setSelectedChordId(null)
+
+      dispatch(
+        startGame({
+          userId: finalUserId,
+          instrumentId: finalInstrumentId,
+          level: newLevel,
+        }),
+      )
     }
-    console.log("Level Down pressed, new level:", currentLevel - 1)
-    onLevelDown?.()
   }
 
   const handleLevelUp = () => {
-    if (currentLevel < 4) {
-      setCurrentLevel(currentLevel + 1)
-      setSelectedNote(null) // Reset selected note when level changes
+    if (currentLevel < 4 && finalUserId && finalInstrumentId) {
+      const newLevel = currentLevel + 1
+      console.log("📈 GameScreen: Level up to:", newLevel)
+      dispatch(setCurrentLevel(newLevel))
+      dispatch(clearGameResult())
+      setShowResult(false)
+      setSelectedChordId(null)
+
+      dispatch(
+        startGame({
+          userId: finalUserId,
+          instrumentId: finalInstrumentId,
+          level: newLevel,
+        }),
+      )
     }
-    console.log("Level Up pressed, new level:", currentLevel + 1)
-    onLevelUp?.()
   }
 
-  const handleNotePress = (note: string, rowIndex: number, noteIndex: number) => {
-    setSelectedNote(`${note}-${rowIndex}-${noteIndex}`)
-    onNotePress?.(note)
+  const handleMoreDetails = () => {
+    console.log("🔍 GameScreen: More Details pressed")
+    onMoreDetails?.()
+    navigation.navigate("Menu" as never, {
+      accuracy: currentStats.accuracy.toFixed(1) + "%",
+      level: currentLevel,
+      streaks: currentStats.streak,
+      selectedNote: selectedChordId,
+      gameResult: gameResult?.isCorrect ? "correct" : "incorrect",
+    })
   }
 
   const handleSaveProgress = () => {
-    console.log("Save Progress pressed")
+    console.log("💾 GameScreen: Save Progress pressed")
     onSaveProgress?.()
     navigation.navigate("Register" as never)
+  }
+
+  const handleSubscriptionUpgrade = () => {
+    setShowSubscriptionModal(false)
+    dispatch(clearError())
+    console.log("💳 GameScreen: Navigating to subscription screen")
+    // Navigate to subscription/payment screen
+    navigation.navigate("Subscription" as never)
+  }
+
+  const handleSubscriptionCancel = () => {
+    setShowSubscriptionModal(false)
+    dispatch(clearError())
+
+    // Go back to previous level
+    if (currentLevel > 1) {
+      const previousLevel = currentLevel - 1
+      dispatch(setCurrentLevel(previousLevel))
+      console.log("📉 GameScreen: Returning to level:", previousLevel)
+    }
+  }
+
+  const handleGameErrorClose = () => {
+    setShowGameErrorModal(false)
+    dispatch(clearError())
+  }
+
+  const handleGameErrorRetry = () => {
+    setShowGameErrorModal(false)
+    dispatch(clearError())
+
+    if (finalUserId && finalInstrumentId) {
+      dispatch(
+        startGame({
+          userId: finalUserId,
+          instrumentId: finalInstrumentId,
+          level: currentLevel,
+        }),
+      )
+    }
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="flex-row items-center px-6 py-4">
+          <BackButton onPress={onBack} />
+        </View>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#003049" />
+          <Text className="mt-4 text-[#003049] text-lg">Loading game...</Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  // Error state
+  if (!currentGameRound && !error) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="flex-row items-center px-6 py-4">
+          <BackButton onPress={onBack} />
+        </View>
+        <View className="flex-1 justify-center items-center px-6">
+          <Text className="text-[#003049] text-lg text-center mb-4">Unable to load game. Please try again.</Text>
+          <ActionButton title="Retry" onPress={handleGameErrorRetry} />
+        </View>
+      </SafeAreaView>
+    )
   }
 
   return (
@@ -88,47 +310,143 @@ export default function GameScreen({
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Stats Row */}
-        <View className="flex-row justify-center px-6 mb-8 gap-x-6">
-          <StatCard value="53%" label="Accuracy" size="small" valueColor="blue" />
+        {/* Audio Error Warning (if any) */}
+        {audioError && (
+          <View className="mx-6 mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
+            <Text className="text-yellow-800 text-sm">⚠️ Audio playback issue: {audioError}</Text>
+          </View>
+        )}
+<View className="bg-[#E5EAED80] rounded-3xl m-4">
+        {/* Stats Row - Now using real-time stats from API */}
+        <View className="flex-row  justify-center px-6 mb-8 gap-x-6">
+          <StatCard value={currentStats.accuracy.toFixed(1) + "%"} label="Accuracy" size="large" valueColor="red" />
           <StatCard value={currentLevel.toString()} label="Level" size="large" />
-          <StatCard value="10" label="Streaks" size="small" />
+          <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
         </View>
+
+        {/* Additional Stats Row (optional - shows more detailed stats) */}
+        {/* <View className="flex-row justify-center px-6 mb-6 gap-x-4">
+          <View className="bg-gray-50 rounded-lg p-3 flex-1">
+            <Text className="text-center text-sm text-gray-600">Total Attempts</Text>
+            <Text className="text-center text-lg font-bold text-[#003049]">{currentStats.totalAttempts}</Text>
+          </View>
+          <View className="bg-gray-50 rounded-lg p-3 flex-1">
+            <Text className="text-center text-sm text-gray-600">Correct</Text>
+            <Text className="text-center text-lg font-bold text-green-600">{currentStats.correctAnswers}</Text>
+          </View>
+        </View> */}
 
         {/* Play Again Button */}
-        <View className="px-6 mb-6">
-          <PlayAgainButton onPress={handlePlayAgain} />
-        </View>
+        {currentGameRound && (
+          <View className="px-6 mb-6">
+            <PlayAgainButton onPress={handlePlayAgain} />
+          </View>
+        )}
+</View>
+        {/* Game Result Feedback */}
+        {showResult && gameResult && (
+          <View className="px-6 mb-6">
+            <Text
+              className={`text-xl font-bold text-center mb-2 ${
+                gameResult.isCorrect ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {gameResult.isCorrect ? "Correct!" : `Sorry, that was ${gameResult.correctChord.displayName}. Try Again!`}
+            </Text>
+            {/* <Text className="text-[#003049] text-center text-lg mb-4">
+              {gameResult.feedback || (gameResult.isCorrect ? "Great job!" : "Try again!")}
+            </Text>
+            <Text className="text-gray-600 text-center">Correct answer: {gameResult.correctChord.displayName}</Text> */}
 
-        {/* Correct Text */}
-        {/* <Text className="text-[#003049] text-2xl font-bold text-center mb-8">Correct!</Text> */}
+            {/* Show updated stats in the result */}
+            {/* <View className="mt-4 bg-blue-50 rounded-lg p-4">
+              <Text className="text-center text-sm text-blue-800 mb-2">Updated Stats</Text>
+              <View className="flex-row justify-around">
+                <View className="items-center">
+                  <Text className="text-blue-600 font-bold text-lg">{gameResult.stats.streak}</Text>
+                  <Text className="text-blue-600 text-xs">Streak</Text>
+                </View>
+                <View className="items-center">
+                  <Text className="text-blue-600 font-bold text-lg">{gameResult.stats.accuracy.toFixed(1)}%</Text>
+                  <Text className="text-blue-600 text-xs">Accuracy</Text>
+                </View>
+                <View className="items-center">
+                  <Text className="text-blue-600 font-bold text-lg">
+                    {gameResult.stats.correctAnswers}/{gameResult.stats.totalAttempts}
+                  </Text>
+                  <Text className="text-blue-600 text-xs">Score</Text>
+                </View>
+              </View>
+            </View> */}
+          </View>
+        )}
 
-        {/* Note Grid */}
-        <NoteGrid selectedNote={selectedNote} onNotePress={handleNotePress} visibleRows={currentLevel} />
+        {/* Note Grid with chord options */}
+        {currentGameRound && (
+          <NoteGrid
+            chordOptions={currentGameRound.chordOptions}
+            selectedChordId={selectedChordId}
+            onChordPress={handleChordSelect}
+            disabled={isSubmittingAnswer}
+            showResult={showResult}
+            correctChordId={gameResult?.correctChord.id}
+          />
+        )}
 
         {/* Level Control Buttons */}
-        <View className="px-6 mb-4 gap-y-3">
-          {currentLevel > 1 && <ActionButton title="Level Down" icon="arrow-down" onPress={handleLevelDown} />}
-          {currentLevel < 4 && <ActionButton title="Level Up" icon="arrow-up" onPress={handleLevelUp} />}
+        <View className="px-6 mb-4 items-center gap-y-3">
+          {currentLevel > 1 && (
+            <ActionButton
+              title="Level Down"
+              icon="arrow-down"
+              onPress={handleLevelDown}
+              disabled={isLoading || isSubmittingAnswer}
+            />
+          )}
+          {currentLevel < 4 && (
+            <ActionButton
+              title="Level Up"
+              icon="arrow-up"
+              onPress={handleLevelUp}
+              disabled={isLoading || isSubmittingAnswer}
+            />
+          )}
         </View>
 
-        {/* Save Progress Text */}
-       
         {/* Extra space to ensure content doesn't get hidden behind fixed button */}
         <View className="h-20" />
       </ScrollView>
 
       {/* Fixed More Details Button at bottom */}
       <View className="px-6 pb-8 pt-4">
-        <ActionButton title="More Details" icon="dots" onPress={handleMoreDetails}/>
-        {/* Bottom indicator */}
+           <MoreDetailsButton onPress={handleMoreDetails} />
         <View className="pt-4">
-           <Text className="text-[#006AE6] text-lg font-semibold text-center" onPress={handleSaveProgress}>
-          Save your progress
-        </Text>
-
+          <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
+            Save your progress
+          </Text>
         </View>
       </View>
+
+      {/* Subscription Required Modal */}
+      <SubscriptionModal
+        visible={showSubscriptionModal}
+        message={
+          error || "Subscription required for Level 3 and above. Upgrade to Premium to unlock all levels and features!"
+        }
+        onUpgrade={handleSubscriptionUpgrade}
+        onCancel={handleSubscriptionCancel}
+      />
+
+      {/* Game Error Modal */}
+      <GameErrorModal
+        visible={showGameErrorModal}
+        title={errorCode === "NETWORK_ERROR" ? "Connection Error" : "Game Error"}
+        message={error || "An unexpected error occurred. Please try again."}
+        errorCode={errorCode || undefined}
+        onRetry={handleGameErrorRetry}
+        onClose={handleGameErrorClose}
+        showRetry={errorCode === "NETWORK_ERROR" || !errorCode}
+      />
     </SafeAreaView>
   )
 }

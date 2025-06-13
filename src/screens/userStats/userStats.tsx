@@ -1,8 +1,7 @@
 "use client"
 
 import { View, Text, ScrollView, SafeAreaView } from "react-native"
-import { useState } from "react"
-import { useNavigation } from "@react-navigation/native"
+import { useState, useCallback } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import ChordCard from "@/src/components/widgets/ChordCard"
 import ModeSelector from "@/src/components/widgets/ModeSelector"
@@ -10,14 +9,16 @@ import LevelSelector from "@/src/components/widgets/LevelSelector"
 import ProgressCard from "@/src/components/widgets/ProgressCard"
 import HistoryTable from "@/src/components/widgets/HistoryTable"
 
+// Define proper navigation prop types
 interface StatsScreenProps {
+  navigation?: any // Replace with proper type from @react-navigation/native
+  route?: any // Replace with proper type from @react-navigation/native
   onBack?: () => void
 }
 
-export default function UserStatsScreen({ onBack }: StatsScreenProps) {
-  const navigation = useNavigation()
+export default function UserStatsScreen({ navigation, route, onBack }: StatsScreenProps) {
   const [selectedMode, setSelectedMode] = useState<"simple" | "advanced">("simple")
-  const [selectedLevel, setSelectedLevel] = useState(2)
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(null)
 
   // Sample history data - remains unchanged regardless of level selection
   const historyData = [
@@ -26,25 +27,28 @@ export default function UserStatsScreen({ onBack }: StatsScreenProps) {
     { date: "Oct 23, 2025", streak: 18, accuracy: "14%" },
   ]
 
-  // Back button handler - this was missing!
-  const handleBack = () => {
+  // Use useCallback to memoize the handler
+  const handleBack = useCallback(() => {
     if (onBack) {
       onBack()
-    } else {
+    } else if (navigation) {
+      // Only use navigation if it's available
       navigation.goBack()
+    } else {
+      console.log("Back pressed, but navigation is not available")
     }
-  }
+  }, [onBack, navigation])
 
-  const handleLevelChange = (level: number) => {
+  // Empty handler that only updates visual state
+  const handleLevelChange = useCallback((level: number) => {
     console.log(`Level ${level} selected, but no data changes applied`)
-  }
+    setSelectedLevel(level) // Only updates visual state
+  }, [])
 
   return (
-    <SafeAreaView className="flex-1 pt-8 bg-[#1e3a5f]">
+    <SafeAreaView className="flex-1 pt-8 bg-[#F2F5F6]">
       {/* Header with back button */}
-
-        <BackButton onPress={handleBack} />
- 
+      <BackButton onPress={handleBack} />
 
       {/* Blue background section with reduced height */}
       <View className="h-28" />
@@ -60,11 +64,11 @@ export default function UserStatsScreen({ onBack }: StatsScreenProps) {
         <View className="flex-1 bg-white rounded-t-3xl">
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
             {/* Top padding for chord card */}
-            <View className="pt-20">
+            <View className="pt-24">
               {/* Mode Selector */}
-              <ModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} />
+              {/* <ModeSelector selectedMode={selectedMode} onModeChange={setSelectedMode} /> */}
 
-              {/* Level Selector */}
+              {/* Level Selector - No initial selection */}
               <LevelSelector selectedLevel={selectedLevel} onLevelChange={handleLevelChange} />
 
               {/* Daily Progress */}
@@ -79,7 +83,6 @@ export default function UserStatsScreen({ onBack }: StatsScreenProps) {
               {/* History Table */}
               <HistoryTable data={historyData} />
             </View>
-          
           </ScrollView>
         </View>
       </View>

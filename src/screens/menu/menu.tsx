@@ -68,11 +68,11 @@ export default function MenuScreen({
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="pt-4 px-4 gap-y-2">
-          <MenuOption title="View Sample" icon="play" onPress={handleViewSample} />
-          <MenuOption title="Advance Mode" icon="sliders" onPress={handleAdvanceMode} />
-          <MenuOption title="View Stats" icon="stats" onPress={handleViewStats} />
-          <MenuOption title="Leadership board" icon="medal" onPress={handleLeaderboard} />
-          <MenuOption title="Share" icon="share" onPress={handleShare} />
+          <MenuOption title="My Stats" onPress={handleViewStats} />
+         <MenuOption title="Advanced Play" onPress={handleAdvanceMode} />
+          <MenuOption title="Sample Chords"  onPress={handleViewSample} />
+          <MenuOption title="Leader board" onPress={handleLeaderboard} />
+          <MenuOption title="Share" onPress={handleShare} />
         </View>
       </ScrollView>
     </SafeAreaView>

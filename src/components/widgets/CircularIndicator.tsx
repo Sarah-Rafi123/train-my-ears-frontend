@@ -10,11 +10,11 @@ export default function CircularIndicator({ type, size = 40 }: CircularIndicator
   const getIndicatorStyle = () => {
     switch (type) {
       case "success":
-        return "bg-green-500 border-green-500"
+        return "border-[#588157]"
       case "error":
-        return "bg-red-500 border-red-500"
+        return "border-red-500"
       case "empty":
-        return "bg-gray-200 border-gray-300"
+        return " border-gray-300"
       default:
         return "bg-gray-200 border-gray-300"
     }
@@ -23,9 +23,9 @@ export default function CircularIndicator({ type, size = 40 }: CircularIndicator
   const getIcon = () => {
     switch (type) {
       case "success":
-        return <Feather name="check" size={size * 0.5} color="white" />
+        return <Feather name="check" size={size * 0.5} color="green" />
       case "error":
-        return <Feather name="x" size={size * 0.5} color="white" />
+        return <Feather name="x" size={size * 0.5} color="red" />
       case "empty":
         return null
       default:

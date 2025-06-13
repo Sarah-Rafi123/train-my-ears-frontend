@@ -8,30 +8,30 @@ import ShareSvg from "@/src/assets/svgs/Share"
 
 interface MenuOptionProps {
   title: string
-  icon: "play" | "sliders" | "stats" | "medal" | "share"
+  // icon: "play" | "sliders" | "stats" | "medal" | "share"
   onPress?: () => void
 }
 
-export default function MenuOption({ title, icon, onPress }: MenuOptionProps) {
-  const renderIcon = () => {
-    const iconSize = 24
-    const iconColor = "#003049"
+export default function MenuOption({ title, onPress }: MenuOptionProps) {
+  // const renderIcon = () => {
+  //   const iconSize = 24
+  //   const iconColor = "#003049"
 
-    switch (icon) {
-      case "play":
-        return <ViewSampleSvg size={iconSize} color={iconColor} />
-      case "sliders":
-        return <AdvanceModeSvg size={iconSize} color={iconColor} />
-      case "stats":
-        return <ViewStatsSvg size={iconSize} color={iconColor} />
-      case "medal":
-        return <LeadershipBoardSvg size={iconSize} color={iconColor} />
-      case "share":
-        return <ShareSvg size={iconSize} color={iconColor} />
-      default:
-        return <Feather name="circle" size={iconSize} color={iconColor} />
-    }
-  }
+  //   switch (icon) {
+  //     case "play":
+  //       return <ViewSampleSvg size={iconSize} color={iconColor} />
+  //     case "sliders":
+  //       return <AdvanceModeSvg size={iconSize} color={iconColor} />
+  //     case "stats":
+  //       return <ViewStatsSvg size={iconSize} color={iconColor} />
+  //     case "medal":
+  //       return <LeadershipBoardSvg size={iconSize} color={iconColor} />
+  //     case "share":
+  //       return <ShareSvg size={iconSize} color={iconColor} />
+  //     default:
+  //       return <Feather name="circle" size={iconSize} color={iconColor} />
+  //   }
+  // }
 
   return (
     <TouchableOpacity
@@ -42,7 +42,7 @@ export default function MenuOption({ title, icon, onPress }: MenuOptionProps) {
       activeOpacity={0.7}
     >
       <View className= " flex flex-row justify-start items-center">
-      <View className="w-12 h-12 items-center justify-center mr-2">{renderIcon()}</View>
+      {/* <View className="w-12 h-12 items-center justify-center mr-2">{renderIcon()}</View> */}
       <Text className="text-[#003049] text-lg font-medium text-center">{title}</Text>
       </View>
     </TouchableOpacity>

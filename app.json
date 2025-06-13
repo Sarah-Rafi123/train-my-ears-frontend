@@ -1,36 +1,41 @@
 {
-    "name": "frontend_trainmyears",
-    "slug": "frontend_trainmyears",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "frontendtrainmyears",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.frontend-trainmyears"
+  "name": "frontend_trainmyears",
+  "slug": "frontend_trainmyears",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "icon": "./assets/images/icon.png",
+  "scheme": "frontendtrainmyears",
+  "userInterfaceStyle": "automatic",
+  "newArchEnabled": true,
+  "ios": {
+    "supportsTablet": true,
+    "bundleIdentifier": "com.anonymous.frontend-trainmyears"
+  },
+  "android": {
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/images/adaptive-icon.png",
+      "backgroundColor": "#ffffff"
     },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.frontend_trainmyears"
-    },
-   "expo": {
+    "edgeToEdgeEnabled": true,
+    "package": "com.anonymous.frontend_trainmyears"
+  },
+  "expo": {
     "web": {
       "bundler": "metro"
-    }
-  },
-    "experiments": {
-      "typedRoutes": true
     },
     "extra": {
-      "router": {},
       "eas": {
         "projectId": "6a7ba359-637b-4c8f-a89e-e5c56f873354"
       }
+    }
+  },
+  "experiments": {
+    "typedRoutes": true
+  },
+  "extra": {
+    "router": {},
+    "eas": {
+      "projectId": "6a7ba359-637b-4c8f-a89e-e5c56f873354"
+    }
   }
 }

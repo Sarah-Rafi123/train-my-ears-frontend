@@ -85,13 +85,12 @@ export default function SampleScreen({ onBack, onNotePress, onUpgrade }: ViewSam
         </View>
 
         {/* Level Control Buttons */}
-        <View className="px-6 mb-4 gap-y-3">
+        <View className="px-6 mb-4 items-center gap-y-3">
           {currentLevel < 4 && (
             <ActionButton
               title={`Upgrade to level ${currentLevel + 1}`}
               icon="arrow-up"
               onPress={handleLevelUp}
-              variant="filled"
             />
           )}
           {currentLevel > 1 && (

@@ -8,7 +8,6 @@ interface LevelSelectorProps {
 
 export default function LevelSelector({ selectedLevel, onLevelChange, maxLevel = 4 }: LevelSelectorProps) {
   const levels = Array.from({ length: maxLevel }, (_, i) => i + 1)
-
   return (
     <View className="flex-row justify-center gap-x-4 px-6 mb-8">
       {levels.map((level) => (
@@ -21,10 +20,10 @@ export default function LevelSelector({ selectedLevel, onLevelChange, maxLevel =
           accessibilityRole="button"
           accessibilityLabel={`Level ${level}`}
         >
-          <Text className={`text-2xl font-bold ${selectedLevel === level ? "text-[#003049]" : "text-gray-600"}`}>
+          <Text className={`text-4xl font-bold ${selectedLevel === level ? "text-[#003049]" : "text-[#003049]"}`}>
             {level}
           </Text>
-          <Text className={`text-sm font-medium ${selectedLevel === level ? "text-[#003049]" : "text-gray-600"}`}>
+          <Text className={`text-sm font-medium ${selectedLevel === level ? "text-[#003049]" : "text-[#003049]"}`}>
             Level
           </Text>
         </TouchableOpacity>
