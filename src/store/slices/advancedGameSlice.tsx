@@ -198,6 +198,16 @@ const advancedGameSlice = createSlice({
         state.errorCode = null
         state.responseStartTime = Date.now() // Start timer when game loads
         state.selectedSequence = [] // Reset sequence
+
+        // Log audio URLs for debugging
+        console.log("🎵 AdvancedGameSlice: Game round loaded with audio URLs:")
+        if (action.payload.data.gameRound.sequenceAudioUrls) {
+          action.payload.data.gameRound.sequenceAudioUrls.forEach((url, index) => {
+            const fileName = url.split("/").pop() || url
+            console.log(`🎵 Audio ${index + 1}: ${url}`)
+            console.log(`🎵 File name: ${fileName}`)
+          })
+        }
       })
       .addCase(startAdvancedGame.rejected, (state, action) => {
         state.isLoading = false

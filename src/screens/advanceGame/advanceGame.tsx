@@ -28,6 +28,8 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { TouchableOpacity } from "react-native"
 import { Feather } from "@expo/vector-icons"
 import StatCard from "@/src/components/widgets/StatsCard"
+// Import the debounce function at the top of the file
+import { debounce } from "@/src/lib/utils"
 
 interface AdvancedGameScreenProps {
   onBack?: () => void
@@ -109,14 +111,29 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
   // Initialize game when component mounts
   useEffect(() => {
-    console.log("🎮 AdvancedGameScreen: Initializing game with:", {
+    // Add a flag to prevent duplicate initialization
+    const initializeKey = `${finalUserId}-${finalInstrumentId}-${currentLevel}`
+    const initializeFlag = `initialized-${initializeKey}`
+
+    console.log("🎮 AdvancedGameScreen: Checking initialization with:", {
       userId: finalUserId,
       instrumentId: finalInstrumentId,
-      instrument: instrumentFromRoute,
       level: currentLevel,
+      hasCurrentGameRound: !!currentGameRound,
+      initializeKey,
     })
 
-    if (finalUserId && finalInstrumentId) {
+    // Only initialize if we have the required data and haven't already initialized with these parameters
+    if (finalUserId && finalInstrumentId && !window[initializeFlag]) {
+      console.log("🎮 AdvancedGameScreen: Initializing game with:", {
+        userId: finalUserId,
+        instrumentId: finalInstrumentId,
+        level: currentLevel,
+      })
+
+      // Set the flag to prevent duplicate initialization
+      window[initializeFlag] = true
+
       dispatch(
         startAdvancedGame({
           userId: finalUserId,
@@ -124,7 +141,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           level: currentLevel,
         }),
       )
-    } else {
+    } else if (!finalUserId || !finalInstrumentId) {
       console.error("❌ AdvancedGameScreen: Missing required data:", {
         userId: finalUserId,
         instrumentId: finalInstrumentId,
@@ -140,11 +157,34 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
       console.error(`❌ Missing: ${missingItems.join(", ")}`)
       setShowGameErrorModal(true)
+    } else {
+      console.log("🎮 AdvancedGameScreen: Skipping initialization (already initialized)")
     }
-  }, [dispatch, finalUserId, finalInstrumentId, currentLevel, guitarId, pianoId, currentGameRound?.sequenceLength])
+
+    // Cleanup function to reset initialization flag when component unmounts
+    return () => {
+      window[initializeFlag] = false
+      console.log("🎮 AdvancedGameScreen: Cleaned up initialization flag")
+    }
+  }, [finalUserId, finalInstrumentId, currentLevel])
 
   // Auto-submit sequence when complete
   useEffect(() => {
+    // Create a debounced version of the submit function
+    const debouncedSubmit = debounce(() => {
+      if (
+        currentGameRound &&
+        finalUserId &&
+        selectedSequence.length === (currentGameRound?.sequenceLength ?? 0) &&
+        !isSubmittingSequence &&
+        !showResult
+      ) {
+        console.log("🎯 AdvancedGameScreen: Auto-submitting sequence (debounced)")
+        handleSubmitSequence()
+      }
+    }, 1000) // 1 second debounce time
+
+    // Call the debounced function when conditions are met
     if (
       currentGameRound &&
       finalUserId &&
@@ -152,13 +192,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       !isSubmittingSequence &&
       !showResult
     ) {
-      // Add a small delay to make the auto-submission feel more natural
-      const timer = setTimeout(() => {
-        handleSubmitSequence()
-      }, 500)
-
-      return () => clearTimeout(timer)
+      debouncedSubmit()
     }
+
+    // No need for cleanup as the debounce function handles it
   }, [selectedSequence.length, currentGameRound?.sequenceLength, isSubmittingSequence, showResult])
 
   // Handle game result
@@ -193,6 +230,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }, [error, errorCode])
 
+  // Update the playSequenceAudio function in the AdvancedGameScreen component
   const playSequenceAudio = async () => {
     if (!currentGameRound?.sequenceAudioUrls || isPlayingSequence) return
 
@@ -200,12 +238,28 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       setIsPlayingSequence(true)
       setAudioError(null)
       console.log("🎵 AdvancedGameScreen: Playing sequence audio...")
+      console.log("🎵 AdvancedGameScreen: Audio URLs to play:", currentGameRound.sequenceAudioUrls)
 
       for (let i = 0; i < currentGameRound.sequenceAudioUrls.length; i++) {
         const audioUrl = currentGameRound.sequenceAudioUrls[i]
         console.log(`🎵 Playing audio ${i + 1}/${currentGameRound.sequenceAudioUrls.length}:`, audioUrl)
 
-        await audioService.playAudio(audioUrl)
+        // Extract file name for clearer logging
+        const fileName = audioUrl.split("/").pop() || audioUrl
+        console.log(`🎵 File name: ${fileName}`)
+
+        try {
+          await audioService.playAudio(audioUrl)
+        } catch (audioError) {
+          console.error(`❌ Error playing audio ${i + 1}:`, audioError)
+
+          // Try to continue with next audio file instead of stopping the whole sequence
+          if (i < currentGameRound.sequenceAudioUrls.length - 1) {
+            setAudioError(`Error playing chord ${i + 1}. Continuing with next chord.`)
+          } else {
+            setAudioError(`Error playing chord ${i + 1}.`)
+          }
+        }
 
         // Wait a bit between audio files
         if (i < currentGameRound.sequenceAudioUrls.length - 1) {
@@ -280,6 +334,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       dispatch(clearSequence())
       setShowResult(false)
 
+      // Reset the initialization flag for this level
+      const initializeKey = `${finalUserId}-${finalInstrumentId}-${newLevel}`
+      window[`initialized-${initializeKey}`] = false
+
       dispatch(
         startAdvancedGame({
           userId: finalUserId,
@@ -298,6 +356,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       dispatch(clearGameResult())
       dispatch(clearSequence())
       setShowResult(false)
+
+      // Reset the initialization flag for this level
+      const initializeKey = `${finalUserId}-${finalInstrumentId}-${newLevel}`
+      window[`initialized-${initializeKey}`] = false
 
       dispatch(
         startAdvancedGame({
