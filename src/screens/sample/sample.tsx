@@ -134,48 +134,36 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
         <BackButton onPress={onBack} />
         <View className="flex-1">
           <Text className="text-slate-800 text-xl font-semibold text-center mt-4 mr-10">
-            {getInstrumentName()} Chords - Level {currentLevel}
+            View Sample
           </Text>
         </View>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Audio Waveform */}
         <View className="justify-center items-center mb-4">
           <SoundWavesSvg />
         </View>
-
-        {/* Level Info */}
-        {/* <View className="px-6 mb-4">
-          <Text className="text-center text-gray-600 text-sm">
-            {metadata?.levelInfo.description || `Level ${currentLevel} - ${actualChords} of ${expectedChords} chords`}
-          </Text>
-          {actualChords !== expectedChords && (
-            <Text className="text-center text-orange-600 text-sm mt-1">
-              ⚠️ Expected {expectedChords} chords, found {actualChords}
-            </Text>
-          )}
-        </View> */}
-
-        {/* Chord Grid */}
+        
+        {/* Chord Grid - 3 per row layout */}
         <View className="px-6 mb-8">
           {chordRows.length > 0 ? (
             chordRows.map((row, rowIndex) => (
-              <View key={rowIndex} className="flex-row justify-between mb-4">
+              <View key={rowIndex} className="flex-row justify-center gap-x-3 mb-4">
                 {row.map((chord, chordIndex) => (
-                  <NoteButton
-                    key={`${chord.id}-${rowIndex}-${chordIndex}`}
-                    note={chord.displayName}
-                    isSelected={selectedChord === `${chord.id}-${rowIndex}-${chordIndex}`}
-                    onPress={() => handleChordPress(chord, rowIndex, chordIndex)}
-                    disabled={playingChord === chord.id}
-                    state={playingChord === chord.id ? "selected" : "default"}
-                  />
+                  <View key={`${chord.id}-${rowIndex}-${chordIndex}`} className="flex-1 max-w-[30%]">
+                    <NoteButton
+                      note={chord.displayName}
+                      isSelected={selectedChord === `${chord.id}-${rowIndex}-${chordIndex}`}
+                      onPress={() => handleChordPress(chord, rowIndex, chordIndex)}
+                      disabled={playingChord === chord.id}
+                      state={playingChord === chord.id ? "selected" : "default"}
+                    />
+                  </View>
                 ))}
-                {/* Fill empty slots in the row */}
+                {/* Fill empty slots in the row to maintain alignment */}
                 {row.length < 3 &&
                   Array.from({ length: 3 - row.length }).map((_, emptyIndex) => (
-                    <View key={`empty-${rowIndex}-${emptyIndex}`} className="min-w-[80px]" />
+                    <View key={`empty-${rowIndex}-${emptyIndex}`} className="flex-1 max-w-[30%]" />
                   ))}
               </View>
             ))

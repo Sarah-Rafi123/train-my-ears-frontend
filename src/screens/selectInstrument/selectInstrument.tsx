@@ -89,10 +89,10 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
 
     if (instrument === "guitar") {
       selectedInstrumentId = guitarId
-      console.log("🎸 Selected Guitar ID:", guitarId || "Not yet loaded")
+      console.log("🎸 Selected Guitar ID:","cmbyuwdi00002qlhguosiz78c")
     } else if (instrument === "piano") {
       selectedInstrumentId = pianoId
-      console.log("🎹 Selected Piano ID:", pianoId || "Not yet loaded")
+      console.log("🎹 Selected Piano ID:","cmbyuwdi20003qlhg0w2epml0")
     }
 
     // If instrument ID is not available, try to get it from the loaded instruments
@@ -104,21 +104,22 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
 
         // Store it in context for future use
         if (instrument === "guitar") {
-          await setGuitarId(selectedInstrumentId)
+          await setGuitarId("cmbyuwdi00002qlhguosiz78c")
         } else if (instrument === "piano") {
-          await setPianoId(selectedInstrumentId)
+          await setPianoId("cmbyuwdi00002qlhguosiz78c")
         }
       }
     }
 
     // Log all available data for debugging
-    if (__DEV__) {
-      console.log("🔍 SelectInstrumentScreen: Debug info:")
-      console.log("  - User ID:", userId || "Not logged in")
-      console.log("  - Token:", token ? "Available" : "Not available")
-      console.log("  - Selected Instrument ID:", selectedInstrumentId || "Not available")
-      console.log("  - All instruments loaded:", instruments.length)
-    }
+    // if (__DEV__) {
+    //   console.log("🔍 SelectInstrumentScreen: Debug info:")
+    //   console.log("  - User ID:", userId || "Not logged in")
+    //   console.log("  - Token:", token ? "Available" : "Not available")
+    //   console.log(selectedInstrumentId );
+    //   console.log("  - Selected Instrument ID:", selectedInstrumentId || "Not available")
+    //   console.log("  - All instruments loaded:", instruments.length)
+    // }
 
     // Navigate to different screens based on instrument selection
     if (instrument === "guitar") {

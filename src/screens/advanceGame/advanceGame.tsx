@@ -1,6 +1,6 @@
 "use client"
 
-import { View, Text, ScrollView, ActivityIndicator } from "react-native"
+import { View, Text, ScrollView, ActivityIndicator, Dimensions } from "react-native"
 import { useState, useEffect } from "react"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
@@ -41,6 +41,9 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const navigation = useNavigation()
   const route = useRoute()
   const dispatch = useAppDispatch()
+
+  // Get screen dimensions for responsive layout
+  const screenWidth = Dimensions.get('window').width
 
   // Get auth data
   const { userId, guitarId, pianoId } = useAuth()
@@ -175,7 +178,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       if (
         currentGameRound &&
         finalUserId &&
-        selectedSequence.length === (currentGameRound?.sequenceLength ?? 0) &&
+        selectedSequence.length === currentGameRound.sequenceLength &&
         !isSubmittingSequence &&
         !showResult
       ) {
@@ -185,18 +188,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }, 1000) // 1 second debounce time
 
     // Call the debounced function when conditions are met
-    if (
-      currentGameRound &&
-      finalUserId &&
-      selectedSequence.length === currentGameRound.sequenceLength &&
-      !isSubmittingSequence &&
-      !showResult
-    ) {
-      debouncedSubmit()
-    }
+    debouncedSubmit()
 
     // No need for cleanup as the debounce function handles it
-  }, [selectedSequence.length, currentGameRound?.sequenceLength, isSubmittingSequence, showResult])
+  }, [selectedSequence.length, currentGameRound, finalUserId, isSubmittingSequence, showResult])
 
   // Handle game result
   useEffect(() => {
@@ -451,6 +446,68 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     return indicators
   }
 
+  // Function to organize chords into rows with exactly 3 buttons per row
+  const organizeChordRows = (chords: any[]) => {
+    const rows = []
+    const buttonsPerRow = 3
+    
+    // If we have fewer than 3 chords total, put them all in one row
+    if (chords.length <= buttonsPerRow) {
+      return [chords]
+    }
+    
+    // Calculate how many complete rows of 3 we can make
+    const completeRows = Math.floor(chords.length / buttonsPerRow)
+    const remainder = chords.length % buttonsPerRow
+    
+    // Create complete rows of 3
+    for (let i = 0; i < completeRows; i++) {
+      const startIndex = i * buttonsPerRow
+      const endIndex = startIndex + buttonsPerRow
+      rows.push(chords.slice(startIndex, endIndex))
+    }
+    
+    // Handle remaining chords
+    if (remainder > 0) {
+      const remainingChords = chords.slice(completeRows * buttonsPerRow)
+      
+      if (remainder === 1) {
+        // If only 1 chord left, take 1 from the previous row to make 2 rows of 2 each
+        // But since we want at least 3 per row, take 2 from previous row to make 3
+        if (rows.length > 0) {
+          const lastCompleteRow = rows[rows.length - 1]
+          const redistributed = lastCompleteRow.slice(-2).concat(remainingChords)
+          rows[rows.length - 1] = lastCompleteRow.slice(0, -2)
+          rows.push(redistributed)
+        } else {
+          // This shouldn't happen given our initial check, but handle it
+          rows.push(remainingChords)
+        }
+      } else if (remainder === 2) {
+        // If 2 chords left, take 1 from the previous row to make a row of 3
+        if (rows.length > 0) {
+          const lastCompleteRow = rows[rows.length - 1]
+          const redistributed = lastCompleteRow.slice(-1).concat(remainingChords)
+          rows[rows.length - 1] = lastCompleteRow.slice(0, -1)
+          rows.push(redistributed)
+        } else {
+          // This shouldn't happen given our initial check, but handle it
+          rows.push(remainingChords)
+        }
+      }
+    }
+    
+    return rows
+  }
+
+  // Calculate button width for exactly 3 buttons per row
+  const calculateButtonWidth = () => {
+    const padding = 48 // Total horizontal padding (24 on each side)
+    const gap = 8 // Total gap space (2 gaps of 4px each between 3 buttons)
+    const availableWidth = screenWidth - padding - gap
+    return Math.floor(availableWidth / 3)
+  }
+
   // Loading state
   if (isLoading) {
     return (
@@ -564,36 +621,46 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           </View>
         )}
 
-        {/* Chord Pool Buttons */}
+        {/* Chord Pool Buttons - Updated to ensure exactly 3 buttons per row */}
         {currentGameRound && (
-          <View className=" mb-6">
-            {/* Chord Pool Grid */}
-            <View className="flex-row flex-wrap justify-center gap-1 mb-6">
-              {currentGameRound.chordPool.map((chord) => (
-                <TouchableOpacity
-                  key={chord.id}
-                  onPress={() => handleChordSelect(chord.id)}
-                  disabled={
-                    isSubmittingSequence || selectedSequence.length >= currentGameRound.sequenceLength || showResult
-                  }
-                  className={`border-2 border-transparent rounded-2xl py-4 px-6  bg-[#E5EAED] items-center ${
-                    isSubmittingSequence || selectedSequence.length >= currentGameRound.sequenceLength || showResult
-                      ? "max-h-[50px] min-w-[80px] bg-[#E5EAED]"
-                      : "max-h-[50px] min-w-[80px] bg-[#E5EAED]"
-                  }`}
-                >
-                  <Text
-                    className={`text-lg font-bold text-center ${
-                      isSubmittingSequence || selectedSequence.length >= currentGameRound.sequenceLength || showResult
-                        ? "max-h-[50px] min-w-[80px] bg-[#E5EAED]"
-                        : " max-h-[50px] min-w-[80px] bg-[#E5EAED]"
-                    }`}
-                  >
-                    {chord.displayName}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <View className="px-6 mb-6">
+            {organizeChordRows(currentGameRound.chordPool).map((row, rowIndex) => (
+              <View key={rowIndex} className="flex-row justify-center gap-1 mb-2">
+                {row.map((chord) => {
+                  const buttonWidth = calculateButtonWidth()
+                  return (
+                    <TouchableOpacity
+                      key={chord.id}
+                      onPress={() => handleChordSelect(chord.id)}
+                      disabled={
+                        isSubmittingSequence || selectedSequence.length >= currentGameRound.sequenceLength || showResult
+                      }
+                      className={`border-2 border-transparent rounded-2xl py-4 px-2 bg-[#E5EAED] items-center justify-center ${
+                        isSubmittingSequence || selectedSequence.length >= currentGameRound.sequenceLength || showResult
+                          ? "opacity-50"
+                          : ""
+                      }`}
+                      style={{ 
+                        width: buttonWidth,
+                        minHeight: 60
+                      }}
+                    >
+                      <Text
+                        className={`text-lg font-bold text-center text-[#003049] ${
+                          isSubmittingSequence || selectedSequence.length >= currentGameRound.sequenceLength || showResult
+                            ? "opacity-50"
+                            : ""
+                        }`}
+                        numberOfLines={2}
+                        adjustsFontSizeToFit
+                      >
+                        {chord.displayName}
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                })}
+              </View>
+            ))}
           </View>
         )}
 

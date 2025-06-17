@@ -12,8 +12,8 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   // Instrument IDs
-  guitarId: string | null
-  pianoId: string | null
+  guitarId: string | null | "cmbyuwdi00002qlhguosiz78c"
+  pianoId: string | null | "cmbyuwdi20003qlhg0w2epml0"
   // Utility functions
   getStoredAuthData: () => Promise<any>
   getStoredToken: () => Promise<string | null>
@@ -77,6 +77,15 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  useEffect(() => {
+  const clearOldInstrumentIds = async () => {
+    await AsyncStorage.removeItem("guitarId")
+    await AsyncStorage.removeItem("pianoId")
+    console.log("🧹 Cleared old instrument IDs from storage.")
+  }
+
+  clearOldInstrumentIds()
+}, [])
   // Log authentication state changes
   useEffect(() => {
     console.log("🔄 AuthProvider: Authentication state changed:", {
