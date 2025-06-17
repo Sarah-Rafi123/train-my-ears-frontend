@@ -198,6 +198,7 @@ export const loginUser = createAsyncThunk<AuthResponse, LoginData, { rejectValue
   async (loginData, { rejectWithValue }) => {
     try {
       console.log("🚀 Starting login process...")
+      console.log(process.env.API_BASE_URL)
       console.log("📡 Making login API call to:", `${process.env.API_BASE_URL}/auth/login`)
       console.log("📤 Request data:", {
         email: loginData.email,

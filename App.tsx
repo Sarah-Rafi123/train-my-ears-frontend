@@ -12,15 +12,23 @@ import SocialRegisterScreen from "@/src/screens/socialRegister/socialRegister"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import "./global.css"
+import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import AdvanceGameScreen from "./src/screens/advanceGame/advanceGame"
 import UserStatsScreen from "./src/screens/userStats/userStats"
 import AuthProvider from './src/context/AuthContext'
-
+import { ClerkProvider, ClerkLoaded} from '@clerk/clerk-expo'
 type Screen = "welcome" | "selectInstrument"
 const Stack = createNativeStackNavigator()
 
 export default function RootLayout() {
+  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_c3R1bm5pbmctbWFrby05NS5jbGVyay5hY2NvdW50cy5kZXYk"
+  if(!publishableKey) {
+    console.error("Clerk publishable key is missing")
+    return null
+  }
   return (
+     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+      <ClerkLoaded>
     <Provider store={store}>
       <AuthProvider>
         <NavigationContainer>
@@ -45,5 +53,7 @@ export default function RootLayout() {
         </NavigationContainer>
       </AuthProvider>
     </Provider>
+    </ClerkLoaded>
+    </ClerkProvider>
   )
 }

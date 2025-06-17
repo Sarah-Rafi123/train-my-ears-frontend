@@ -49,6 +49,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const [pianoId, setPianoIdState] = useState<string | null>(null)
 
   useEffect(() => {
+    console.log(process.env.API_BASE_URL)
     // Load stored authentication data when app starts
     console.log("🚀 AuthProvider: Loading stored authentication data...")
     dispatch(loadStoredAuth())

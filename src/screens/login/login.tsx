@@ -1,5 +1,5 @@
 "use client"
-
+import * as WebBrowser from 'expo-web-browser'
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import PrimaryButton from "@/src/components/ui/buttons/PrimaryButton"
 import SocialButtons from "@/src/components/ui/buttons/SocialButtons"
@@ -14,6 +14,18 @@ import { Alert, Text, TouchableOpacity, View } from "react-native"
 import { Provider as PaperProvider, TextInput } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 
+export const useWarmUpBrowser = () => {
+  useEffect(() => {
+    // Preloads the browser for Android devices to reduce authentication load time
+    // See: https://docs.expo.dev/guides/authentication/#improving-user-experience
+    void WebBrowser.warmUpAsync()
+    return () => {
+      // Cleanup: closes browser when component unmounts
+      void WebBrowser.coolDownAsync()
+    }
+  }, [])
+}
+WebBrowser.maybeCompleteAuthSession()
 // Simple validation function for login
 const validateLoginForm = (email: string, password: string) => {
   const errors: { email?: string; password?: string } = {}
@@ -40,6 +52,7 @@ const hasLoginValidationErrors = (errors: { email?: string; password?: string })
 }
 
 export default function LoginScreen() {
+  useWarmUpBrowser()
   const navigation = useNavigation()
   const dispatch = useAppDispatch()
   const { isLoading, error, isAuthenticated } = useAppSelector((state) => state.auth)
