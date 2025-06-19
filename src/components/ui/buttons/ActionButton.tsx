@@ -1,6 +1,7 @@
 import { TouchableOpacity, Text, View } from "react-native"
 import { Feather } from "@expo/vector-icons"
-
+import ArrowDownSvg from "@/src/assets/svgs/ArrowDown";
+import ArrowUpSvg from "@/src/assets/svgs/ArrowUp";
 interface ActionButtonProps {
   title: string
   variant?: "outline" | "filled"
@@ -19,10 +20,10 @@ export default function ActionButton({ title, variant = "outline", icon, onPress
       return <Feather name="more-horizontal" size={20} color={iconColor} />
     }
     if (icon === "arrow-down") {
-      return <Feather name="chevron-down" size={20} color={iconColor} />
+      return <ArrowDownSvg />
     }
     if (icon === "arrow-up") {
-      return <Feather name="chevron-up" size={20} color={iconColor} />
+      return <ArrowUpSvg />
     }
     return null
   }

@@ -42,6 +42,9 @@ module.exports = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['NATS-Regular'], // Make NATS the default font
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

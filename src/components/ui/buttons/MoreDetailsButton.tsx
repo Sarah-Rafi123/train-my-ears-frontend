@@ -10,7 +10,7 @@ export default function MoreDetailsButton({ onPress, disabled = false }: MoreDet
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
-      className="mb-4"
+      className="mb-16"
       accessibilityRole="button"
       accessibilityLabel="More Details"
     >

@@ -40,11 +40,11 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
       />
 
       {/* Content Container */}
-      <View className="mt-auto bg-white px-6 pt-40 pb-8 h-[55%]" style={{ zIndex: 50 }}>
-        <Text className="text-[#003049] text-3xl font-bold text-center mb-4">TRAIN MY EAR</Text>
-        <Text className="text-[#003049] text-base text-center mb-12">A simple tool to help recognize chords by ear.</Text>
+      <View className="mt-auto bg-white px-6 pt-44 h-[60%]" style={{ zIndex: 50 }}>
+        <Text className="text-[#003049] text-4xl font-bold font-sans text-center">TRAIN MY EAR</Text>
+        <Text className="text-[#003049] text-2xl text-center mb-12 font-sans">A simple tool to help recognize chords by ear.</Text>
 
-        <View className="mb-6">
+        <View className="mt-16">
            <GuestButton onPress={handleGuestStart} />
           <RegisterLoginButton onPress={handleRegisterLogin} />
          

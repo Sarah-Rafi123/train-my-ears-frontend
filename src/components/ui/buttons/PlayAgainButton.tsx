@@ -1,6 +1,6 @@
 import { TouchableOpacity, Text } from "react-native"
-import { Feather } from "@expo/vector-icons"
 
+import ReplaySvg from "@/src/assets/svgs/Replay"
 interface PlayAgainButtonProps {
   onPress?: () => void
 }
@@ -13,7 +13,7 @@ export default function PlayAgainButton({ onPress }: PlayAgainButtonProps) {
       accessibilityRole="button"
       accessibilityLabel="Play Again"
     >
-      <Feather name="refresh-cw" size={20} color="white" />
+      <ReplaySvg />
       <Text className="text-white text-lg font-semibold ml-3">Play Again</Text>
     </TouchableOpacity>
   )

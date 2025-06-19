@@ -1,6 +1,6 @@
 import { TouchableOpacity, Text } from "react-native"
 import { Feather } from "@expo/vector-icons"
-
+import PersonSvg from "@/src/assets/svgs/Person"
 interface RegisterLoginButtonProps {
   onPress: () => void
   className?: string
@@ -14,8 +14,8 @@ export default function RegisterLoginButton({ onPress, className = "" }: Registe
       accessibilityRole="button"
       accessibilityLabel="Register or Login"
     >
-      <Feather name="user" size={20} color="white" />
-      <Text className="text-white text-lg font-semibold ml-2">Register or Login</Text>
+      <PersonSvg/>
+      <Text className="text-white text-xl font-sans ml-2">Register or Login</Text>
     </TouchableOpacity>
   )
 }

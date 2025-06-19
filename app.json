@@ -29,7 +29,7 @@
       }
     },
     "plugins": [
-      
+      "expo-font"
     ]
   },
   "experiments": {

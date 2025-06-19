@@ -71,7 +71,7 @@ export default function MenuScreen({
           <MenuOption title="My Stats" onPress={handleViewStats} />
          <MenuOption title="Advanced Play" onPress={handleAdvanceMode} />
           <MenuOption title="Sample Chords"  onPress={handleViewSample} />
-          <MenuOption title="Leader board" onPress={handleLeaderboard} />
+          <MenuOption title="Leader Board" onPress={handleLeaderboard} />
           <MenuOption title="Share" onPress={handleShare} />
         </View>
       </ScrollView>

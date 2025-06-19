@@ -37,7 +37,7 @@ export default function SocialButton({
       onPress={onPress}
     >
       <View className="mr-2">{getIcon()}</View>
-      <Text className={`font-medium ${textClassName}`}>{title}</Text>
+      <Text className={`font-sans text-2xl ${textClassName}`}>{title}</Text>
     </TouchableOpacity>
   )
 }

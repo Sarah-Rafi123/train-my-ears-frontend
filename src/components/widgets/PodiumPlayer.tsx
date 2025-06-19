@@ -37,6 +37,14 @@ export default function PodiumPlayer({ name, initials, position }: PodiumPlayerP
     }
   }
 
+  // Function to truncate name to 10 characters with dots
+  const getTruncatedName = (name: string) => {
+    if (name.length <= 10) {
+      return name
+    }
+    return name.substring(0, 10) + "..."
+  }
+
   return (
     <View className="items-center">
       {/* Crown for 1st place */}
@@ -64,8 +72,8 @@ export default function PodiumPlayer({ name, initials, position }: PodiumPlayerP
       {/* Position number */}
       <Text className="text-[#003049] text-3xl font-bold mb-1">{position}</Text>
 
-      {/* Player name */}
-      <Text className="text-[#003049] text-base font-medium">{name}</Text>
+      {/* Player name - truncated to 10 characters */}
+      <Text className="text-[#003049] text-base font-medium">{getTruncatedName(name)}</Text>
     </View>
   )
 }

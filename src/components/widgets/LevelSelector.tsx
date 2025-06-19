@@ -67,12 +67,12 @@ export default function LevelSelector({
               alignItems: 'center',
               justifyContent: 'center',
               backgroundColor: isDisabled 
-                ? '#f3f4f6' 
+                ? '#F2F5F6' 
                 : isSelected 
-                  ? '#ffffff' 
+                  ? '#F2F5F6' 
                   : isPressed 
-                    ? '#d1d5db' 
-                    : '#e5e7eb',
+                    ? '#F2F5F6' 
+                    : '#F2F5F6',
               borderWidth: isSelected ? 2 : 0,
               borderColor: isSelected ? '#003049' : 'transparent',
               opacity: isDisabled ? 0.5 : 1,
@@ -108,33 +108,7 @@ export default function LevelSelector({
         )
       })}
       
-      {/* Loading overlay */}
-      {loading && (
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <View style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.1)',
-            borderRadius: 20,
-            paddingHorizontal: 12,
-            paddingVertical: 4
-          }}>
-            <Text style={{
-              fontSize: 12,
-              color: '#6b7280',
-              fontWeight: '500'
-            }}>
-              Loading...
-            </Text>
-          </View>
-        </View>
-      )}
+      
     </View>
   )
 }

@@ -196,10 +196,10 @@ export default function LoginScreen() {
       <SafeAreaView className="flex-1 bg-white">
         <View className="px-6 py-4 flex-1">
           <BackButton />
-
-          <View className="mt-8">
-            <Text className="text-2xl font-bold text-[#003049]">LOGIN WITH EMAIL</Text>
-            <Text className="text-gray-600 mt-1">Hello there, sign in to continue!</Text>
+<View></View>
+          <View className="mt-20">
+            <Text className="text-4xl font-sans text-[#003049]">LOGIN WITH EMAIL</Text>
+            <Text className="text-gray-600 font-sans text-lg mt-1">Hello there, sign in to continue!</Text>
           </View>
 
           <View className="mt-8 gap-y-3">
@@ -218,7 +218,7 @@ export default function LoginScreen() {
                 error={touched.email && !!validationErrors.email}
               />
               {touched.email && validationErrors.email && (
-                <Text className="text-red-500 text-xs mt-1 ml-2">{validationErrors.email}</Text>
+                <Text className="text-red-500 text-sm mt-1 ml-2">{validationErrors.email}</Text>
               )}
             </View>
 
@@ -243,7 +243,7 @@ export default function LoginScreen() {
                 error={touched.password && !!validationErrors.password}
               />
               {touched.password && validationErrors.password && (
-                <Text className="text-red-500 text-xs mt-1 ml-2">{validationErrors.password}</Text>
+                <Text className="text-red-500 text-sm mt-1 ml-2">{validationErrors.password}</Text>
               )}
             </View>
           </View>
@@ -256,7 +256,7 @@ export default function LoginScreen() {
             disabled={isLoading}
           />
 
-          <View className="my-8">
+          <View className="my-8 mt-20">
             <Text className="text-center text-lg text-black mb-4">Sign in with</Text>
             <SocialButtons />
           </View>

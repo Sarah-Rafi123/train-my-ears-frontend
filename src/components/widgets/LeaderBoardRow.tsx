@@ -26,8 +26,8 @@ export default function LeaderboardRow({ place, name, streak, accuracy }: Leader
       <View className={`w-8 h-8 ${getPlaceStyle()} rounded-full justify-center items-center mr-4`}>
         <Text className="text-white font-bold text-sm">{place}</Text>
       </View>
-      <Text className="flex-1 text-[#003049] font-medium text-base">{name}</Text>
-      <Text className="text-[#003049] font-medium w-16 text-center">{streak}</Text>
+      <Text className="flex-1 text-[#003049] bg-red-600 ml-4 font-medium text-base">{name}</Text>
+      <Text className="text-[#003049] font-medium bg-blue-500 w-16 text-center">{streak}</Text>
       <Text className="text-[#003049] font-medium w-20 text-center">{accuracy}</Text>
     </View>
   )

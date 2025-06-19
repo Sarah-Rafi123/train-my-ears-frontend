@@ -17,10 +17,10 @@ export default function SocialRegisterScreen() {
         <View className="flex-1  justify-center items-center">
           <View className="w-full border-t border-l border-r rounded-t-[5%] border-black p-5">
             <View className="w-full items-center mb-4">
-              <View className="w-20 h-2 bg-black rounded-full" />
+              <View className="w-24 h-2 bg-black rounded-full" />
             </View>
 
-            <Text className="text-2xl font-semibold text-[#003049] text-center mb-8">CREATE YOUR ACCOUNT</Text>
+            <Text className="text-4xl font-sans text-[#003049] mt-8 text-center mb-8">CREATE YOUR ACCOUNT</Text>
 
             <SocialButton provider="apple" title="Sign up with Apple" className="bg-black" textClassName="text-white" />
 
@@ -39,20 +39,20 @@ export default function SocialRegisterScreen() {
             />
 
             <TouchableOpacity
-              className="w-full bg-white border border-black rounded-2xl py-3 px-4 mt-4 items-center"
+              className="w-full bg-white border border-black rounded-2xl py-4 px-4 mt-4 flex-row items-center justify-center"
               onPress={() => navigation.navigate("Register" as never)}
             >
-              <Text className="text-black font-medium">Continue with email</Text>
+              <Text className="text-black font-sans text-2xl">Continue with email</Text>
             </TouchableOpacity>
 
-            <View className="mt-8 items-center">
+            <View className="mt-10 items-center">
               <Text className="text-[#003049] text-lg text-center">Already have an account?</Text>
               <TouchableOpacity className="mt-1" onPress={() => navigation.navigate("Login" as never)}>
-                <Text className="text-blue-500 text-xl font-semibold">Sign In</Text>
+                <Text className="text-blue-500 text-2xl font-semibold">Sign In</Text>
               </TouchableOpacity>
             </View>
 
-            <Text className="text-[#797979] text-sm text-center mt-8">
+            <Text className="text-[#797979] text-sm text-center mt-10">
               By signing up you agree to our{"\n"}
               Terms of Service and acknowledge that you have{"\n"}
               read our Privacy Policy

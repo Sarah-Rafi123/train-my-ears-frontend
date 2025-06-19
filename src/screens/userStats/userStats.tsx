@@ -13,9 +13,9 @@ import { dailyProgressApi, dailyProgressUtils, DailyProgressData } from "@/src/s
 // Define proper navigation prop types
 interface StatsScreenProps {
   navigation?: any // Replace with proper type from @react-navigation/native
-  route?: any // Replace with proper type from @react-navigation/native
+  route?: any 
   onBack?: () => void
-  userId?: string // Add userId prop
+  userId?: string 
 }
 
 export default function UserStatsScreen({ navigation, route, onBack, userId = "cmbyuzdld0000qljum0i8f11r" }: StatsScreenProps) {
@@ -25,8 +25,6 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
   const [historicalProgressData, setHistoricalProgressData] = useState<DailyProgressData[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Fetch progress data for last 4 days (today + 3 previous days)
   const fetchProgressData = async (level?: number) => {
     setLoading(true)
     setError(null)
@@ -38,7 +36,6 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
       const progressDataArray = await dailyProgressApi.getLastNDaysProgress(userId, 4, level)
       
       if (progressDataArray.length > 0) {
-        // Today's data is the last item (most recent)
         const todayData = progressDataArray[progressDataArray.length - 1]
         setTodayProgressData(todayData)
         setHistoricalProgressData(progressDataArray)
@@ -141,11 +138,9 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
                   </View>
                 </View>
               )}
-
-              {/* Daily Progress - Today's Data */}
               <View className="px-6 mb-8">
                 <Text className="text-[#003049] text-xl font-bold mb-4">
-                  Today's Progress {selectedLevel ? `- Level ${selectedLevel}` : ''}
+                  Streak Progress 
                 </Text>
                 <View className="flex-row gap-x-4">
                   <ProgressCard 

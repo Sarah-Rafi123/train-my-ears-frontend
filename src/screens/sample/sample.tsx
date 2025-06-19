@@ -177,11 +177,11 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
         {/* Level Control Buttons */}
         <View className="px-6 mb-4 items-center gap-y-3">
           {currentLevel < 4 && (
-            <ActionButton title={`Upgrade to level ${currentLevel + 1}`} icon="arrow-up" onPress={handleLevelUp} />
+            <ActionButton title={`Level Up`} icon="arrow-up" onPress={handleLevelUp} />
           )}
           {currentLevel > 1 && (
             <ActionButton
-              title={`Downgrade to level ${currentLevel - 1}`}
+              title={`Level Down`}
               icon="arrow-down"
               onPress={handleLevelDown}
             />

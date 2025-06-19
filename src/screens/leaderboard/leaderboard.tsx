@@ -241,9 +241,9 @@ export default function LeaderboardScreen({  navigation,onBack }: LeaderboardScr
               paddingHorizontal: 24
             }}>
               <Text style={{ color: '#003049', fontWeight: '600', width: 48 }}>Place</Text>
-              <Text style={{ color: '#003049', fontWeight: '600', flex: 1, marginLeft: 16 }}>Name</Text>
-              <Text style={{ color: '#003049', fontWeight: '600', width: 64, textAlign: 'center' }}>Streak</Text>
-              <Text style={{ color: '#003049', fontWeight: '600', width: 80, textAlign: 'center' }}>Accuracy</Text>
+              <Text style={{ color: '#003049', fontWeight: '600', flex: 1, marginLeft: 8, marginRight: 8 }}>Name</Text>
+              <Text style={{ color: '#003049', fontWeight: '600', marginLeft: 16, textAlign: 'center' }}>Streak</Text>
+              <Text style={{ color: '#003049', fontWeight: '600', width: 80, marginLeft: 8, textAlign: 'center' }}>Accuracy</Text>
             </View>
 
             {/* Leaderboard Rows - Exactly 3 rows */}
@@ -286,8 +286,6 @@ export default function LeaderboardScreen({  navigation,onBack }: LeaderboardScr
         {/* Bottom spacing */}
         {/* <View style={{ height: 32 }} /> */}
       </ScrollView>
-
-      {/* Bottom indicator */}
       <View style={{ paddingBottom: 32, paddingTop: 16 }}>
         <View style={{
           width: 128,

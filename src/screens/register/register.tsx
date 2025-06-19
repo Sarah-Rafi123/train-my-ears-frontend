@@ -1,4 +1,3 @@
-"use client"
 
 import { useState, useEffect } from "react"
 import { View, Text, TouchableOpacity, Alert } from "react-native"
@@ -24,6 +23,8 @@ const validateRegistrationForm = (name: string, email: string, password: string)
     errors.name = "Name is required"
   } else if (name.trim().length < 2) {
     errors.name = "Name must be at least 2 characters long"
+  } else if (name.trim().length > 50) {
+    errors.name = "Name must not exceed 50 characters"
   }
 
   // Email validation
@@ -116,7 +117,10 @@ export default function RegisterScreen() {
   const handleInputChange = (field: "name" | "email" | "password", value: string) => {
     switch (field) {
       case "name":
-        setName(value)
+        // Limit name input to 50 characters
+        if (value.length <= 50) {
+          setName(value)
+        }
         break
       case "email":
         setEmail(value.toLowerCase().trim())
@@ -211,9 +215,9 @@ export default function RegisterScreen() {
         <View className="flex-1 px-6 py-4">
           <BackButton />
 
-          <View className="mt-8">
-            <Text className="text-2xl font-bold text-[#003049]">CREATE YOUR ACCOUNT</Text>
-            <Text className="text-[#003049] text-sm mt-1">Hello there, sign in to continue!</Text>
+          <View className="mt-20">
+            <Text className="text-4xl font-sans text-[#003049]">CREATE YOUR ACCOUNT</Text>
+            <Text className="text-[#003049] font-sans text-lg mt-1">Hello there, sign in to continue!</Text>
           </View>
 
           <View className="mt-8 gap-y-3">
@@ -229,10 +233,18 @@ export default function RegisterScreen() {
                 style={{ backgroundColor: "white" }}
                 theme={inputTheme}
                 error={touched.name && !!validationErrors.name}
+                maxLength={50}
               />
-              {touched.name && validationErrors.name && (
-                <Text className="text-red-500 text-xs mt-1 ml-2">{validationErrors.name}</Text>
-              )}
+              <View className="flex-row justify-between items-center">
+                <View className="flex-1">
+                  {touched.name && validationErrors.name && (
+                    <Text className="text-red-500 text-sm mt-1 ml-2">{validationErrors.name}</Text>
+                  )}
+                </View>
+                {/* <Text className="text-gray-400 text-xs mt-1 mr-2">
+                  {name.length}/50
+                </Text> */}
+              </View>
             </View>
 
             <View>
@@ -250,7 +262,7 @@ export default function RegisterScreen() {
                 error={touched.email && !!validationErrors.email}
               />
               {touched.email && validationErrors.email && (
-                <Text className="text-red-500 text-xs mt-1 ml-2">{validationErrors.email}</Text>
+                <Text className="text-red-500 text-sm mt-1 ml-2">{validationErrors.email}</Text>
               )}
             </View>
 
@@ -275,7 +287,7 @@ export default function RegisterScreen() {
                 error={touched.password && !!validationErrors.password}
               />
               {touched.password && validationErrors.password && (
-                <Text className="text-red-500 text-xs mt-1 ml-2">{validationErrors.password}</Text>
+                <Text className="text-red-500 text-sm mt-1 ml-2">{validationErrors.password}</Text>
               )}
             </View>
           </View>
@@ -288,7 +300,7 @@ export default function RegisterScreen() {
             disabled={isLoading}
           />
 
-          <View className="my-8">
+          <View className="my-8 mt-16">
             <Text className="text-center text-black mb-4">Sign up with</Text>
             <SocialButtons />
           </View>

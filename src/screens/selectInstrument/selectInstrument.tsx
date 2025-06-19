@@ -110,18 +110,6 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
         }
       }
     }
-
-    // Log all available data for debugging
-    // if (__DEV__) {
-    //   console.log("🔍 SelectInstrumentScreen: Debug info:")
-    //   console.log("  - User ID:", userId || "Not logged in")
-    //   console.log("  - Token:", token ? "Available" : "Not available")
-    //   console.log(selectedInstrumentId );
-    //   console.log("  - Selected Instrument ID:", selectedInstrumentId || "Not available")
-    //   console.log("  - All instruments loaded:", instruments.length)
-    // }
-
-    // Navigate to different screens based on instrument selection
     if (instrument === "guitar") {
       navigation.navigate("Game" as never, {
         instrument: "guitar",
@@ -137,38 +125,28 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
     }
   }
 
-  const __DEV__ = Platform.OS !== "production"
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* Header with back button */}
       <View className="flex-row items-center mt-8 px-6 py-8">
         <BackButton onPress={onBack} />
         <View className="flex-1">
           <Text className="text-[#003049] text-lg font-semibold text-center mt-5 mr-10">Select an Instrument</Text>
         </View>
       </View>
-
-      {/* Musical background image at the top */}
       <View className="h-64 w-full mt-28">
         <Image source={musicbg} className="w-full h-full" resizeMode="contain" />
       </View>
-
-      {/* Content below the image */}
       <View className="flex-1 px-6 pt-8">
         <View className="mb-8 mt-auto">
-          <Text className="text-[#003049] text-3xl font-bold  mb-4">Train My Ear</Text>
-          <Text className="text-[#003049] text-base">A simple tool to help recognize chords by ear.</Text>
+          <Text className="text-[#003049] font-sans text-3xl font-bold  mb-4">TRAIN MY EAR</Text>
+          <Text className="text-[#003049] font-sans text-2xl">A simple tool to help recognize chords by ear.</Text>
         </View>
-
-        {/* Loading state */}
         {loading && (
           <View className="mb-16 items-center">
             <Text className="text-[#003049] text-lg">Loading instruments...</Text>
           </View>
         )}
-
-        {/* Error state */}
         {error && !loading && (
           <View className="mb-16 items-center">
             <Text className="text-red-500 text-lg text-center mb-4">Failed to load instruments</Text>
@@ -186,19 +164,6 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
             <InstrumentCard instrument="piano" onPress={() => handleInstrumentSelect("piano")} />
           </View>
         )}
-
-        {/* Debug info (only in development) */}
-        {/* {__DEV__ && (
-          <View className="mb-4 p-4 bg-gray-100 rounded">
-            <Text className="text-xs text-gray-600">Debug Info:</Text>
-            <Text className="text-xs text-gray-600">Guitar ID: {guitarId || "Not loaded yet"}</Text>
-            <Text className="text-xs text-gray-600">Piano ID: {pianoId || "Not loaded yet"}</Text>
-            <Text className="text-xs text-gray-600">User ID: {userId || "Not logged in"}</Text>
-            <Text className="text-xs text-gray-600">Instruments loaded: {instruments.length}</Text>
-            <Text className="text-xs text-gray-600">Loading: {loading ? "Yes" : "No"}</Text>
-            <Text className="text-xs text-gray-600">Error: {error || "None"}</Text>
-          </View>
-        )} */}
       </View>
     </SafeAreaView>
   )

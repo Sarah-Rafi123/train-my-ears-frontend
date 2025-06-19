@@ -15,11 +15,18 @@ import "./global.css"
 import AdvanceGameScreen from "./src/screens/advanceGame/advanceGame"
 import UserStatsScreen from "./src/screens/userStats/userStats"
 import AuthProvider from './src/context/AuthContext'
-
+import { useFonts } from 'expo-font';
 type Screen = "welcome" | "selectInstrument"
 const Stack = createNativeStackNavigator()
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    'NATS-Regular': require('./src/assets/fonts/NATS-Regular.ttf'),
+  });
+
+  if (!fontsLoaded) {
+    return null; // Or a loading screen
+  }
   return (
     <Provider store={store}>
       <AuthProvider>

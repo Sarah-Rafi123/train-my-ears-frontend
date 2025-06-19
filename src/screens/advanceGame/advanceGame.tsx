@@ -689,7 +689,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       </ScrollView>
 
       {/* Fixed Bottom Section */}
-      <View className="px-6 pb-8 pt-4 bg-white border-t border-gray-100">
+      <View className="px-6 pb-8 pt-4 bg-white">
         <MoreDetailsButton onPress={handleMoreDetails} />
         <SaveProgressButton onPress={handleSaveProgress} />
       </View>
