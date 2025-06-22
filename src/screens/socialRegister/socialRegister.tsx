@@ -15,7 +15,7 @@ export default function SocialRegisterScreen() {
         <BackButton />
         </View>
         <View className="flex-1  justify-center items-center">
-          <View className="w-full border-t border-l border-r rounded-t-[5%] border-black p-5">
+          <View className="w-full border-t border-l border-r rounded-t-[10%] border-black p-5">
             <View className="w-full items-center mb-4">
               <View className="w-24 h-2 bg-black rounded-full" />
             </View>
@@ -52,7 +52,7 @@ export default function SocialRegisterScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text className="text-[#797979] text-sm text-center mt-10">
+            <Text className="text-[#797979] font-sans text-xl text-center mt-10">
               By signing up you agree to our{"\n"}
               Terms of Service and acknowledge that you have{"\n"}
               read our Privacy Policy

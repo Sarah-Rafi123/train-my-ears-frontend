@@ -139,8 +139,8 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       </View>
       <View className="flex-1 px-6 pt-8">
         <View className="mb-8 mt-auto">
-          <Text className="text-[#003049] font-sans text-3xl font-bold  mb-4">TRAIN MY EAR</Text>
-          <Text className="text-[#003049] font-sans text-2xl">A simple tool to help recognize chords by ear.</Text>
+          <Text className="text-[#003049] font-sans text-3xl text-center font-bold  mb-4">TRAIN MY EAR</Text>
+          <Text className="text-[#003049] text-center font-sans text-2xl">A simple tool to help recognize chords by ear.</Text>
         </View>
         {loading && (
           <View className="mb-16 items-center">

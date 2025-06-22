@@ -1,6 +1,6 @@
 "use client"
 
-import { View, Text, ScrollView, SafeAreaView, Alert } from "react-native"
+import { View, Text, ScrollView, SafeAreaView, Alert, Image } from "react-native"
 import { useState, useCallback } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import NoteButton from "@/src/components/ui/buttons/NoteButton"
@@ -23,6 +23,7 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
   const [currentLevel, setCurrentLevel] = useState(1)
   const [selectedChord, setSelectedChord] = useState<string | null>(null)
   const [playingChord, setPlayingChord] = useState<string | null>(null)
+  const [isGifAnimating, setIsGifAnimating] = useState(false)
 
   const { chords, metadata, isLoading, error, refetch, getExpectedChordCount } = useChords(currentLevel)
 
@@ -65,11 +66,20 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
     if (chord.audioFileUrl) {
       try {
         setPlayingChord(chord.id)
+        setIsGifAnimating(true) // Start GIF animation
+        
         await audioService.playAudio(chord.audioFileUrl)
         console.log(`🎵 Playing audio for chord: ${chord.displayName}`)
+        
+        // Stop GIF animation after a delay (adjust timing as needed)
+        setTimeout(() => {
+          setIsGifAnimating(false)
+        }, 2000) // 2 seconds - adjust based on your audio length
+        
       } catch (error) {
         console.error("❌ Error playing chord audio:", error)
         Alert.alert("Audio Error", "Failed to play chord audio")
+        setIsGifAnimating(false) // Stop animation on error
       } finally {
         setPlayingChord(null)
       }
@@ -133,15 +143,38 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
       <View className="flex-row items-center mt-8 px-6 py-8">
         <BackButton onPress={onBack} />
         <View className="flex-1">
-          <Text className="text-slate-800 text-xl font-semibold text-center mt-4 mr-10">
-            View Sample
-          </Text>
         </View>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="justify-center items-center mb-4">
-          <SoundWavesSvg />
+        {/* Container for SoundWaves and GIF with fixed height */}
+        <View className="justify-center items-center mb-4" style={{ height: 140 }}>
+          {/* <SoundWavesSvg /> */}
+          
+          {/* Animated GIF - Positioned absolutely to overlay without affecting layout */}
+          {isGifAnimating && (
+            <View 
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 10
+              }}
+            >
+              <Image
+                source={require("@/src/assets/gifs/music.gif")}
+                style={{
+                  width: 120,
+                  height: 120,
+                  resizeMode: 'contain'
+                }}
+              />
+            </View>
+          )}
         </View>
         
         {/* Chord Grid - 3 per row layout */}
@@ -187,25 +220,6 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
             />
           )}
         </View>
-
-        {/* Debug Info (remove in production) */}
-        {/* {__DEV__ && metadata && (
-          <View className="px-6 mb-4">
-            <Text className="text-xs text-gray-500 text-center">
-              Debug:{" "}
-              {JSON.stringify(
-                {
-                  level: currentLevel,
-                  totalChords: actualChords,
-                  expected: expectedChords,
-                  instrumentId: guitarId || pianoId,
-                },
-                null,
-                2,
-              )}
-            </Text>
-          </View>
-        )} */}
 
         {/* Extra space at bottom for better scrolling */}
         <View className="h-20" />

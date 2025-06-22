@@ -49,7 +49,7 @@ export const leaderboardApi = {
       const params = new URLSearchParams({
         sortBy,
       })
-
+console.log(process.env.API_BASE_URL)
       const url = `${process.env.API_BASE_URL}/stats/leaderboard/level/${levelId}?${params.toString()}`
       console.log("🔗 Leaderboard API URL:", url)
 

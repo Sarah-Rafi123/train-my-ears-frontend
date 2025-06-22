@@ -25,6 +25,22 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
   const [historicalProgressData, setHistoricalProgressData] = useState<DailyProgressData[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Generate dates for last 5 days (excluding today)
+  const generateLast5Days = () => {
+    const dates: string[] = []
+    const today = new Date()
+    
+    // Generate last 5 days excluding today
+    for (let i = 5; i >= 1; i--) {
+      const date = new Date(today)
+      date.setDate(today.getDate() - i)
+      dates.push(date.toISOString().split('T')[0])
+    }
+    
+    return dates.reverse() // Most recent first
+  }
+
   const fetchProgressData = async (level?: number) => {
     setLoading(true)
     setError(null)
@@ -32,18 +48,20 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
     try {
       console.log(`📊 Fetching progress data for user ${userId}, level: ${level || 'all'}`)
       
-      // Fetch last 4 days of progress data
-      const progressDataArray = await dailyProgressApi.getLastNDaysProgress(userId, 4, level)
-      
-      if (progressDataArray.length > 0) {
-        const todayData = progressDataArray[progressDataArray.length - 1]
-        setTodayProgressData(todayData)
-        setHistoricalProgressData(progressDataArray)
-        
-        console.log(`✅ Successfully loaded progress data for ${progressDataArray.length} days`)
-      } else {
-        throw new Error('No progress data available')
+      // Fetch today's progress for the boxes
+      const todayResponse = await dailyProgressApi.getTodayProgress(userId, level)
+      if (todayResponse.success) {
+        setTodayProgressData(todayResponse.data.progress)
+        console.log(`✅ Successfully loaded today's progress data`)
       }
+      
+      // Fetch last 5 days for history table
+      const last5Days = generateLast5Days()
+      console.log(`📅 Fetching last 5 days data:`, last5Days)
+      
+      const historicalData = await dailyProgressApi.getMultipleDaysProgress(userId, last5Days, level)
+      setHistoricalProgressData(historicalData)
+      console.log(`✅ Successfully loaded last 5 days progress data`)
       
     } catch (err) {
       console.error(`❌ Error fetching progress data:`, err)
@@ -80,8 +98,8 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
     await fetchProgressData(level)
   }, [userId])
 
-  // Get progress card values based on selected level (today's data)
-  const getProgressValues = () => {
+  // Get today's progress card values
+  const getTodayProgressValues = () => {
     if (!todayProgressData) {
       return { streak: 0, accuracy: 0 }
     }
@@ -89,10 +107,10 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
     return dailyProgressUtils.getProgressCardValues(todayProgressData, selectedLevel || undefined)
   }
 
-  // Convert historical data to history table format
+  // Convert historical data to history table format (last 5 days)
   const historyData = dailyProgressUtils.convertToHistoryData(historicalProgressData, selectedLevel || undefined)
 
-  const progressValues = getProgressValues()
+  const todayProgressValues = getTodayProgressValues()
 
   return (
     <SafeAreaView className="flex-1 pt-8 bg-[#F2F5F6]">
@@ -138,53 +156,64 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
                   </View>
                 </View>
               )}
+
+              {/* Today's Progress Section */}
               <View className="px-6 mb-8">
                 <Text className="text-[#003049] text-xl font-bold mb-4">
-                  Streak Progress 
+                  Today's Progress 
                 </Text>
                 <View className="flex-row gap-x-4">
                   <ProgressCard 
                     icon="fire" 
-                    value={progressValues.streak} 
+                    value={todayProgressValues.streak} 
                     className="flex-1" 
                   />
                   <ProgressCard 
                     icon="target" 
-                    value={Math.round(progressValues.accuracy)} 
+                    value={Math.round(todayProgressValues.accuracy)} 
                     suffix="%" 
                     className="flex-1" 
                   />
                 </View>
               </View>
 
-              {/* History Table - Last 4 Days */}
-              <HistoryTable data={historyData} />
-
-              {/* Data info */}
-              {/* {!loading && !error && historicalProgressData.length > 0 && (
-                <View className="px-6 mt-4 mb-8">
-                  <View className="bg-blue-50 rounded-lg p-4">
-                    <Text className="text-[#003049] font-medium mb-2">
-                      {selectedLevel ? `Level ${selectedLevel} Progress` : 'Overall Progress'}
-                    </Text>
-                    <Text className="text-gray-600 text-sm">
-                      Showing data for the last 4 days including today
-                      {selectedLevel ? ` for Level ${selectedLevel}` : ' across all levels'}.
-                    </Text>
+              {/* History Table - Last 5 Days */}
+              <View className="px-6">
+                <Text className="text-[#003049] text-xl font-bold mb-4">History</Text>
+                
+                <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
+                  {/* Header */}
+                  <View className="bg-gray-100 flex-row py-4 px-6">
+                    <Text className="flex-1 text-[#003049] text-lg font-semibold">Date</Text>
+                    <Text className="w-20 text-center text-[#003049] text-lg font-semibold">Streak</Text>
+                    <Text className="w-24 text-right text-[#003049] text-lg font-semibold">Accuracy</Text>
                   </View>
-                </View>
-              )} */}
 
-              {/* Empty state */}
-              {/* {!loading && !error && historicalProgressData.length === 0 && (
-                <View className="px-6 mt-4 mb-8">
-                  <View className="bg-gray-50 rounded-lg p-4">
-                    <Text className="text-gray-600 text-center">
-                      No progress data available for the selected period.
-                    </Text>
-                  </View>
+                  {/* Scrollable Data Rows */}
+                  <ScrollView className="max-h-64" showsVerticalScrollIndicator={true}>
+                    {historyData.length > 0 ? (
+                      historyData.map((entry, index) => (
+                        <View
+                          key={`${entry.date}-${index}`}
+                          className={`flex-row py-4 px-6 ${index !== historyData.length - 1 ? "border-b border-gray-100" : ""}`}
+                        >
+                          <Text className="flex-1 text-[#003049] text-base">{entry.date}</Text>
+                          <Text className="w-20 text-center text-[#003049] text-base font-medium">{entry.streak}</Text>
+                          <Text className="w-24 text-right text-[#003049] text-base font-medium">{entry.accuracy}</Text>
+                        </View>
+                      ))
+                    ) : (
+                      <View className="py-8 px-6">
+                        <Text className="text-gray-500 text-center">
+                          {loading ? "Loading history..." : "No history data available"}
+                        </Text>
+                      </View>
+                    )}
+                  </ScrollView>
                 </View>
-              )} */}
+              </View>
+
+              <View style={{ height: 32 }} />
             </View>
           </ScrollView>
         </View>

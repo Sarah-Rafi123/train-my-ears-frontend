@@ -16,6 +16,7 @@ import { SubscriptionModal } from "@/src/components/ui/modal/subscription-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
+
 interface GameScreenProps {
   onBack?: () => void
   onMoreDetails?: () => void
@@ -40,7 +41,7 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
     errorCode,
     currentLevel,
     responseStartTime,
-    currentStats, // Get current stats from Redux
+    currentStats,
   } = useAppSelector((state) => state.game)
 
   const [selectedChordId, setSelectedChordId] = useState<string | null>(null)
@@ -48,6 +49,8 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
   const [audioError, setAudioError] = useState<string | null>(null)
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
+  // Add state to track if chords should be visible
+  const [showChords, setShowChords] = useState(true)
 
   // Get route params
   const routeParams = route.params as any
@@ -98,6 +101,10 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
   useEffect(() => {
     if (currentGameRound?.targetChord?.audioFileUrl) {
       playAudioSafely(currentGameRound.targetChord.audioFileUrl)
+      // Reset chord visibility when new game round loads
+      setShowChords(true)
+      setShowResult(false)
+      setSelectedChordId(null)
     }
   }, [currentGameRound])
 
@@ -105,6 +112,8 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
   useEffect(() => {
     if (gameResult) {
       setShowResult(true)
+      // Hide chords after submitting answer
+      setShowChords(false)
 
       // Log the updated stats when we get a result
       console.log("🎯 Game result received with stats:", {
@@ -146,8 +155,24 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
   }
 
   const handlePlayAgain = async () => {
-    if (currentGameRound?.targetChord?.audioFileUrl) {
+    if (showChords && currentGameRound?.targetChord?.audioFileUrl) {
+      // If chords are visible, just replay the audio
+      console.log("🔄 GameScreen: Replaying audio for current round")
       await playAudioSafely(currentGameRound.targetChord.audioFileUrl)
+    } else if (!showChords && finalUserId && finalInstrumentId) {
+      // If chords are hidden (after submitting answer), start a new game round
+      console.log("🔄 GameScreen: Starting new game round")
+      dispatch(clearGameResult())
+      setShowResult(false)
+      setSelectedChordId(null)
+
+      dispatch(
+        startGame({
+          userId: finalUserId,
+          instrumentId: finalInstrumentId,
+          level: currentLevel,
+        }),
+      )
     }
   }
 
@@ -184,6 +209,7 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
       dispatch(clearGameResult())
       setShowResult(false)
       setSelectedChordId(null)
+      setShowChords(true)
 
       dispatch(
         startGame({
@@ -203,6 +229,7 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
       dispatch(clearGameResult())
       setShowResult(false)
       setSelectedChordId(null)
+      setShowChords(true)
 
       dispatch(
         startGame({
@@ -236,7 +263,6 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
     setShowSubscriptionModal(false)
     dispatch(clearError())
     console.log("💳 GameScreen: Navigating to subscription screen")
-    // Navigate to subscription/payment screen
     navigation.navigate("Subscription" as never)
   }
 
@@ -244,7 +270,6 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
     setShowSubscriptionModal(false)
     dispatch(clearError())
 
-    // Go back to previous level
     if (currentLevel > 1) {
       const previousLevel = currentLevel - 1
       dispatch(setCurrentLevel(previousLevel))
@@ -316,33 +341,23 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
             <Text className="text-yellow-800 text-sm">⚠️ Audio playback issue: {audioError}</Text>
           </View>
         )}
-<View className="bg-[#E5EAED80] rounded-3xl m-4">
-        {/* Stats Row - Now using real-time stats from API */}
-        <View className="flex-row  justify-center px-6 mb-8 gap-x-6">
-          <StatCard value={currentStats.accuracy.toFixed(1) + "%"} label="Accuracy" size="large" valueColor="red" />
-          <StatCard value={currentLevel.toString()} label="Level" size="large" />
-          <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
+
+        <View className="bg-[#E5EAED80] rounded-3xl m-4">
+          {/* Stats Row - Now using real-time stats from API */}
+          <View className="flex-row justify-center px-6 mb-8 gap-x-6">
+ <StatCard value={Math.round(currentStats.accuracy) + "%"} label="Accuracy" size="large" />
+            <StatCard value={currentLevel.toString()} label="Level" size="large" />
+            <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
+          </View>
+
+          {/* Play Again Button */}
+          {currentGameRound && (
+            <View className="px-6 mb-6">
+              <PlayAgainButton onPress={handlePlayAgain} />
+            </View>
+          )}
         </View>
 
-        {/* Additional Stats Row (optional - shows more detailed stats) */}
-        {/* <View className="flex-row justify-center px-6 mb-6 gap-x-4">
-          <View className="bg-gray-50 rounded-lg p-3 flex-1">
-            <Text className="text-center text-sm text-gray-600">Total Attempts</Text>
-            <Text className="text-center text-lg font-bold text-[#003049]">{currentStats.totalAttempts}</Text>
-          </View>
-          <View className="bg-gray-50 rounded-lg p-3 flex-1">
-            <Text className="text-center text-sm text-gray-600">Correct</Text>
-            <Text className="text-center text-lg font-bold text-green-600">{currentStats.correctAnswers}</Text>
-          </View>
-        </View> */}
-
-        {/* Play Again Button */}
-        {currentGameRound && (
-          <View className="px-6 mb-6">
-            <PlayAgainButton onPress={handlePlayAgain} />
-          </View>
-        )}
-</View>
         {/* Game Result Feedback */}
         {showResult && gameResult && (
           <View className="px-6 mb-6">
@@ -353,36 +368,11 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
             >
               {gameResult.isCorrect ? "Correct!" : `Sorry, that was ${gameResult.correctChord.displayName}. Try Again!`}
             </Text>
-            {/* <Text className="text-[#003049] text-center text-lg mb-4">
-              {gameResult.feedback || (gameResult.isCorrect ? "Great job!" : "Try again!")}
-            </Text>
-            <Text className="text-gray-600 text-center">Correct answer: {gameResult.correctChord.displayName}</Text> */}
-
-            {/* Show updated stats in the result */}
-            {/* <View className="mt-4 bg-blue-50 rounded-lg p-4">
-              <Text className="text-center text-sm text-blue-800 mb-2">Updated Stats</Text>
-              <View className="flex-row justify-around">
-                <View className="items-center">
-                  <Text className="text-blue-600 font-bold text-lg">{gameResult.stats.streak}</Text>
-                  <Text className="text-blue-600 text-xs">Streak</Text>
-                </View>
-                <View className="items-center">
-                  <Text className="text-blue-600 font-bold text-lg">{gameResult.stats.accuracy.toFixed(1)}%</Text>
-                  <Text className="text-blue-600 text-xs">Accuracy</Text>
-                </View>
-                <View className="items-center">
-                  <Text className="text-blue-600 font-bold text-lg">
-                    {gameResult.stats.correctAnswers}/{gameResult.stats.totalAttempts}
-                  </Text>
-                  <Text className="text-blue-600 text-xs">Score</Text>
-                </View>
-              </View>
-            </View> */}
           </View>
         )}
 
-        {/* Note Grid with chord options */}
-        {currentGameRound && (
+        {/* Note Grid with chord options - Only show when showChords is true */}
+        {currentGameRound && showChords && (
           <NoteGrid
             chordOptions={currentGameRound.chordOptions}
             selectedChordId={selectedChordId}
@@ -418,8 +408,8 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
       </ScrollView>
 
       {/* Fixed More Details Button at bottom */}
-      <View className="px-6 pb-8 pt-4">
-           <MoreDetailsButton onPress={handleMoreDetails} />
+      <View className="px-6 pb-8 pt-4 justify-center items-center">
+        <MoreDetailsButton onPress={handleMoreDetails} />
         <View className="pt-4">
           <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
             Save your progress

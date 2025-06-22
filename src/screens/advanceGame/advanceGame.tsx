@@ -43,7 +43,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const dispatch = useAppDispatch()
 
   // Get screen dimensions for responsive layout
-  const screenWidth = Dimensions.get('window').width
+  const screenWidth = Dimensions.get("window").width
 
   // Get auth data
   const { userId, guitarId, pianoId } = useAuth()
@@ -272,8 +272,30 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }
 
-  const handlePlayAgain = async () => {
-    await playSequenceAudio()
+  // FIXED: Updated handlePlayAgain to properly reset game state and start new game
+  const handlePlayAgain = () => {
+    if (!finalUserId || !finalInstrumentId) return
+
+    console.log("🔄 AdvancedGameScreen: Starting new game (Play Again)")
+
+    // Clear previous game state
+    dispatch(clearGameResult())
+    dispatch(clearSequence())
+    setShowResult(false)
+    setAudioError(null)
+
+    // Reset the initialization flag for current level to allow new game
+    const initializeKey = `${finalUserId}-${finalInstrumentId}-${currentLevel}`
+    window[`initialized-${initializeKey}`] = false
+
+    // Start a new game
+    dispatch(
+      startAdvancedGame({
+        userId: finalUserId,
+        instrumentId: finalInstrumentId,
+        level: currentLevel,
+      }),
+    )
   }
 
   const handleChordSelect = (chordId: string) => {
@@ -450,27 +472,27 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const organizeChordRows = (chords: any[]) => {
     const rows = []
     const buttonsPerRow = 3
-    
+
     // If we have fewer than 3 chords total, put them all in one row
     if (chords.length <= buttonsPerRow) {
       return [chords]
     }
-    
+
     // Calculate how many complete rows of 3 we can make
     const completeRows = Math.floor(chords.length / buttonsPerRow)
     const remainder = chords.length % buttonsPerRow
-    
+
     // Create complete rows of 3
     for (let i = 0; i < completeRows; i++) {
       const startIndex = i * buttonsPerRow
       const endIndex = startIndex + buttonsPerRow
       rows.push(chords.slice(startIndex, endIndex))
     }
-    
+
     // Handle remaining chords
     if (remainder > 0) {
       const remainingChords = chords.slice(completeRows * buttonsPerRow)
-      
+
       if (remainder === 1) {
         // If only 1 chord left, take 1 from the previous row to make 2 rows of 2 each
         // But since we want at least 3 per row, take 2 from previous row to make 3
@@ -496,7 +518,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         }
       }
     }
-    
+
     return rows
   }
 
@@ -558,29 +580,35 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
           {/* Stats Row - Now using real-time stats from API */}
           <View className="flex-row justify-center px-6 mb-8 gap-x-6">
-            <StatCard value={currentStats.accuracy.toFixed(1) + "%"} label="Accuracy" size="large" valueColor="red" />
+            <StatCard value={currentStats.accuracy.toFixed(1) + "%"} label="Accuracy" size="large" />
             <StatCard value={currentLevel.toString()} label="Level" size="large" />
             <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
           </View>
         </View>
 
-        {/* Play Again Button */}
+        {/* Play Again Button - Updated to show proper text based on game state */}
         {currentGameRound && (
           <View className="px-6 mb-8">
             <TouchableOpacity
-              onPress={handlePlayAgain}
-              disabled={isPlayingSequence}
+              onPress={showResult ? handlePlayAgain : () => playSequenceAudio()}
+              disabled={isPlayingSequence || isLoading}
               className="bg-[#1e3a5f] rounded-2xl py-4 px-6 flex-row justify-center items-center shadow-sm"
               accessibilityRole="button"
-              accessibilityLabel="Play Sequence Again"
+              accessibilityLabel={showResult ? "Play Again" : "Play Sequence Again"}
             >
-              {isPlayingSequence ? (
+              {isPlayingSequence || isLoading ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Feather name="refresh-cw" size={20} color="white" />
+                <Feather name={showResult ? "play" : "refresh-cw"} size={20} color="white" />
               )}
               <Text className="text-white text-lg font-semibold ml-3">
-                {isPlayingSequence ? "Playing..." : "Play Again"}
+                {isPlayingSequence
+                  ? "Playing..."
+                  : isLoading
+                    ? "Loading..."
+                    : showResult
+                      ? "Play Again"
+                      : "Play Sequence"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -640,14 +668,16 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
                           ? "opacity-50"
                           : ""
                       }`}
-                      style={{ 
+                      style={{
                         width: buttonWidth,
-                        minHeight: 60
+                        minHeight: 60,
                       }}
                     >
                       <Text
                         className={`text-lg font-bold text-center text-[#003049] ${
-                          isSubmittingSequence || selectedSequence.length >= currentGameRound.sequenceLength || showResult
+                          isSubmittingSequence ||
+                          selectedSequence.length >= currentGameRound.sequenceLength ||
+                          showResult
                             ? "opacity-50"
                             : ""
                         }`}
@@ -689,7 +719,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       </ScrollView>
 
       {/* Fixed Bottom Section */}
-      <View className="px-6 pb-8 pt-4 bg-white">
+      <View className="px-6 pb-8 pt-4 items-center justify-center bg-white">
         <MoreDetailsButton onPress={handleMoreDetails} />
         <SaveProgressButton onPress={handleSaveProgress} />
       </View>

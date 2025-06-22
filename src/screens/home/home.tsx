@@ -44,7 +44,7 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
         <Text className="text-[#003049] text-4xl font-bold font-sans text-center">TRAIN MY EAR</Text>
         <Text className="text-[#003049] text-2xl text-center mb-12 font-sans">A simple tool to help recognize chords by ear.</Text>
 
-        <View className="mt-16">
+        <View className="mt-8 mb-16">
            <GuestButton onPress={handleGuestStart} />
           <RegisterLoginButton onPress={handleRegisterLogin} />
          

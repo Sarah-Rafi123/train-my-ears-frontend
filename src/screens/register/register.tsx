@@ -217,10 +217,10 @@ export default function RegisterScreen() {
 
           <View className="mt-20">
             <Text className="text-4xl font-sans text-[#003049]">CREATE YOUR ACCOUNT</Text>
-            <Text className="text-[#003049] font-sans text-lg mt-1">Hello there, sign in to continue!</Text>
+            <Text className="text-[#003049] font-sans text-lg">Hello there, sign in to continue!</Text>
           </View>
 
-          <View className="mt-8 gap-y-3">
+          <View className="mt-4 gap-y-3">
             <View>
               <TextInput
                 label="Name"

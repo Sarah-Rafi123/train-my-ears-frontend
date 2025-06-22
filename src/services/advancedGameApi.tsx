@@ -84,7 +84,7 @@ export const advancedGameApi = {
   startGame: async (userId: string, instrumentId: string, level: number): Promise<StartAdvancedGameResponse> => {
     try {
       console.log("🎮 Starting advanced game API call:", { userId, instrumentId, level })
-      console.log(process.env.API_BASE_URL)
+      console.log("📡 API Base URL:", process.env.API_BASE_URL)
       const response = await fetch(`${process.env.API_BASE_URL}/advanced-game/start`, {
         method: "POST",
         headers: {

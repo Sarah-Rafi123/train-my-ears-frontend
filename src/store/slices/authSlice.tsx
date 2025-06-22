@@ -133,6 +133,7 @@ export const registerUser = createAsyncThunk<AuthResponse, RegisterData, { rejec
   async (userData, { rejectWithValue }) => {
     try {
       console.log("🚀 Starting registration process...")
+      console.log(process.env.API_BASE_URL)
       console.log("📡 Making registration API call to:", `${process.env.API_BASE_URL}/auth/register`)
       console.log("📤 Request data:", {
         name: userData.name,

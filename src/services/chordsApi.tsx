@@ -65,7 +65,7 @@ export const chordApi = {
       if (instrumentName) {
         params.append("instrumentName", instrumentName)
       }
-
+console.log(process.env.API_BASE_URL)
       const url = `${process.env.API_BASE_URL}/chords?${params.toString()}`
       console.log("🔗 Chords API URL:", url)
 

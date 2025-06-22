@@ -15,7 +15,7 @@ export default function RegisterLoginButton({ onPress, className = "" }: Registe
       accessibilityLabel="Register or Login"
     >
       <PersonSvg/>
-      <Text className="text-white text-xl font-sans ml-2">Register or Login</Text>
+      <Text className="text-white text-2xl font-sans ml-2">Register or Login</Text>
     </TouchableOpacity>
   )
 }

@@ -26,6 +26,7 @@ class AudioService {
       // If it's not already a full URL, construct it
       let fullUrl = audioUrl;
       if (!isRemoteUrl) {
+        console.log(process.env.AUDIO_BASE_URL);
         const baseUrl = process.env.AUDIO_BASE_URL || "http://localhost:3000";
         fullUrl = `${baseUrl}${audioUrl.startsWith("/") ? audioUrl : "/" + audioUrl}`;
       }

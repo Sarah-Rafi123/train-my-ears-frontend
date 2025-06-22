@@ -14,11 +14,9 @@ import { Alert, Text, TouchableOpacity, View } from "react-native"
 import { Provider as PaperProvider, TextInput } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 
-// Simple validation function for login
 const validateLoginForm = (email: string, password: string) => {
   const errors: { email?: string; password?: string } = {}
 
-  // Email validation
   if (!email.trim()) {
     errors.email = "Email is required"
   } else if (!/\S+@\S+\.\S+/.test(email)) {
@@ -271,8 +269,8 @@ export default function LoginScreen() {
 
         <SuccessModal
           visible={showSuccessModal}
-          title="Login Successful"
-          message="Welcome back! You've been logged in successfully."
+          title="Welcome Back!"
+          message=""
           buttonText="Continue"
           onClose={handleContinue}
         />
