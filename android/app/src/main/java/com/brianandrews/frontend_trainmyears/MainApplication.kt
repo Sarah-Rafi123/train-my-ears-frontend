@@ -1,4 +1,4 @@
-package com.anonymous.frontend_trainmyears
+package com.brianandrews.frontend_trainmyears
 
 import android.app.Application
 import android.content.res.Configuration

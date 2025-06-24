@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 
 // Types
 interface User {
@@ -116,6 +116,18 @@ const saveAuthDataToStorage = async (token: string, refreshToken: string, user: 
   }
 }
 
+// Helper function to clear auth data from AsyncStorage
+const clearAuthDataFromStorage = async () => {
+  try {
+    console.log("🗑️ Clearing authentication data from AsyncStorage...")
+    await AsyncStorage.multiRemove(["token", "refreshToken", "user", "userId"])
+    console.log("✅ Successfully cleared all stored auth data")
+  } catch (error) {
+    console.error("❌ Error clearing stored auth data:", error)
+    throw error
+  }
+}
+
 // Initial state
 const initialState: AuthState = {
   user: null,
@@ -199,8 +211,7 @@ export const loginUser = createAsyncThunk<AuthResponse, LoginData, { rejectValue
   async (loginData, { rejectWithValue }) => {
     try {
       console.log("🚀 Starting login process...")
-            console.log(process.env.API_BASE_URL)
-console.log(process.env.API_BASE_URL)
+      console.log(process.env.API_BASE_URL)
       console.log("📡 Making login API call to:", `${process.env.API_BASE_URL}/auth/login`)
       console.log("📤 Request data:", {
         email: loginData.email,
@@ -262,6 +273,63 @@ console.log(process.env.API_BASE_URL)
   },
 )
 
+// Async thunk for logout
+export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
+  "auth/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log("🚀 Starting logout process...")
+      
+      // Get refresh token from AsyncStorage
+      const refreshToken = await AsyncStorage.getItem("refreshToken")
+      
+      if (!refreshToken) {
+        console.log("ℹ️ No refresh token found, proceeding with local logout")
+        await clearAuthDataFromStorage()
+        return
+      }
+
+      console.log("📡 Making logout API call to:", `${process.env.API_BASE_URL}/auth/logout`)
+      console.log("📤 Request data: { refreshToken: [HIDDEN] }")
+      
+      const response = await fetch(`${process.env.API_BASE_URL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ refreshToken }),
+      })
+
+      console.log("📊 Logout response status:", response.status)
+      console.log("📊 Logout response ok:", response.ok)
+
+      if (!response.ok) {
+        const data = await response.json()
+        console.error("❌ Logout API failed:", data)
+        console.log("⚠️ Continuing with local logout despite API failure")
+      } else {
+        console.log("✅ Successfully logged out from server")
+      }
+
+      // Always clear local data regardless of API response
+      await clearAuthDataFromStorage()
+
+    } catch (error) {
+      console.error("💥 Logout network error:", error)
+      console.log("⚠️ Continuing with local logout despite network error")
+      
+      // Still clear local data even if network fails
+      try {
+        await clearAuthDataFromStorage()
+      } catch (storageError) {
+        console.error("❌ Failed to clear local storage:", storageError)
+        return rejectWithValue("Failed to clear local authentication data")
+      }
+    }
+  },
+)
+
 // Async thunk to load stored auth data
 export const loadStoredAuth = createAsyncThunk("auth/loadStored", async () => {
   try {
@@ -307,7 +375,7 @@ const authSlice = createSlice({
       state.error = null
     },
     logout: (state) => {
-      console.log("👋 Logging out user...")
+      console.log("👋 Synchronous logout - clearing state...")
       console.log("🗑️ Clearing user data:", {
         userId: state.userId,
         userEmail: state.user?.email,
@@ -318,15 +386,12 @@ const authSlice = createSlice({
       state.token = null
       state.refreshToken = null
       state.isAuthenticated = false
+      state.error = null
 
-      // Clear AsyncStorage
-      AsyncStorage.multiRemove(["token", "refreshToken", "user", "userId"])
-        .then(() => {
-          console.log("✅ Successfully cleared all stored auth data")
-        })
-        .catch((error) => {
-          console.error("❌ Error clearing stored auth data:", error)
-        })
+      // Clear AsyncStorage (fire and forget for sync action)
+      clearAuthDataFromStorage().catch((error) => {
+        console.error("❌ Error in sync logout storage clear:", error)
+      })
     },
   },
   extraReducers: (builder) => {
@@ -392,6 +457,35 @@ const authSlice = createSlice({
         console.log("❌ Login rejected:", action.payload)
         state.isLoading = false
         state.error = action.payload || "Login failed"
+      })
+      // Logout user (async)
+      .addCase(logoutUser.pending, (state) => {
+        console.log("⏳ Logout pending...")
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        console.log("✅ Logout fulfilled - clearing state")
+        state.user = null
+        state.userId = null
+        state.token = null
+        state.refreshToken = null
+        state.isAuthenticated = false
+        state.isLoading = false
+        state.error = null
+        console.log("🎯 User successfully logged out and state cleared")
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        console.log("❌ Logout rejected but clearing state anyway:", action.payload)
+        // Still clear local data even if API call failed
+        state.user = null
+        state.userId = null
+        state.token = null
+        state.refreshToken = null
+        state.isAuthenticated = false
+        state.isLoading = false
+        state.error = null
+        console.log("🎯 Local logout completed despite API error")
       })
       // Load stored auth
       .addCase(loadStoredAuth.fulfilled, (state, action) => {

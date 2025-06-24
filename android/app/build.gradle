@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.frontend_trainmyears'
+    namespace 'com.brianandrews.frontend_trainmyears'
     defaultConfig {
-        applicationId 'com.anonymous.frontend_trainmyears'
+        applicationId 'com.brianandrews.frontend_trainmyears'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -15,7 +15,7 @@ export default function GuestButton({ onPress, className = "" }: GuestButtonProp
       accessibilityLabel="Start as guest"
     >
       <Feather name="music" size={20} color="#1e3a5f" />
-      <Text className="text-[#1e3a5f] text-2xl font-sans ml-2">Guest</Text>
+      <Text className="text-[#1e3a5f] font-sans text-2xl ml-2">Guest</Text>
     </TouchableOpacity>
   )
 }

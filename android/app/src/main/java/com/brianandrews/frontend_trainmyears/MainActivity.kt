@@ -1,4 +1,4 @@
-package com.anonymous.frontend_trainmyears
+package com.brianandrews.frontend_trainmyears
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

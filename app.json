@@ -30,7 +30,13 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "android": {
+      "package": "com.brianandrews.frontend_trainmyears"
+    },
+    "ios": {
+      "bundleIdentifier": "com.brianandrews.frontend-trainmyears"
+    }
   },
   "experiments": {
     "typedRoutes": true

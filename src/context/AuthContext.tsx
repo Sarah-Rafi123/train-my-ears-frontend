@@ -2,7 +2,7 @@
 
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react"
-import { loadStoredAuth } from "../store/slices/authSlice"
+import { loadStoredAuth, logoutUser } from "../store/slices/authSlice"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 interface AuthContextType {
@@ -24,6 +24,8 @@ interface AuthContextType {
   setGuitarId: (id: string) => Promise<void>
   setPianoId: (id: string) => Promise<void>
   getStoredInstrumentIds: () => Promise<{ guitarId: string | null; pianoId: string | null }>
+  // Auth functions
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -49,7 +51,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const [pianoId, setPianoIdState] = useState<string | null>(null)
 
   useEffect(() => {
-console.log(process.env.API_BASE_URL)
+    console.log(process.env.API_BASE_URL)
     console.log("🚀 AuthProvider: Loading stored authentication data...")
     dispatch(loadStoredAuth())
 
@@ -78,14 +80,15 @@ console.log(process.env.API_BASE_URL)
   }
 
   useEffect(() => {
-  const clearOldInstrumentIds = async () => {
-    await AsyncStorage.removeItem("guitarId")
-    await AsyncStorage.removeItem("pianoId")
-    console.log("🧹 Cleared old instrument IDs from storage.")
-  }
+    const clearOldInstrumentIds = async () => {
+      await AsyncStorage.removeItem("guitarId")
+      await AsyncStorage.removeItem("pianoId")
+      console.log("🧹 Cleared old instrument IDs from storage.")
+    }
 
-  clearOldInstrumentIds()
-}, [])
+    clearOldInstrumentIds()
+  }, [])
+
   // Log authentication state changes
   useEffect(() => {
     console.log("🔄 AuthProvider: Authentication state changed:", {
@@ -275,6 +278,50 @@ console.log(process.env.API_BASE_URL)
     console.log("🔍 === AuthContext: END AUTH DATA LOG ===")
   }
 
+  // Logout function that calls the API and clears local data
+  const logout = async () => {
+    try {
+      console.log("🔓 AuthProvider: Initiating logout...")
+      console.log("👤 AuthProvider: Current user before logout:", {
+        userId: userId,
+        userEmail: user?.email,
+        isAuthenticated: isAuthenticated,
+      })
+
+      // Dispatch the logout thunk which handles API call and state clearing
+      const result = await dispatch(logoutUser())
+      
+      if (logoutUser.fulfilled.match(result)) {
+        console.log("✅ AuthProvider: Logout completed successfully")
+      } else if (logoutUser.rejected.match(result)) {
+        console.log("⚠️ AuthProvider: Logout completed with API error, but local data cleared")
+      }
+
+      // Clear instrument IDs as well since user is logging out
+      try {
+        await AsyncStorage.multiRemove(["guitarId", "pianoId"])
+        setGuitarIdState(null)
+        setPianoIdState(null)
+        console.log("🎵 AuthProvider: Cleared instrument IDs on logout")
+      } catch (instrumentError) {
+        console.error("❌ AuthProvider: Error clearing instrument IDs:", instrumentError)
+      }
+
+      console.log("🎯 AuthProvider: Logout process completed")
+    } catch (error) {
+      console.error("❌ AuthProvider: Logout error:", error)
+      // Even if there's an error, we should still try to clear local state
+      try {
+        await AsyncStorage.multiRemove(["token", "refreshToken", "user", "userId", "guitarId", "pianoId"])
+        setGuitarIdState(null)
+        setPianoIdState(null)
+        console.log("🧹 AuthProvider: Emergency cleanup completed")
+      } catch (cleanupError) {
+        console.error("❌ AuthProvider: Emergency cleanup failed:", cleanupError)
+      }
+    }
+  }
+
   const value: AuthContextType = {
     user,
     userId,
@@ -294,6 +341,8 @@ console.log(process.env.API_BASE_URL)
     setGuitarId,
     setPianoId,
     getStoredInstrumentIds,
+    // Auth functions
+    logout,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
