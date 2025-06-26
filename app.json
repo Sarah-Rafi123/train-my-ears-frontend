@@ -9,7 +9,7 @@
   "newArchEnabled": true,
   "ios": {
     "supportsTablet": true,
-    "bundleIdentifier": "com.anonymous.frontend-trainmyears"
+    "bundleIdentifier": "com.brianandrews.trainmyears"
   },
   "android": {
     "adaptiveIcon": {
@@ -17,7 +17,7 @@
       "backgroundColor": "#ffffff"
     },
     "edgeToEdgeEnabled": true,
-    "package": "com.anonymous.frontend_trainmyears"
+    "package": "com.brianandrews.trainmyears"
   },
   "expo": {
     "web": {
@@ -32,10 +32,10 @@
       "expo-font"
     ],
     "android": {
-      "package": "com.brianandrews.frontend_trainmyears"
+      "package": "com.brianandrews.trainmyears"
     },
     "ios": {
-      "bundleIdentifier": "com.brianandrews.frontend-trainmyears"
+      "bundleIdentifier": "com.brianandrews.trainmyears"
     }
   },
   "experiments": {

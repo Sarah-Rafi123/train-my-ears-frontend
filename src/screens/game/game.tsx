@@ -125,6 +125,15 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
       })
     }
   }, [gameResult])
+// In your GameScreen, add this useEffect to debug:
+useEffect(() => {
+  console.log("🔍 Current stats in GameScreen:", {
+    streak: currentStats.streak,
+    accuracy: currentStats.accuracy,
+    totalAttempts: currentStats.totalAttempts,
+    correctAnswers: currentStats.correctAnswers,
+  })
+}, [currentStats])
 
   // Handle errors with appropriate modals
   useEffect(() => {
@@ -344,10 +353,31 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
 
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
           {/* Stats Row - Now using real-time stats from API */}
-          <View className="flex-row justify-center px-6 mb-8 gap-x-6">
- <StatCard value={Math.round(currentStats.accuracy) + "%"} label="Accuracy" size="large" />
-            <StatCard value={currentLevel.toString()} label="Level" size="large" />
-            <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
+          <View className="flex-row justify-center mb-6 gap-x-2">
+            <StatCard 
+              value={Math.round(currentStats.accuracy) + "%"} 
+              label="Accuracy" 
+              size="large" 
+            />
+            <StatCard 
+              value={currentLevel.toString()} 
+              label="Level" 
+              size="large" 
+              valueColor="dark"
+            />
+            <StatCard 
+              value={currentStats.streak.toString()} 
+              label="Streaks" 
+              size="large" 
+            />
+             <StatCard 
+              value="" // Not used when showFraction is true
+              label="Wins / Attempts"
+              size="large"
+              showFraction={true}
+              numerator={currentStats.correctAnswers || 0}
+              denominator={currentStats.totalAttempts || 0}
+            />
           </View>
 
           {/* Play Again Button */}

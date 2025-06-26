@@ -9,11 +9,10 @@ import {
   startAdvancedGame,
   submitSequence,
   clearError,
-  clearGameResult,
   setCurrentLevel,
   addToSequence,
   removeFromSequence,
-  clearSequence,
+  resetGame,
 } from "@/src/store/slices/advancedGameSlice"
 import { audioService } from "@/src/services/audioService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
@@ -68,6 +67,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
   const [isPlayingSequence, setIsPlayingSequence] = useState(false)
 
+  // Use simpler state tracking instead of complex refs
+  const [isInitializing, setIsInitializing] = useState(false)
+  const [hasInitialized, setHasInitialized] = useState(false)
+
   // Get route params
   const routeParams = route.params as any
   const instrumentFromRoute = routeParams?.instrument
@@ -112,64 +115,125 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     pianoIdFromContext: pianoId,
   })
 
-  // Initialize game when component mounts
+  // Function to format chord name for display in indicators
+  const formatChordForDisplay = (chordName: string): string => {
+    // Convert "a major" to "A", "a minor" to "A m", etc.
+    const parts = chordName.toLowerCase().split(" ")
+    if (parts.length >= 2) {
+      const note = parts[0].toUpperCase()
+      const quality = parts[1]
+
+      if (quality === "minor") {
+        return `${note} m`
+      } else if (quality === "major") {
+        return note
+      } else {
+        // For other qualities like diminished, augmented, etc.
+        return `${note} ${quality.charAt(0)}`
+      }
+    }
+
+    // Fallback: just capitalize first letter
+    return chordName.charAt(0).toUpperCase() + chordName.slice(1, 3)
+  }
+
+  // Function to format chord name for sequence display (longer format)
+  const formatChordForSequence = (chordName: string): string => {
+    const parts = chordName.toLowerCase().split(" ")
+    if (parts.length >= 2) {
+      const note = parts[0].toUpperCase()
+      const quality = parts[1]
+
+      if (quality === "minor") {
+        return `${note} Minor`
+      } else if (quality === "major") {
+        return `${note} Major`
+      } else {
+        // Capitalize first letter of quality
+        return `${note} ${quality.charAt(0).toUpperCase() + quality.slice(1)}`
+      }
+    }
+
+    // Fallback: capitalize properly
+    return chordName
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ")
+  }
+
+  // Remove all the complex ref logic and replace the useEffect with this simpler version:
   useEffect(() => {
-    // Add a flag to prevent duplicate initialization
-    const initializeKey = `${finalUserId}-${finalInstrumentId}-${currentLevel}`
-    const initializeFlag = `initialized-${initializeKey}`
+    const initializeGame = async () => {
+      // Only initialize once when component mounts with required data
+      if (finalUserId && finalInstrumentId && !hasInitialized && !isInitializing && !currentGameRound) {
+        console.log("🎮 AdvancedGameScreen: Initializing game for level:", currentLevel)
 
-    console.log("🎮 AdvancedGameScreen: Checking initialization with:", {
-      userId: finalUserId,
-      instrumentId: finalInstrumentId,
-      level: currentLevel,
-      hasCurrentGameRound: !!currentGameRound,
-      initializeKey,
-    })
+        setIsInitializing(true)
+        setHasInitialized(true)
 
-    // Only initialize if we have the required data and haven't already initialized with these parameters
-    if (finalUserId && finalInstrumentId && !window[initializeFlag]) {
-      console.log("🎮 AdvancedGameScreen: Initializing game with:", {
-        userId: finalUserId,
-        instrumentId: finalInstrumentId,
-        level: currentLevel,
-      })
+        try {
+          await dispatch(
+            startAdvancedGame({
+              userId: finalUserId,
+              instrumentId: finalInstrumentId,
+              level: currentLevel,
+            }),
+          ).unwrap()
 
-      // Set the flag to prevent duplicate initialization
-      window[initializeFlag] = true
+          console.log("✅ Game initialized successfully")
+        } catch (error) {
+          console.error("❌ Error initializing game:", error)
+          setHasInitialized(false) // Allow retry on error
+        } finally {
+          setIsInitializing(false)
+        }
+      } else if (!finalUserId || !finalInstrumentId) {
+        console.error("❌ Missing required data for game initialization")
+        setShowGameErrorModal(true)
+      }
+    }
 
-      dispatch(
+    initializeGame()
+  }, [finalUserId, finalInstrumentId, hasInitialized, isInitializing, currentGameRound, currentLevel, dispatch])
+
+  // Replace the complex startNewGame function with this simpler version:
+  const startNewGame = async (levelToUse: number) => {
+    if (!finalUserId || !finalInstrumentId || isInitializing) {
+      console.log("🔄 Cannot start game: missing data or already initializing")
+      return
+    }
+
+    console.log("🎮 Starting new game at level:", levelToUse)
+
+    setIsInitializing(true)
+    setShowResult(false)
+    setAudioError(null)
+
+    // Clear Redux state
+    dispatch(resetGame())
+
+    // Set the level if different
+    if (levelToUse !== currentLevel) {
+      dispatch(setCurrentLevel(levelToUse))
+    }
+
+    try {
+      await dispatch(
         startAdvancedGame({
           userId: finalUserId,
           instrumentId: finalInstrumentId,
-          level: currentLevel,
+          level: levelToUse,
         }),
-      )
-    } else if (!finalUserId || !finalInstrumentId) {
-      console.error("❌ AdvancedGameScreen: Missing required data:", {
-        userId: finalUserId,
-        instrumentId: finalInstrumentId,
-        guitarId,
-        pianoId,
-        instrumentFromRoute,
-      })
+      ).unwrap()
 
-      // Show more specific error message
-      const missingItems = []
-      if (!finalUserId) missingItems.push("User ID")
-      if (!finalInstrumentId) missingItems.push("Instrument ID")
-
-      console.error(`❌ Missing: ${missingItems.join(", ")}`)
+      console.log("✅ New game started successfully")
+    } catch (error) {
+      console.error("❌ Error starting new game:", error)
       setShowGameErrorModal(true)
-    } else {
-      console.log("🎮 AdvancedGameScreen: Skipping initialization (already initialized)")
+    } finally {
+      setIsInitializing(false)
     }
-
-    // Cleanup function to reset initialization flag when component unmounts
-    return () => {
-      window[initializeFlag] = false
-      console.log("🎮 AdvancedGameScreen: Cleaned up initialization flag")
-    }
-  }, [finalUserId, finalInstrumentId, currentLevel])
+  }
 
   // Auto-submit sequence when complete
   useEffect(() => {
@@ -272,30 +336,12 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }
 
-  // FIXED: Updated handlePlayAgain to properly reset game state and start new game
+  // Updated handlePlayAgain to start new game immediately
   const handlePlayAgain = () => {
     if (!finalUserId || !finalInstrumentId) return
-
-    console.log("🔄 AdvancedGameScreen: Starting new game (Play Again)")
-
-    // Clear previous game state
-    dispatch(clearGameResult())
-    dispatch(clearSequence())
-    setShowResult(false)
-    setAudioError(null)
-
-    // Reset the initialization flag for current level to allow new game
-    const initializeKey = `${finalUserId}-${finalInstrumentId}-${currentLevel}`
-    window[`initialized-${initializeKey}`] = false
-
-    // Start a new game
-    dispatch(
-      startAdvancedGame({
-        userId: finalUserId,
-        instrumentId: finalInstrumentId,
-        level: currentLevel,
-      }),
-    )
+    console.log("🔄 AdvancedGameScreen: Play Again clicked")
+    setHasInitialized(false) // Reset initialization flag
+    startNewGame(currentLevel)
   }
 
   const handleChordSelect = (chordId: string) => {
@@ -342,49 +388,23 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     )
   }
 
+  // Updated handleLevelDown to start new game immediately
   const handleLevelDown = () => {
     if (currentLevel > 1 && finalUserId && finalInstrumentId) {
       const newLevel = currentLevel - 1
       console.log("📉 AdvancedGameScreen: Level down to:", newLevel)
-      dispatch(setCurrentLevel(newLevel))
-      dispatch(clearGameResult())
-      dispatch(clearSequence())
-      setShowResult(false)
-
-      // Reset the initialization flag for this level
-      const initializeKey = `${finalUserId}-${finalInstrumentId}-${newLevel}`
-      window[`initialized-${initializeKey}`] = false
-
-      dispatch(
-        startAdvancedGame({
-          userId: finalUserId,
-          instrumentId: finalInstrumentId,
-          level: newLevel,
-        }),
-      )
+      setHasInitialized(false) // Reset initialization flag
+      startNewGame(newLevel)
     }
   }
 
+  // Updated handleLevelUp to start new game immediately
   const handleLevelUp = () => {
     if (currentLevel < 4 && finalUserId && finalInstrumentId) {
       const newLevel = currentLevel + 1
       console.log("📈 AdvancedGameScreen: Level up to:", newLevel)
-      dispatch(setCurrentLevel(newLevel))
-      dispatch(clearGameResult())
-      dispatch(clearSequence())
-      setShowResult(false)
-
-      // Reset the initialization flag for this level
-      const initializeKey = `${finalUserId}-${finalInstrumentId}-${newLevel}`
-      window[`initialized-${initializeKey}`] = false
-
-      dispatch(
-        startAdvancedGame({
-          userId: finalUserId,
-          instrumentId: finalInstrumentId,
-          level: newLevel,
-        }),
-      )
+      setHasInitialized(false) // Reset initialization flag
+      startNewGame(newLevel)
     }
   }
 
@@ -419,8 +439,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
     if (currentLevel > 1) {
       const previousLevel = currentLevel - 1
-      dispatch(setCurrentLevel(previousLevel))
-      console.log("📉 AdvancedGameScreen: Returning to level:", previousLevel)
+      startNewGame(previousLevel)
     }
   }
 
@@ -434,34 +453,57 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     dispatch(clearError())
 
     if (finalUserId && finalInstrumentId) {
-      dispatch(
-        startAdvancedGame({
-          userId: finalUserId,
-          instrumentId: finalInstrumentId,
-          level: currentLevel,
-        }),
-      )
+      startNewGame(currentLevel)
     }
   }
 
   // Get sequence indicators based on current selection and result
-  const getSequenceIndicators = (): ("success" | "error" | "empty")[] => {
+  const getSequenceIndicators = (): Array<{
+    type: "success" | "error" | "empty" | "filled"
+    chordText?: string
+    showIcon?: boolean
+  }> => {
     if (!currentGameRound) return []
 
-    const indicators: ("success" | "error" | "empty")[] = []
+    const indicators: Array<{
+      type: "success" | "error" | "empty" | "filled"
+      chordText?: string
+      showIcon?: boolean
+    }> = []
 
     for (let i = 0; i < currentGameRound.sequenceLength; i++) {
       if (showResult && gameResult) {
-        // Show result indicators
+        // Show result indicators with chord names and tick/cross icons
         const comparison = gameResult.sequenceComparison.find((comp) => comp.position === i + 1)
         if (comparison) {
-          indicators.push(comparison.correct ? "success" : "error")
+          // Find the chord name for display
+          const correctChord = gameResult.correctSequence.find((chord) => chord.position === i + 1)
+          const chordText = correctChord ? formatChordForDisplay(correctChord.name) : ""
+
+          indicators.push({
+            type: comparison.correct ? "success" : "error",
+            chordText,
+            showIcon: true, // Show tick/cross icons in result view
+          })
         } else {
-          indicators.push("empty")
+          indicators.push({ type: "empty" })
         }
       } else {
-        // Show selection indicators
-        indicators.push(i < selectedSequence.length ? "success" : "empty")
+        // Show selection indicators with selected chord names (no icons during gameplay)
+        if (i < selectedSequence.length) {
+          // Find the chord name from the selected chord ID
+          const selectedChordId = selectedSequence[i]
+          const selectedChord = currentGameRound.chordPool.find((chord) => chord.id === selectedChordId)
+          const chordText = selectedChord ? formatChordForDisplay(selectedChord.name) : ""
+
+          indicators.push({
+            type: "filled",
+            chordText,
+            showIcon: false, // No icons during gameplay
+          })
+        } else {
+          indicators.push({ type: "empty" })
+        }
       }
     }
 
@@ -530,8 +572,8 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     return Math.floor(availableWidth / 3)
   }
 
-  // Loading state
-  if (isLoading) {
+  // Update the loading condition to use the simpler state:
+  if (isLoading || isInitializing) {
     return (
       <SafeAreaView className="flex-1 bg-white">
         <View className="flex-row items-center px-6 py-4">
@@ -540,6 +582,8 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#003049" />
           <Text className="mt-4 text-[#003049] text-lg">Loading advanced game...</Text>
+          {/* Add timeout message after 10 seconds */}
+          <Text className="mt-2 text-gray-500 text-sm">If this takes too long, please check your connection</Text>
         </View>
       </SafeAreaView>
     )
@@ -591,12 +635,12 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           <View className="px-6 mb-8">
             <TouchableOpacity
               onPress={showResult ? handlePlayAgain : () => playSequenceAudio()}
-              disabled={isPlayingSequence || isLoading}
+              disabled={isPlayingSequence || isLoading || isInitializing}
               className="bg-[#1e3a5f] rounded-2xl py-4 px-6 flex-row justify-center items-center shadow-sm"
               accessibilityRole="button"
               accessibilityLabel={showResult ? "Play Again" : "Play Sequence Again"}
             >
-              {isPlayingSequence || isLoading ? (
+              {isPlayingSequence || isLoading || isInitializing ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
                 <Feather name={showResult ? "play" : "refresh-cw"} size={20} color="white" />
@@ -604,7 +648,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
               <Text className="text-white text-lg font-semibold ml-3">
                 {isPlayingSequence
                   ? "Playing..."
-                  : isLoading
+                  : isLoading || isInitializing
                     ? "Loading..."
                     : showResult
                       ? "Play Again"
@@ -614,11 +658,22 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           </View>
         )}
 
-        {/* Sequence Indicators */}
+        {/* Sequence Indicators - Now showing chord names with full-circle tick/cross icons */}
         {currentGameRound && (
           <View className="flex-row justify-center gap-x-4 mb-8">
-            {getSequenceIndicators().map((type, index) => (
-              <CircularIndicator key={index} type={type} size={50} />
+            {getSequenceIndicators().map((indicator, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleSequenceItemRemove(index)}
+                disabled={showResult || !indicator.chordText}
+              >
+                <CircularIndicator
+                  type={indicator.type}
+                  size={50}
+                  chordText={indicator.chordText}
+                  showIcon={indicator.showIcon}
+                />
+              </TouchableOpacity>
             ))}
           </View>
         )}
@@ -640,12 +695,35 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         {showResult && gameResult && (
           <View className="px-6 mb-6">
             <Text
-              className={`text-2xl font-bold text-center mb-2 ${
+              className={`text-2xl font-bold text-center mb-4 ${
                 gameResult.isCorrect ? "text-green-600" : "text-red-600"
               }`}
             >
               {gameResult.isCorrect ? "Perfect Sequence!" : "Incorrect Sequence"}
             </Text>
+
+            {/* Show correct sequence in text format */}
+            <View className="bg-gray-50 rounded-lg p-4 mb-4">
+              <Text className="text-gray-700 text-lg font-semibold text-center mb-2">
+                {gameResult.isCorrect ? "Your Answer:" : "Correct Sequence:"}
+              </Text>
+              <Text className="text-gray-800 text-base text-center leading-6">
+                {gameResult.correctSequence
+                  .sort((a, b) => a.position - b.position)
+                  .map((chord) => formatChordForSequence(chord.name))
+                  .join(" → ")}
+              </Text>
+            </View>
+
+            {/* Show user's answer if incorrect */}
+            {!gameResult.isCorrect && (
+              <View className="bg-red-50 rounded-lg p-4 mb-4">
+                <Text className="text-red-700 text-lg font-semibold text-center mb-2">Your Answer:</Text>
+                <Text className="text-red-800 text-base text-center leading-6">
+                  {gameResult.submittedSequence.map((chord) => formatChordForSequence(chord.name)).join(" → ")}
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -661,10 +739,16 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
                       key={chord.id}
                       onPress={() => handleChordSelect(chord.id)}
                       disabled={
-                        isSubmittingSequence || selectedSequence.length >= currentGameRound.sequenceLength || showResult
+                        isSubmittingSequence ||
+                        selectedSequence.length >= currentGameRound.sequenceLength ||
+                        showResult ||
+                        isInitializing
                       }
                       className={`border-2 border-transparent rounded-2xl py-4 px-2 bg-[#E5EAED] items-center justify-center ${
-                        isSubmittingSequence || selectedSequence.length >= currentGameRound.sequenceLength || showResult
+                        isSubmittingSequence ||
+                        selectedSequence.length >= currentGameRound.sequenceLength ||
+                        showResult ||
+                        isInitializing
                           ? "opacity-50"
                           : ""
                       }`}
@@ -677,7 +761,8 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
                         className={`text-lg font-bold text-center text-[#003049] ${
                           isSubmittingSequence ||
                           selectedSequence.length >= currentGameRound.sequenceLength ||
-                          showResult
+                          showResult ||
+                          isInitializing
                             ? "opacity-50"
                             : ""
                         }`}
@@ -701,7 +786,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
               title="Level Down"
               icon="arrow-down"
               onPress={handleLevelDown}
-              disabled={isLoading || isSubmittingSequence}
+              disabled={isLoading || isSubmittingSequence || isInitializing}
             />
           )}
           {currentLevel < 4 && (
@@ -709,7 +794,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
               title="Level Up"
               icon="arrow-up"
               onPress={handleLevelUp}
-              disabled={isLoading || isSubmittingSequence}
+              disabled={isLoading || isSubmittingSequence || isInitializing}
             />
           )}
         </View>

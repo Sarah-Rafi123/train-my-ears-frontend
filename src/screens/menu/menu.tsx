@@ -1,8 +1,13 @@
+"use client"
+
 import { View, ScrollView, Text } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { useState } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import MenuOption from "@/src/components/widgets/MenuOption"
+import FeedbackModal from "@/src/components/ui/modal/feedback-modal"
+import { useAuth } from "@/src/context/AuthContext"
 
 interface MenuScreenProps {
   onBack?: () => void
@@ -22,6 +27,8 @@ export default function MenuScreen({
   onShare,
 }: MenuScreenProps) {
   const navigation = useNavigation()
+  const { user } = useAuth()
+  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false)
 
   const handleViewSample = () => {
     console.log("View Sample pressed")
@@ -53,6 +60,17 @@ export default function MenuScreen({
     // Implement share functionality
   }
 
+  const handleShareFeedback = () => {
+    console.log("Share Feedback pressed")
+    console.log("👤 Current user email:", user?.email || "No email (anonymous)")
+    setFeedbackModalVisible(true)
+  }
+
+  const handleViewFeedback = () => {
+    console.log("View Feedback pressed")
+    navigation.navigate("ViewFeedback" as never)
+  }
+
   const handleBack = () => {
     console.log("Back pressed")
     onBack?.()
@@ -69,12 +87,27 @@ export default function MenuScreen({
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="pt-4 px-4 gap-y-2">
           <MenuOption title="My Stats" onPress={handleViewStats} />
-         <MenuOption title="Advanced Play" onPress={handleAdvanceMode} />
-          <MenuOption title="Sample Chords"  onPress={handleViewSample} />
+          <MenuOption title="Advanced Play" onPress={handleAdvanceMode} />
+          <MenuOption title="Sample Chords" onPress={handleViewSample} />
           <MenuOption title="Leader Board" onPress={handleLeaderboard} />
           <MenuOption title="Share" onPress={handleShare} />
+          <MenuOption title="Share Feedback" onPress={handleShareFeedback} />
+
+          {/* Small text for View Feedback */}
+          <View className="mt-6 px-2">
+            <Text className="text-sm text-[#003049] hover:font-bold hover:text-black underline text-center" onPress={handleViewFeedback}>
+              View Feedback
+            </Text>
+          </View>
         </View>
       </ScrollView>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        visible={feedbackModalVisible}
+        onClose={() => setFeedbackModalVisible(false)}
+        userEmail={user?.email}
+      />
     </SafeAreaView>
   )
 }

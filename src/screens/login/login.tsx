@@ -79,13 +79,11 @@ export default function LoginScreen() {
   // Log stored data after successful login for verification
   useEffect(() => {
     if (isAuthenticated && !isLoading && !error) {
-      // Wait a bit to ensure AsyncStorage operations are complete
       setTimeout(async () => {
         console.log("🎉 LoginScreen: Login successful, logging all stored data...")
         console.log("🆔 Current user ID from context:", userId)
         await logAllStoredData()
 
-        // Also get and log the auth data directly
         const authData = await getStoredAuthData()
         if (authData) {
           console.log("✅ LoginScreen: Successfully retrieved auth data after login:", {

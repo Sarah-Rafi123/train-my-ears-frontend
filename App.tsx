@@ -14,6 +14,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import "./global.css"
 import AdvanceGameScreen from "./src/screens/advanceGame/advanceGame"
 import UserStatsScreen from "./src/screens/userStats/userStats"
+import ViewFeedbackScreen from './src/screens/viewFeedback/viewFeedback'
 import AuthProvider from './src/context/AuthContext'
 import { useFonts } from 'expo-font';
 type Screen = "welcome" | "selectInstrument"
@@ -37,6 +38,7 @@ export default function RootLayout() {
               headerShown: false, 
             }}
           >
+            <Stack.Screen name="ViewFeedback" component={ViewFeedbackScreen} />
             <Stack.Screen name="SocialRegister" component={SocialRegisterScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />

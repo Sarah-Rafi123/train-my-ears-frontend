@@ -5,7 +5,6 @@ import { useState, useCallback } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import NoteButton from "@/src/components/ui/buttons/NoteButton"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
-import SoundWavesSvg from "@/src/assets/svgs/SoundWaves"
 import { useChords } from "@/src/hooks/useChords"
 import { audioService } from "@/src/services/audioService"
 import { useAuth } from "@/src/context/AuthContext"
@@ -67,15 +66,14 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
       try {
         setPlayingChord(chord.id)
         setIsGifAnimating(true) // Start GIF animation
-        
+
         await audioService.playAudio(chord.audioFileUrl)
         console.log(`🎵 Playing audio for chord: ${chord.displayName}`)
-        
+
         // Stop GIF animation after a delay (adjust timing as needed)
         setTimeout(() => {
           setIsGifAnimating(false)
         }, 2000) // 2 seconds - adjust based on your audio length
-        
       } catch (error) {
         console.error("❌ Error playing chord audio:", error)
         Alert.alert("Audio Error", "Failed to play chord audio")
@@ -142,27 +140,52 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-row items-center mt-8 px-6 py-8">
         <BackButton onPress={onBack} />
-        <View className="flex-1">
-        </View>
+        <View className="flex-1"></View>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Container for SoundWaves and GIF with fixed height */}
+        {/* Container for SoundWaves, Placeholder Image, and GIF with fixed height */}
         <View className="justify-center items-center mb-4" style={{ height: 140 }}>
           {/* <SoundWavesSvg /> */}
-          
-          {/* Animated GIF - Positioned absolutely to overlay without affecting layout */}
-          {isGifAnimating && (
-            <View 
+
+          {/* Placeholder Image - Shows when GIF is NOT animating */}
+          {!isGifAnimating && (
+            <View
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 0,
                 left: 0,
                 right: 0,
                 bottom: 0,
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: 10
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 5,
+              }}
+            >
+              <Image
+                source={require("@/src/assets/images/sound.png")} // Add your placeholder image here
+                style={{
+                  width: 100,
+                  height: 100,
+                  resizeMode: "contain",
+                 // Slightly transparent for a subtle look
+                }}
+              />
+            </View>
+          )}
+
+          {/* Animated GIF - Shows when audio is playing */}
+          {isGifAnimating && (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 10,
               }}
             >
               <Image
@@ -170,13 +193,13 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
                 style={{
                   width: 120,
                   height: 120,
-                  resizeMode: 'contain'
+                  resizeMode: "contain",
                 }}
               />
             </View>
           )}
         </View>
-        
+
         {/* Chord Grid - 3 per row layout */}
         <View className="px-6 mb-8">
           {chordRows.length > 0 ? (
@@ -209,16 +232,8 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
 
         {/* Level Control Buttons */}
         <View className="px-6 mb-4 items-center gap-y-3">
-          {currentLevel < 4 && (
-            <ActionButton title={`Level Up`} icon="arrow-up" onPress={handleLevelUp} />
-          )}
-          {currentLevel > 1 && (
-            <ActionButton
-              title={`Level Down`}
-              icon="arrow-down"
-              onPress={handleLevelDown}
-            />
-          )}
+          {currentLevel < 4 && <ActionButton title={`Level Up`} icon="arrow-up" onPress={handleLevelUp} />}
+          {currentLevel > 1 && <ActionButton title={`Level Down`} icon="arrow-down" onPress={handleLevelDown} />}
         </View>
 
         {/* Extra space at bottom for better scrolling */}

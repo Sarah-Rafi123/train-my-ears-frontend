@@ -5,9 +5,20 @@ interface StatCardProps {
   label: string
   size?: "small" | "large"
   valueColor?: "blue" | "red" | "green" | "gray" | "dark"
+  showFraction?: boolean
+  numerator?: number
+  denominator?: number
 }
 
-export default function StatCard({ value, label, size = "small", valueColor = "gray" }: StatCardProps) {
+export default function StatCard({ 
+  value, 
+  label, 
+  size = "small", 
+  valueColor = "gray",
+  showFraction = false,
+  numerator = 0,
+  denominator = 0
+}: StatCardProps) {
   // Color mapping for different value colors
   const getValueColor = () => {
     switch (valueColor) {
@@ -46,7 +57,13 @@ export default function StatCard({ value, label, size = "small", valueColor = "g
   return (
     <View className={`items-center ${sizeStyles.container}`}>
       <Text className={`text-gray-600 ${sizeStyles.label} text-center`}>{label}</Text>
-      <Text className={`${getValueColor()} ${sizeStyles.value} text-center`}>{value}</Text>
+      {showFraction ? (
+        <Text className={`${getValueColor()} ${sizeStyles.value} text-center`}>
+          {numerator}/{denominator}
+        </Text>
+      ) : (
+        <Text className={`${getValueColor()} ${sizeStyles.value} text-center`}>{value}</Text>
+      )}
     </View>
   )
 }

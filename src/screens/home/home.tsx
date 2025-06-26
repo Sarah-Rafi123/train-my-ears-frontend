@@ -18,7 +18,7 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
   
   const screenWidth = Dimensions.get("window").width
   const screenHeight = Dimensions.get("window").height
-  const imageHeight = screenHeight * 0.6 // 60% of screen height
+  const imageHeight = screenHeight * 0.6 
 
   const handleRegisterLogin = () => {
     console.log("Register or Login pressed")
@@ -28,8 +28,6 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
   const handleGuestStart = async () => {
     try {
       console.log("Start as guest pressed")
-      
-      // Check if user is currently authenticated
       if (isAuthenticated) {
         console.log("🔓 User is authenticated, logging out before guest access...")
         console.log("👤 Current user:", {
@@ -74,16 +72,13 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
         }}
         resizeMode="cover"
       />
-
-      {/* Content Container */}
-      <View className="mt-auto bg-white px-6 pt-44 h-[60%]">
+      <View className="mt-auto bg-white px-6 pt-52 h-[60%]">
         <Text className="text-[#003049] text-4xl font-bold font-sans text-center">
           TRAIN MY EAR
         </Text>
         <Text className="text-[#003049] text-2xl text-center mb-12 font-sans">
           A simple tool to help recognize chords by ear.
         </Text>
-
         <View className="mt-8 mb-16">
           <GuestButton 
             onPress={handleGuestStart} 
