@@ -4,27 +4,53 @@ import { View, Text, ScrollView, SafeAreaView } from "react-native"
 import { useState, useCallback, useEffect } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import ChordCard from "@/src/components/widgets/ChordCard"
-import ModeSelector from "@/src/components/widgets/ModeSelector"
 import LevelSelector from "@/src/components/widgets/LevelSelector"
 import ProgressCard from "@/src/components/widgets/ProgressCard"
-import HistoryTable from "@/src/components/widgets/HistoryTable"
 import { dailyProgressApi, dailyProgressUtils, DailyProgressData } from "@/src/services/dailyProgressApi"
+import { useAuth } from "@/src/context/AuthContext"
+import StatCard from "@/src/components/widgets/StatsCard"
 
 // Define proper navigation prop types
 interface StatsScreenProps {
   navigation?: any // Replace with proper type from @react-navigation/native
   route?: any 
   onBack?: () => void
-  userId?: string 
 }
 
-export default function UserStatsScreen({ navigation, route, onBack, userId = "cmbyuzdld0000qljum0i8f11r" }: StatsScreenProps) {
+export default function UserStatsScreen({ navigation, route, onBack }: StatsScreenProps) {
+  const { userId } = useAuth()
   const [selectedMode, setSelectedMode] = useState<"simple" | "advanced">("simple")
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null)
   const [todayProgressData, setTodayProgressData] = useState<DailyProgressData | null>(null)
   const [historicalProgressData, setHistoricalProgressData] = useState<DailyProgressData[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Use useCallback to memoize the handler
+  const handleBack = useCallback(() => {
+    if (onBack) {
+      onBack()
+    } else if (navigation) {
+      // Only use navigation if it's available
+      navigation.goBack()
+    } else {
+      console.log("Back pressed, but navigation is not available")
+    }
+  }, [onBack, navigation])
+
+  // Add this check after the useAuth hook
+  if (!userId) {
+    return (
+      <SafeAreaView className="flex-1 pt-8 bg-[#F2F5F6]">
+        <BackButton onPress={handleBack} />
+        <View className="flex-1 justify-center items-center px-6">
+          <Text className="text-[#003049] text-lg text-center mb-4">
+            Please log in to view your statistics
+          </Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
 
   // Generate dates for last 5 days (excluding today)
   const generateLast5Days = () => {
@@ -79,17 +105,7 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
     fetchProgressData()
   }, [userId])
 
-  // Use useCallback to memoize the handler
-  const handleBack = useCallback(() => {
-    if (onBack) {
-      onBack()
-    } else if (navigation) {
-      // Only use navigation if it's available
-      navigation.goBack()
-    } else {
-      console.log("Back pressed, but navigation is not available")
-    }
-  }, [onBack, navigation])
+  
 
   // Handle level change with API call
   const handleLevelChange = useCallback(async (level: number) => {
@@ -98,13 +114,43 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
     await fetchProgressData(level)
   }, [userId])
 
-  // Get today's progress card values
+  // Get today's progress card values with win/attempts data
   const getTodayProgressValues = () => {
     if (!todayProgressData) {
-      return { streak: 0, accuracy: 0 }
+      return { 
+        streak: 0, 
+        accuracy: 0, 
+        totalGamesPlayed: 0, 
+        totalAttempts: 0, 
+        correctAnswers: 0 
+      }
     }
     
-    return dailyProgressUtils.getProgressCardValues(todayProgressData, selectedLevel || undefined)
+    if (selectedLevel) {
+      // Get level-specific data
+      const levelProgress = todayProgressData.levelProgress.find(
+        level => level.levelId === selectedLevel
+      )
+      
+      if (levelProgress) {
+        return {
+          streak: levelProgress.maxStreak,
+          accuracy: levelProgress.overallAccuracy,
+          totalGamesPlayed: levelProgress.totalGamesPlayed,
+          totalAttempts: levelProgress.totalAttempts,
+          correctAnswers: levelProgress.correctAnswers
+        }
+      }
+    }
+    
+    // Use overall stats when no level is selected
+    return {
+      streak: todayProgressData.overallUserStats?.maxStreak || 0,
+      accuracy: todayProgressData.overallUserStats?.overallAccuracy || 0,
+      totalGamesPlayed: todayProgressData.overallUserStats?.totalGamesPlayed || 0,
+      totalAttempts: todayProgressData.overallUserStats?.totalAttempts || 0,
+      correctAnswers: todayProgressData.overallUserStats?.correctAnswers || 0
+    }
   }
 
   // Convert historical data to history table format (last 5 days)
@@ -162,18 +208,28 @@ export default function UserStatsScreen({ navigation, route, onBack, userId = "c
                 <Text className="text-[#003049] text-xl font-bold mb-4">
                   Today's Progress 
                 </Text>
-                <View className="flex-row gap-x-4">
-                  <ProgressCard 
-                    icon="fire" 
-                    value={todayProgressValues.streak} 
-                    className="flex-1" 
-                  />
-                  <ProgressCard 
-                    icon="target" 
-                    value={Math.round(todayProgressValues.accuracy)} 
-                    suffix="%" 
-                    className="flex-1" 
-                  />
+                
+                <View className="bg-[#E5EAED80] rounded-3xl p-4">
+                  <View className="flex-row justify-between gap-x-2">
+                    <StatCard 
+                      value={`${todayProgressValues.accuracy.toFixed(1)}%`}
+                      label="Accuracy" 
+                      size="large" 
+                    />
+                    <StatCard 
+                      value={todayProgressValues.streak.toString()}
+                      label="Streak" 
+                      size="large" 
+                    />
+                    <StatCard 
+                      showFraction={true}
+                      numerator={todayProgressValues.correctAnswers}
+                      denominator={todayProgressValues.totalAttempts}
+                      label="Wins / Attempts" 
+                      size="large" 
+                      value="" // Not used when showFraction is true
+                    />
+                  </View>
                 </View>
               </View>
 

@@ -102,7 +102,7 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="flex-row items-center mt-8 px-6 py-8">
+        <View className="flex-row items-center px-6 py-8">
           <BackButton onPress={onBack} />
           <View className="flex-1">
             <Text className="text-slate-800 text-xl font-semibold text-center mt-4 mr-10">Loading Chords...</Text>
@@ -114,12 +114,10 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
       </SafeAreaView>
     )
   }
-
-  // Show error state
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="flex-row items-center mt-8 px-6 py-8">
+        <View className="flex-row items-center px-6 py-8">
           <BackButton onPress={onBack} />
           <View className="flex-1">
             <Text className="text-slate-800 text-xl font-semibold text-center mt-4 mr-10">Error Loading Chords</Text>
@@ -133,22 +131,16 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
     )
   }
 
-  const expectedChords = getExpectedChordCount(currentLevel)
-  const actualChords = chords.length
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="flex-row items-center mt-8 px-6 py-8">
+      <View className="flex-row items-center px-6 pt-8">
         <BackButton onPress={onBack} />
         <View className="flex-1"></View>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Container for SoundWaves, Placeholder Image, and GIF with fixed height */}
-        <View className="justify-center items-center mb-4" style={{ height: 140 }}>
-          {/* <SoundWavesSvg /> */}
-
-          {/* Placeholder Image - Shows when GIF is NOT animating */}
+        <View className="justify-center items-center mb-4" style={{ height: 100 }}>
           {!isGifAnimating && (
             <View
               style={{
@@ -163,12 +155,11 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
               }}
             >
               <Image
-                source={require("@/src/assets/images/sound.png")} // Add your placeholder image here
+                source={require("@/src/assets/images/sound.png")} 
                 style={{
                   width: 100,
                   height: 100,
                   resizeMode: "contain",
-                 // Slightly transparent for a subtle look
                 }}
               />
             </View>
@@ -199,8 +190,6 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
             </View>
           )}
         </View>
-
-        {/* Chord Grid - 3 per row layout */}
         <View className="px-6 mb-8">
           {chordRows.length > 0 ? (
             chordRows.map((row, rowIndex) => (
@@ -216,7 +205,6 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
                     />
                   </View>
                 ))}
-                {/* Fill empty slots in the row to maintain alignment */}
                 {row.length < 3 &&
                   Array.from({ length: 3 - row.length }).map((_, emptyIndex) => (
                     <View key={`empty-${rowIndex}-${emptyIndex}`} className="flex-1 max-w-[30%]" />
@@ -229,18 +217,12 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
             </View>
           )}
         </View>
-
-        {/* Level Control Buttons */}
         <View className="px-6 mb-4 items-center gap-y-3">
           {currentLevel < 4 && <ActionButton title={`Level Up`} icon="arrow-up" onPress={handleLevelUp} />}
           {currentLevel > 1 && <ActionButton title={`Level Down`} icon="arrow-down" onPress={handleLevelDown} />}
         </View>
-
-        {/* Extra space at bottom for better scrolling */}
         <View className="h-20" />
       </ScrollView>
-
-      {/* Home indicator */}
       <View className="pb-8 pt-4">
         <View className="w-32 h-1 bg-black rounded-full self-center" />
       </View>

@@ -71,6 +71,9 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const [isInitializing, setIsInitializing] = useState(false)
   const [hasInitialized, setHasInitialized] = useState(false)
 
+  // Add API call prevention state
+  const [isApiCallInProgress, setIsApiCallInProgress] = useState(false)
+
   // Get route params
   const routeParams = route.params as any
   const instrumentFromRoute = routeParams?.instrument
@@ -165,11 +168,12 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   useEffect(() => {
     const initializeGame = async () => {
       // Only initialize once when component mounts with required data
-      if (finalUserId && finalInstrumentId && !hasInitialized && !isInitializing && !currentGameRound) {
+      if (finalUserId && finalInstrumentId && !hasInitialized && !isInitializing && !currentGameRound && !isApiCallInProgress) {
         console.log("🎮 AdvancedGameScreen: Initializing game for level:", currentLevel)
 
         setIsInitializing(true)
         setHasInitialized(true)
+        setIsApiCallInProgress(true)
 
         try {
           await dispatch(
@@ -186,6 +190,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           setHasInitialized(false) // Allow retry on error
         } finally {
           setIsInitializing(false)
+          setIsApiCallInProgress(false)
         }
       } else if (!finalUserId || !finalInstrumentId) {
         console.error("❌ Missing required data for game initialization")
@@ -194,18 +199,19 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
 
     initializeGame()
-  }, [finalUserId, finalInstrumentId, hasInitialized, isInitializing, currentGameRound, currentLevel, dispatch])
+  }, [finalUserId, finalInstrumentId, hasInitialized, isInitializing, currentGameRound, currentLevel, dispatch, isApiCallInProgress])
 
   // Replace the complex startNewGame function with this simpler version:
   const startNewGame = async (levelToUse: number) => {
-    if (!finalUserId || !finalInstrumentId || isInitializing) {
-      console.log("🔄 Cannot start game: missing data or already initializing")
+    if (!finalUserId || !finalInstrumentId || isInitializing || isApiCallInProgress) {
+      console.log("🔄 Cannot start game: missing data or already initializing/API call in progress")
       return
     }
 
     console.log("🎮 Starting new game at level:", levelToUse)
 
     setIsInitializing(true)
+    setIsApiCallInProgress(true)
     setShowResult(false)
     setAudioError(null)
 
@@ -232,6 +238,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       setShowGameErrorModal(true)
     } finally {
       setIsInitializing(false)
+      setIsApiCallInProgress(false)
     }
   }
 
@@ -363,8 +370,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       !currentGameRound ||
       !finalUserId ||
       selectedSequence.length !== currentGameRound.sequenceLength ||
-      isSubmittingSequence
+      isSubmittingSequence ||
+      isApiCallInProgress
     ) {
+      console.log("🔄 Cannot submit sequence: conditions not met or API call in progress")
       return
     }
 
@@ -377,6 +386,8 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       gameSessionId: currentGameRound.gameSessionId,
     })
 
+    setIsApiCallInProgress(true)
+
     // Submit sequence
     dispatch(
       submitSequence({
@@ -385,7 +396,9 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         submittedSequence: selectedSequence,
         responseTimeMs: responseTime,
       }),
-    )
+    ).finally(() => {
+      setIsApiCallInProgress(false)
+    })
   }
 
   // Updated handleLevelDown to start new game immediately
@@ -622,11 +635,35 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         )}
 
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
-          {/* Stats Row - Now using real-time stats from API */}
-          <View className="flex-row justify-center px-6 mb-8 gap-x-6">
-            <StatCard value={currentStats.accuracy.toFixed(1) + "%"} label="Accuracy" size="large" />
-            <StatCard value={currentLevel.toString()} label="Level" size="large" />
-            <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
+          {/* Stats Row - Now using real-time stats from API with Wins/Attempts card */}
+          <View className="flex-row justify-between px-6 mb-8 gap-x-2">
+            <StatCard 
+              value={currentStats.accuracy.toFixed(1) + "%"} 
+              label="Accuracy" 
+              size="large" 
+           
+            />
+            <StatCard 
+              value={currentLevel.toString()} 
+              label="Level" 
+              size="large" 
+           
+            />
+            <StatCard 
+              value={currentStats.streak.toString()} 
+              label="Streaks" 
+              size="large" 
+      
+            />
+            <StatCard 
+              showFraction={true}
+              numerator={currentStats.correctAnswers}
+              denominator={currentStats.totalAttempts}
+              label="Wins / Attempts" 
+              size="large" 
+     
+              value="" // Not used when showFraction is true
+            />
           </View>
         </View>
 
@@ -714,16 +751,14 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
                   .join(" → ")}
               </Text>
             </View>
-
-            {/* Show user's answer if incorrect */}
-            {!gameResult.isCorrect && (
+            {/* {!gameResult.isCorrect && (
               <View className="bg-red-50 rounded-lg p-4 mb-4">
                 <Text className="text-red-700 text-lg font-semibold text-center mb-2">Your Answer:</Text>
                 <Text className="text-red-800 text-base text-center leading-6">
                   {gameResult.submittedSequence.map((chord) => formatChordForSequence(chord.name)).join(" → ")}
                 </Text>
               </View>
-            )}
+            )} */}
           </View>
         )}
 
@@ -786,7 +821,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
               title="Level Down"
               icon="arrow-down"
               onPress={handleLevelDown}
-              disabled={isLoading || isSubmittingSequence || isInitializing}
+              disabled={isLoading || isSubmittingSequence || isInitializing || isApiCallInProgress}
             />
           )}
           {currentLevel < 4 && (
@@ -794,7 +829,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
               title="Level Up"
               icon="arrow-up"
               onPress={handleLevelUp}
-              disabled={isLoading || isSubmittingSequence || isInitializing}
+              disabled={isLoading || isSubmittingSequence || isInitializing || isApiCallInProgress}
             />
           )}
         </View>

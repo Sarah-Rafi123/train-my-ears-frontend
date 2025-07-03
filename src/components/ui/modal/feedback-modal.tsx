@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Switch,
 } from "react-native"
 import { feedbackService } from "@/src/services/feedbackService"
 
@@ -24,6 +25,7 @@ interface FeedbackModalProps {
 export default function FeedbackModal({ visible, onClose, userEmail }: FeedbackModalProps) {
   const [feedback, setFeedback] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAnonymous, setIsAnonymous] = useState(false)
 
   const handleSubmit = async () => {
     if (!feedback.trim()) {
@@ -46,12 +48,14 @@ export default function FeedbackModal({ visible, onClose, userEmail }: FeedbackM
 
       const feedbackData = {
         message: feedback.trim(),
-        ...(userEmail && { email: userEmail }),
+        // Only include email if not anonymous and userEmail exists
+        ...(!isAnonymous && userEmail && { email: userEmail }),
       }
 
       console.log("📝 Submitting feedback with data:", {
         message: feedbackData.message,
-        email: feedbackData.email || "No email (anonymous)",
+        email: feedbackData.email || "Anonymous feedback",
+        isAnonymous: isAnonymous,
       })
 
       await feedbackService.submitFeedback(feedbackData)
@@ -61,6 +65,7 @@ export default function FeedbackModal({ visible, onClose, userEmail }: FeedbackM
           text: "OK",
           onPress: () => {
             setFeedback("")
+            setIsAnonymous(false) // Reset anonymous toggle
             onClose()
           },
         },
@@ -76,6 +81,7 @@ export default function FeedbackModal({ visible, onClose, userEmail }: FeedbackM
   const handleClose = () => {
     if (!isSubmitting) {
       setFeedback("")
+      setIsAnonymous(false) // Reset anonymous toggle
       onClose()
     }
   }
@@ -108,13 +114,33 @@ export default function FeedbackModal({ visible, onClose, userEmail }: FeedbackM
           </View>
 
           <ScrollView className="flex-1 px-6 py-4">
-            
             {/* Instructions */}
             <View className="mb-4">
               <Text className="text-lg font-semibold text-gray-900 mb-2">We'd love to hear from you!</Text>
               <Text className="text-gray-600 mb-4">
                 Share your thoughts, suggestions, or report any issues you've encountered with the app.
               </Text>
+            </View>
+
+            {/* Anonymous Toggle */}
+            <View className="flex-row items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg">
+              <View className="flex-1 mr-4">
+                <Text className="text-base font-medium text-gray-900 mb-1">Share feedback anonymously</Text>
+                <Text className="text-sm text-gray-600">
+                  {isAnonymous 
+                    ? "Your email will not be included with this feedback" 
+                    : "Your email will be included so we can follow up if needed"
+                  }
+                </Text>
+              </View>
+              <Switch
+                value={isAnonymous}
+                onValueChange={setIsAnonymous}
+                disabled={isSubmitting}
+                trackColor={{ false: "#D1D5DB", true: "#3B82F6" }}
+                thumbColor={isAnonymous ? "#FFFFFF" : "#FFFFFF"}
+                ios_backgroundColor="#D1D5DB"
+              />
             </View>
 
             {/* Feedback Input */}
