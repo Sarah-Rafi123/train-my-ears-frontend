@@ -12,6 +12,18 @@
     "bundleIdentifier": "com.brianandrews.trainmyears"
   },
   "android": {
+     "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "frontendtrainmyears",
+              "host": "oauthredirect"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
     "adaptiveIcon": {
       "foregroundImage": "./assets/images/adaptive-icon.png",
       "backgroundColor": "#ffffff"
