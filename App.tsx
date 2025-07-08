@@ -17,7 +17,8 @@ import AdvanceGameScreen from "./src/screens/advanceGame/advanceGame"
 import UserStatsScreen from "./src/screens/userStats/userStats"
 import ViewFeedbackScreen from './src/screens/viewFeedback/viewFeedback'
 import AuthProvider from './src/context/AuthContext'
-import { ClerkProvider, ClerkLoaded} from '@clerk/clerk-expo'import { useFonts } from 'expo-font';
+import { ClerkProvider, ClerkLoaded} from '@clerk/clerk-expo'
+import { useFonts } from 'expo-font';
 type Screen = "welcome" | "selectInstrument"
 const Stack = createNativeStackNavigator()
 
