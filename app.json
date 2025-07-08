@@ -32,7 +32,8 @@
       "expo-font"
     ],
     "android": {
-      "package": "com.brianandrews.trainmyears"
+      "package": "com.brianandrews.trainmyears",
+      "versionCode": 1
     },
     "ios": {
       "bundleIdentifier": "com.brianandrews.trainmyears"
