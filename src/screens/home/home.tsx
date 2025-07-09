@@ -72,14 +72,14 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
         }}
         resizeMode="cover"
       />
-      <View className="mt-auto bg-white px-6 pt-52 h-[60%]">
+      <View className="mt-auto bg-white px-6 pt-48 h-[60%]">
         <Text className="text-[#003049] text-4xl font-bold font-sans text-center">
           TRAIN MY EAR
         </Text>
         <Text className="text-[#003049] text-2xl text-center mb-12 font-sans">
           A simple tool to help recognize chords by ear.
         </Text>
-        <View className="mt-8 mb-16">
+        <View className=" mb-16">
           <GuestButton 
             onPress={handleGuestStart} 
             isLoading={isLoggingOut}

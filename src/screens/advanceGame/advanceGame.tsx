@@ -621,7 +621,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* Header with back button */}
       <View className="flex-row items-center px-6 py-4">
         <BackButton onPress={onBack} />
       </View>
@@ -636,7 +635,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
           {/* Stats Row - Now using real-time stats from API with Wins/Attempts card */}
-          <View className="flex-row justify-between px-6 mb-8 gap-x-2">
+          <View className="flex-row justify-between mb-8 gap-x-1">
             <StatCard 
               value={currentStats.accuracy.toFixed(1) + "%"} 
               label="Accuracy" 

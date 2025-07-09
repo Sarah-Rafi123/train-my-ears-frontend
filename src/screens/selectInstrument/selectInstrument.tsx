@@ -128,7 +128,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center mt-8 px-6 py-8">
+      <View className="flex-row items-center px-6 py-8">
         <BackButton onPress={onBack} />
         <View className="flex-1">
           <Text className="text-[#003049] text-lg font-semibold text-center mt-5 mr-10">Select an Instrument</Text>
