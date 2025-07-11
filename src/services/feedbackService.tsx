@@ -42,18 +42,17 @@ interface GetFeedbackResponse {
 }
 
 class FeedbackService {
-  private baseUrl = process.env.API_BASE_URL
 
   async submitFeedback(feedbackData: FeedbackRequest): Promise<FeedbackResponse> {
     try {
       console.log("🚀 Submitting feedback...")
-      console.log("📡 API URL:", `${this.baseUrl}/users/feedback`)
+      console.log("📡 API URL:", `http://16.16.104.51/users/feedback`)
       console.log("📤 Request data:", {
         message: feedbackData.message,
         email: feedbackData.email || "No email provided",
       })
 
-      const response = await fetch(`${this.baseUrl}/users/feedback`, {
+      const response = await fetch(`http://16.16.104.51/users/feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -87,9 +86,9 @@ class FeedbackService {
   async getFeedback(page = 1, limit = 10): Promise<GetFeedbackResponse> {
     try {
       console.log("🚀 Fetching feedback...")
-      console.log("📡 API URL:", `${this.baseUrl}/users/feedback?page=${page}&limit=${limit}`)
+      console.log("📡 API URL:", `http://16.16.104.51/users/feedback?page=${page}&limit=${limit}`)
 
-      const response = await fetch(`${this.baseUrl}/users/feedback?page=${page}&limit=${limit}`, {
+      const response = await fetch(`http://16.16.104.51/users/feedback?page=${page}&limit=${limit}`, {
         method: "GET",
         headers: {
           Accept: "application/json",

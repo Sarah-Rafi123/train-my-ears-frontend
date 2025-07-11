@@ -145,15 +145,14 @@ export const registerUser = createAsyncThunk<AuthResponse, RegisterData, { rejec
   async (userData, { rejectWithValue }) => {
     try {
       console.log("🚀 Starting registration process...")
-      console.log(process.env.API_BASE_URL)
-      console.log("📡 Making registration API call to:", `${process.env.API_BASE_URL}/auth/register`)
+      console.log("📡 Making registration API call to:", `http://16.16.104.51/api/auth/register`)
       console.log("📤 Request data:", {
         name: userData.name,
         email: userData.email,
         password: "[HIDDEN]", // Don't log password
       })
 
-      const response = await fetch(`${process.env.API_BASE_URL}/auth/register`, {
+      const response = await fetch(`http://16.16.104.51/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -211,14 +210,13 @@ export const loginUser = createAsyncThunk<AuthResponse, LoginData, { rejectValue
   async (loginData, { rejectWithValue }) => {
     try {
       console.log("🚀 Starting login process...")
-      console.log(process.env.API_BASE_URL)
-      console.log("📡 Making login API call to:", `${process.env.API_BASE_URL}/auth/login`)
+      console.log("📡 Making login API call to:", `http://16.16.104.51/api/auth/login`)
       console.log("📤 Request data:", {
         email: loginData.email,
         password: "[HIDDEN]", // Don't log password
       })
 
-      const response = await fetch(`${process.env.API_BASE_URL}/auth/login`, {
+      const response = await fetch(`http://16.16.104.51/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -289,10 +287,10 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
         return
       }
 
-      console.log("📡 Making logout API call to:", `${process.env.API_BASE_URL}/auth/logout`)
+      console.log("📡 Making logout API call to:", `http://16.16.104.51/api/auth/logout`)
       console.log("📤 Request data: { refreshToken: [HIDDEN] }")
       
-      const response = await fetch(`${process.env.API_BASE_URL}/auth/logout`, {
+      const response = await fetch(`http://16.16.104.51/api/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

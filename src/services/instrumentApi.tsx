@@ -17,10 +17,9 @@ export const instrumentsApi = {
   // Fetch all instruments
   getInstruments: async (): Promise<InstrumentsResponse> => {
     try {
-        console.log(process.env.API_BASE_URL)
-      console.log("🎵 Fetching instruments from:", `${process.env.API_BASE_URL}/instruments`)
+      console.log("🎵 Fetching instruments from:", `http://16.16.104.51/api/instruments`)
 
-      const response = await fetch(`${process.env.API_BASE_URL}/instruments`, {
+      const response = await fetch(`http://16.16.104.51/api/instruments`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

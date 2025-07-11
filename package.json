@@ -23,7 +23,7 @@
     "@types/react-redux": "^7.1.34",
     "eas-cli": "^16.13.3",
     "expo": "~53.0.9",
-    "expo-av": "~15.1.6",
+    "expo-av": "~15.1.7",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.6",
     "expo-dev-client": "~5.2.0",

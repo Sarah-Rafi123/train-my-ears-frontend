@@ -65,8 +65,7 @@ export const chordApi = {
       if (instrumentName) {
         params.append("instrumentName", instrumentName)
       }
-console.log(process.env.API_BASE_URL)
-      const url = `${process.env.API_BASE_URL}/chords?${params.toString()}`
+      const url = `http://16.16.104.51/api/chords?${params.toString()}`
       console.log("🔗 Chords API URL:", url)
 
       const response = await fetch(url, {
@@ -121,7 +120,7 @@ console.log(process.env.API_BASE_URL)
         levelId: levelId.toString(),
       })
 
-      const url = `${process.env.API_BASE_URL}/chords/level-specific?${params.toString()}`
+      const url = `http://16.16.104.51/api/chords/level-specific?${params.toString()}`
       console.log("🔗 Specific level chords API URL:", url)
 
       const response = await fetch(url, {

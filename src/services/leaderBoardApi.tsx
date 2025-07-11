@@ -49,8 +49,7 @@ export const leaderboardApi = {
       const params = new URLSearchParams({
         sortBy,
       })
-console.log(process.env.API_BASE_URL)
-      const url = `${process.env.API_BASE_URL}/stats/leaderboard/level/${levelId}?${params.toString()}`
+      const url = `http://16.16.104.51/api/stats/leaderboard/level/${levelId}?${params.toString()}`
       console.log("🔗 Leaderboard API URL:", url)
 
       const response = await fetch(url, {
@@ -107,7 +106,7 @@ console.log(process.env.API_BASE_URL)
         sortBy,
       })
 
-      const url = `${process.env.API_BASE_URL || 'http://localhost:3000'}/api/stats/leaderboard/level/${levelId}?${params.toString()}`
+      const url = `http://16.16.104.51/api/stats/leaderboard/level/${levelId}?${params.toString()}`
       console.log("🔗 Sorted leaderboard API URL:", url)
 
       const response = await fetch(url, {

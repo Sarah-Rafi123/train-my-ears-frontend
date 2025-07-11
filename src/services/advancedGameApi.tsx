@@ -84,8 +84,7 @@ export const advancedGameApi = {
   startGame: async (userId: string, instrumentId: string, level: number): Promise<StartAdvancedGameResponse> => {
     try {
       console.log("🎮 Starting advanced game API call:", { userId, instrumentId, level })
-      console.log("📡 API Base URL:", process.env.API_BASE_URL)
-      const response = await fetch(`${process.env.API_BASE_URL}/advanced-game/start`, {
+      const response = await fetch(`http://16.16.104.51/api/advanced-game/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -153,7 +152,7 @@ export const advancedGameApi = {
           responseTimeMs,
         })
 
-        const response = await fetch(`${process.env.API_BASE_URL}/advanced-game/submit-sequence`, {
+        const response = await fetch(`http://16.16.104.51/api/advanced-game/submit-sequence`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -260,7 +259,7 @@ export const advancedGameApi = {
     try {
       console.log("📊 Getting user progress:", { userId })
 
-      const response = await fetch(`${process.env.API_BASE_URL}/users/${userId}/progress`, {
+      const response = await fetch(`http://16.16.104.51/api/users/${userId}/progress`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -289,7 +288,7 @@ export const advancedGameApi = {
     try {
       console.log("🎸 Getting available instruments")
 
-      const response = await fetch(`${process.env.API_BASE_URL}/instruments`, {
+      const response = await fetch(`http://16.16.104.51/api/instruments`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -318,7 +317,7 @@ export const advancedGameApi = {
     try {
       console.log("🏆 Getting available levels")
 
-      const response = await fetch(`${process.env.API_BASE_URL}/levels`, {
+      const response = await fetch(`http://16.16.104.51/api/levels`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -347,7 +346,7 @@ export const advancedGameApi = {
     try {
       console.log("📜 Getting game history:", { userId, limit })
 
-      const response = await fetch(`${process.env.API_BASE_URL}/users/${userId}/history?limit=${limit}`, {
+      const response = await fetch(`http://16.16.104.51/api/users/${userId}/history?limit=${limit}`, {
         method: "GET",
         headers: {
           Accept: "application/json",

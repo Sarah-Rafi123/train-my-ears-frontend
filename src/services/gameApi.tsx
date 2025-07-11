@@ -64,9 +64,8 @@ export interface ApiErrorResponse {
 export const gameApi = {
   startGame: async (userId: string, instrumentId: string, level: number): Promise<StartGameResponse> => {
     try {
-      console.log(process.env.API_BASE_URL)
       console.log("🎮 Starting game API call:", { userId, instrumentId, level })
-      const response = await fetch(`${process.env.API_BASE_URL}/simple-game/start`, {
+      const response = await fetch(`http://16.16.104.51/api/simple-game/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -118,7 +117,7 @@ export const gameApi = {
     try {
       console.log("🎯 Submitting answer API call:", { userId, gameRoundId, selectedChordId, responseTimeMs })
 
-      const response = await fetch(`${process.env.API_BASE_URL}/simple-game/submit-answer`, {
+      const response = await fetch(`http://16.16.104.51/api/simple-game/submit-answer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.brianandrews.frontend-trainmyears</string>
+          <string>com.brianandrews.trainmyears</string>
         </array>
       </dict>
       <dict>
