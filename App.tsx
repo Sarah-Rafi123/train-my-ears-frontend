@@ -14,10 +14,12 @@ import SocialRegisterScreen from "@/src/screens/socialRegister/socialRegister"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import "./global.css"
+import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import AdvanceGameScreen from "./src/screens/advanceGame/advanceGame"
 import UserStatsScreen from "./src/screens/userStats/userStats"
 import ViewFeedbackScreen from "./src/screens/viewFeedback/viewFeedback"
 import AuthProvider from "./src/context/AuthContext"
+import { ClerkProvider, ClerkLoaded} from '@clerk/clerk-expo'
 import { useFonts } from "expo-font"
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect, useCallback, useState } from "react"
@@ -54,6 +56,11 @@ const LoadingScreen = () => (
 )
 
 export default function RootLayout() {
+  const publishableKey = "pk_test_c3R1bm5pbmctbWFrby05NS5jbGVyay5hY2NvdW50cy5kZXYk"
+  if(!publishableKey) {
+    console.error("Clerk publishable key is missing")
+    return null
+  }
   const [appIsReady, setAppIsReady] = useState(false)
 
   const [fontsLoaded, fontError] = useFonts({
@@ -93,6 +100,8 @@ export default function RootLayout() {
   }
 
   return (
+     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+      <ClerkLoaded>
     <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <Provider store={store}>
         <AuthProvider>
@@ -119,6 +128,8 @@ export default function RootLayout() {
           </NavigationContainer>
         </AuthProvider>
       </Provider>
+    </ClerkLoaded>
+    </ClerkProvider>
     </View>
   )
 }

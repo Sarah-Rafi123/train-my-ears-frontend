@@ -12,6 +12,21 @@
     "bundleIdentifier": "com.brianandrews.trainmyears"
   },
   "android": {
+    "intentFilters": [
+      {
+        "action": "VIEW",
+        "data": [
+          {
+            "scheme": "frontendtrainmyears",
+            "host": "oauthredirect"
+          }
+        ],
+        "category": [
+          "BROWSABLE",
+          "DEFAULT"
+        ]
+      }
+    ],
     "adaptiveIcon": {
       "foregroundImage": "./assets/images/adaptive-icon.png",
       "backgroundColor": "#ffffff"
@@ -29,7 +44,8 @@
       }
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ],
     "android": {
       "package": "com.brianandrews.trainmyears",

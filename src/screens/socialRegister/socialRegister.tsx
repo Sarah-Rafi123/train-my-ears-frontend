@@ -1,9 +1,23 @@
 import { View, Text, TouchableOpacity } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
-
+import * as WebBrowser from 'expo-web-browser'
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import SocialButton from "@/src/components/ui/buttons/SocialButton"
+import { useEffect } from "react"
+
+export const useWarmUpBrowser = () => {
+  useEffect(() => {
+    // Preloads the browser for Android devices to reduce authentication load time
+    // See: https://docs.expo.dev/guides/authentication/#improving-user-experience
+    void WebBrowser.warmUpAsync()
+    return () => {
+      // Cleanup: closes browser when component unmounts
+      void WebBrowser.coolDownAsync()
+    }
+  }, [])
+}
+WebBrowser.maybeCompleteAuthSession()
 
 export default function SocialRegisterScreen() {
   const navigation = useNavigation()
@@ -22,17 +36,17 @@ export default function SocialRegisterScreen() {
 
             <Text className="text-4xl font-sans text-[#003049] mt-8 text-center mb-8">CREATE YOUR ACCOUNT</Text>
 
-            <SocialButton provider="apple" title="Sign up with Apple" className="bg-black" textClassName="text-white" />
+            <SocialButton strategy="apple" title="Sign up with Apple" className="bg-black" textClassName="text-white" />
 
             <SocialButton
-              provider="google"
+              strategy="google"
               title="Sign up with Google"
               className="bg-white border border-black mt-4"
               textClassName="text-black"
             />
 
             <SocialButton
-              provider="facebook"
+              strategy="facebook"
               title="Sign up with Facebook"
               className="bg-[#1877F2] mt-4"
               textClassName="text-white"
