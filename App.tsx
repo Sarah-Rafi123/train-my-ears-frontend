@@ -23,7 +23,7 @@ type Screen = "welcome" | "selectInstrument"
 const Stack = createNativeStackNavigator()
 
 export default function RootLayout() {
-  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_c3R1bm5pbmctbWFrby05NS5jbGVyay5hY2NvdW50cy5kZXYk"
+  const publishableKey = "pk_test_c3R1bm5pbmctbWFrby05NS5jbGVyay5hY2NvdW50cy5kZXYk"
   if(!publishableKey) {
     console.error("Clerk publishable key is missing")
     return null
