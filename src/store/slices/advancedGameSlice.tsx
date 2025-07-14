@@ -107,7 +107,13 @@ export const submitSequence = createAsyncThunk<
   "advancedGame/submitSequence",
   async ({ userId, gameSessionId, submittedSequence, responseTimeMs }, { rejectWithValue }) => {
     try {
-      console.log("🎯 Submitting sequence:", { userId, gameSessionId, submittedSequence, responseTimeMs, isGuestMode: !userId })
+      console.log("🎯 Submitting sequence:", {
+        userId,
+        gameSessionId,
+        submittedSequence,
+        responseTimeMs,
+        isGuestMode: !userId,
+      })
       const response = await advancedGameApi.submitSequence(userId, gameSessionId, submittedSequence, responseTimeMs)
       console.log("✅ Submit sequence successful:", response)
       return response
@@ -153,6 +159,14 @@ const advancedGameSlice = createSlice({
         totalAttempts: 0,
         correctAnswers: 0,
       }
+      state.currentLevel = 1 // Ensure level is reset to 1 on full game reset
+    },
+    // NEW: Action to clear only round-specific data, keeping level and stats
+    clearRoundData: (state) => {
+      state.currentGameRound = null
+      state.gameResult = null
+      state.selectedSequence = []
+      state.responseStartTime = null // Clear response start time for new round
     },
     // Actions for managing selected sequence
     addToSequence: (state, action: PayloadAction<string>) => {
@@ -186,7 +200,7 @@ const advancedGameSlice = createSlice({
       .addCase(startAdvancedGame.fulfilled, (state, action) => {
         state.isLoading = false
         state.currentGameRound = action.payload.data.gameRound
-        state.currentLevel = action.payload.data.gameRound.level
+        state.currentLevel = action.payload.data.gameRound.level // Level is updated on success
         state.error = null
         state.errorCode = null
         state.responseStartTime = Date.now() // Start timer when game loads
@@ -207,6 +221,7 @@ const advancedGameSlice = createSlice({
         state.error = action.payload?.message || "Failed to start advanced game"
         state.errorCode = action.payload?.code || null
         console.log("🔴 Advanced game start rejected:", { error: state.error, code: state.errorCode })
+        // currentLevel is NOT changed here, it remains at its value before the attempt
       })
       // Submit sequence
       .addCase(submitSequence.pending, (state) => {
@@ -223,7 +238,7 @@ const advancedGameSlice = createSlice({
         // Update current stats from the API response
         if (action.payload.data.result.stats) {
           state.currentStats = action.payload.data.result.stats
-          console.log("��� Advanced game stats updated in Redux:", state.currentStats)
+          console.log("📊 Advanced game stats updated in Redux:", state.currentStats)
         }
       })
       .addCase(submitSequence.rejected, (state, action) => {
@@ -240,6 +255,7 @@ export const {
   setCurrentLevel,
   startResponseTimer,
   resetGame,
+  clearRoundData, // Export the new action
   addToSequence,
   removeFromSequence,
   clearSequence,

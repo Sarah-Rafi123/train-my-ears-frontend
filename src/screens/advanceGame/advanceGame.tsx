@@ -11,7 +11,7 @@ import {
   setCurrentLevel,
   addToSequence,
   removeFromSequence,
-  resetGame,
+  clearRoundData, // Import the new action
 } from "@/src/store/slices/advancedGameSlice"
 import { audioService } from "@/src/services/audioService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
@@ -63,7 +63,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const [audioError, setAudioError] = useState<string | null>(null)
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
-  const [isPlayingSequence, setIsPlayingSequence] = useState(false)
+  const [isPlayingSequence, setIsPlayingSequence] = useState(isPlayingSequence)
 
   // Use simpler state tracking instead of complex refs
   const [isInitializing, setIsInitializing] = useState(false)
@@ -216,10 +216,12 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     setShowResult(false)
     setAudioError(null)
 
-    // Clear Redux state
-    dispatch(resetGame())
+    // Use clearRoundData instead of resetGame to preserve currentLevel and stats
+    dispatch(clearRoundData())
 
-    // Set the level if different
+    // Set the level if different (this will update Redux state)
+    // This dispatch is now redundant if level is only updated on fulfilled, but kept for clarity
+    // The actual level update happens in the fulfilled case of startAdvancedGame
     if (levelToUse !== currentLevel) {
       dispatch(setCurrentLevel(levelToUse))
     }
@@ -235,7 +237,9 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       console.log("✅ New game started successfully")
     } catch (error) {
       console.error("❌ Error starting new game:", error)
-      setShowGameErrorModal(true)
+      // The error handling useEffect will catch this and show the modal.
+      // The level will automatically revert because setCurrentLevel is only effective on fulfilled.
+      setShowGameErrorModal(true) // Fallback for generic errors
     } finally {
       setIsInitializing(false)
       setIsApiCallInProgress(false)
@@ -287,6 +291,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       console.log("🔴 AdvancedGameScreen: Handling error:", { error, errorCode })
       if (errorCode === "SUBSCRIPTION_REQUIRED") {
         setShowSubscriptionModal(true)
+        // No need to revert level here, as it's only updated on fulfilled now.
       } else {
         setShowGameErrorModal(true)
       }
@@ -419,9 +424,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         isGuestMode: !finalUserId,
       })
 
-      // If the new level is 3 or above AND the user is a guest, show subscription modal
-      if (newLevel >= 3 && !finalUserId) {
-        console.log("🚫 AdvancedGameScreen: Subscription required for guest mode at level 3+")
+      // If the new level is 3 or above, show subscription modal for ALL users
+      if (newLevel >= 3) {
+        // Removed `&& !finalUserId`
+        console.log("🚫 AdvancedGameScreen: Subscription required for level 3+")
         setShowSubscriptionModal(true)
         return // Prevent starting the game
       }
@@ -462,10 +468,8 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const handleSubscriptionCancel = () => {
     setShowSubscriptionModal(false)
     dispatch(clearError())
-    if (currentLevel > 1) {
-      const previousLevel = currentLevel - 1
-      startNewGame(previousLevel)
-    }
+    // If the user cancels, ensure they stay on the current level
+    // No explicit action needed here as currentLevel is only updated on successful game start
   }
 
   const handleGameErrorClose = () => {
