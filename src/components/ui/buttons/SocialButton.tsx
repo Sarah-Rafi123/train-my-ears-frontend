@@ -1,10 +1,11 @@
 import { AntDesign, Ionicons } from "@expo/vector-icons"
-import { Text, TouchableOpacity, View } from "react-native"
+import { Text, TouchableOpacity, View, ActivityIndicator } from "react-native"
 import AppleWhiteSvg from "@/src/assets/svgs/Apple_white"
 import GoogleSvg from "@/src/assets/svgs/Google"
 import FacebookWhiteSvg from "@/src/assets/svgs/Facebook_white"
-import { useSSO } from "@clerk/clerk-expo"
-import { useCallback } from "react"
+import { useSSO, useUser } from "@clerk/clerk-expo"
+import { useCallback, useState } from "react"
+// import { useRouter } from "expo-router";
 import * as AuthSession from 'expo-auth-session'
 interface SocialButtonProps {
   strategy: "apple" | "facebook" | "google"
@@ -17,7 +18,6 @@ interface SocialButtonProps {
 export default function SocialButton({
   strategy,
   title,
-
   className = "",
   textClassName = "",
 }: SocialButtonProps) {
@@ -43,10 +43,26 @@ export default function SocialButton({
     }
     return "oauth_facebook";
   };
+   const buttonText = () => {
+    if (isLoading) {
+      return "Loading...";
+    }
 
+    if (strategy === "facebook") {
+      return "Continue with Facebook";
+    } else if (strategy === "google") {
+      return "Continue with Google";
+    } else if (strategy === "apple") {
+      return "Continue with Apple";
+    }
+  };
+const [isLoading, setIsLoading] = useState(false)
+const { user } = useUser();
+//  const router = useRouter();
  const { startSSOFlow } = useSSO()
  const onPress = useCallback(async () => {
     try {
+      setIsLoading(true)
       // Start the authentication process by calling `startSSOFlow()`
       const { createdSessionId, setActive, signIn, signUp } = await startSSOFlow({
         strategy: getStrategy(),
@@ -57,8 +73,10 @@ export default function SocialButton({
       })
 
       // If sign in was successful, set the active session
-      if (createdSessionId) {
-        setActive!({ session: createdSessionId })
+     if (createdSessionId) {
+        console.log("Session created", createdSessionId);
+        setActive!({ session: createdSessionId });
+        await user?.reload();
       } else {
         // If there is no `createdSessionId`,
         // there are missing requirements, such as MFA
@@ -69,15 +87,19 @@ export default function SocialButton({
       // See https://clerk.com/docs/custom-flows/error-handling
       // for more info on error handling
       console.error(JSON.stringify(err, null, 2))
-    }
+    }finally{setIsLoading(false)}
   }, [])
   
   return (
     <TouchableOpacity
       className={`w-full rounded-2xl py-3 px-4 border-black flex-row items-center justify-center ${className}`}
-      onPress={onPress}
-    >
+      onPress={onPress}      
+      disabled={isLoading}
+    > {isLoading ? (
+        <ActivityIndicator size="small" color="black" />
+      ) : (
       <View className="mr-2">{getIcon()}</View>
+        )}
       <Text className={`font-sans text-2xl ${textClassName}`}>{title}</Text>
     </TouchableOpacity>
   )

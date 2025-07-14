@@ -50,21 +50,18 @@ const extractErrorDetails = (errorString: string): { message: string; code?: str
   try {
     // Try to parse as JSON first (for 403 errors with structured data)
     const errorData = JSON.parse(errorString)
-
     if (errorData.error) {
       return {
         message: errorData.error.message || "An unexpected error occurred",
         code: errorData.error.code,
       }
     }
-
     if (errorData.message) {
       return {
         message: errorData.message,
         code: undefined,
       }
     }
-
     // If it's a JSON object but doesn't match expected structure
     return {
       message: "An unexpected error occurred",
@@ -79,51 +76,47 @@ const extractErrorDetails = (errorString: string): { message: string; code?: str
   }
 }
 
-// Async thunk for starting advanced game
+// Async thunk for starting advanced game - userId is now optional
 export const startAdvancedGame = createAsyncThunk<
   StartAdvancedGameResponse,
-  { userId: string; instrumentId: string; level: number },
+  { userId: string | null; instrumentId: string; level: number },
   { rejectValue: { message: string; code?: string } }
 >("advancedGame/startGame", async ({ userId, instrumentId, level }, { rejectWithValue }) => {
   try {
-    console.log("🎮 Starting advanced game with:", { userId, instrumentId, level })
+    console.log("🎮 Starting advanced game with:", { userId, instrumentId, level, isGuestMode: !userId })
     const response = await advancedGameApi.startGame(userId, instrumentId, level)
     console.log("✅ Start advanced game successful:", response)
     return response
   } catch (error) {
     console.error("❌ Start advanced game error:", error)
-
     if (error instanceof Error) {
       const errorDetails = extractErrorDetails(error.message)
       console.log("📋 Extracted error details:", errorDetails)
       return rejectWithValue(errorDetails)
     }
-
     return rejectWithValue({ message: "Failed to start advanced game" })
   }
 })
 
-// Async thunk for submitting sequence
+// Async thunk for submitting sequence - userId is now optional
 export const submitSequence = createAsyncThunk<
   SubmitSequenceResponse,
-  { userId: string; gameSessionId: string; submittedSequence: string[]; responseTimeMs: number },
+  { userId: string | null; gameSessionId: string; submittedSequence: string[]; responseTimeMs: number },
   { rejectValue: { message: string; code?: string } }
 >(
   "advancedGame/submitSequence",
   async ({ userId, gameSessionId, submittedSequence, responseTimeMs }, { rejectWithValue }) => {
     try {
-      console.log("🎯 Submitting sequence:", { userId, gameSessionId, submittedSequence, responseTimeMs })
+      console.log("🎯 Submitting sequence:", { userId, gameSessionId, submittedSequence, responseTimeMs, isGuestMode: !userId })
       const response = await advancedGameApi.submitSequence(userId, gameSessionId, submittedSequence, responseTimeMs)
       console.log("✅ Submit sequence successful:", response)
       return response
     } catch (error) {
       console.error("❌ Submit sequence error:", error)
-
       if (error instanceof Error) {
         const errorDetails = extractErrorDetails(error.message)
         return rejectWithValue(errorDetails)
       }
-
       return rejectWithValue({ message: "Failed to submit sequence" })
     }
   },
@@ -230,7 +223,7 @@ const advancedGameSlice = createSlice({
         // Update current stats from the API response
         if (action.payload.data.result.stats) {
           state.currentStats = action.payload.data.result.stats
-          console.log("📊 Advanced game stats updated in Redux:", state.currentStats)
+          console.log("��� Advanced game stats updated in Redux:", state.currentStats)
         }
       })
       .addCase(submitSequence.rejected, (state, action) => {

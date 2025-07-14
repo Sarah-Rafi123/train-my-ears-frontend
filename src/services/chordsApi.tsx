@@ -65,7 +65,7 @@ export const chordApi = {
       if (instrumentName) {
         params.append("instrumentName", instrumentName)
       }
-      const url = `http://16.16.104.51/api/chords?${params.toString()}`
+      const url = `https://trainmyears.softaims.com/api/chords?${params.toString()}`
       console.log("🔗 Chords API URL:", url)
 
       const response = await fetch(url, {
@@ -120,7 +120,7 @@ export const chordApi = {
         levelId: levelId.toString(),
       })
 
-      const url = `http://16.16.104.51/api/chords/level-specific?${params.toString()}`
+      const url = `https://trainmyears.softaims.com/api/chords/level-specific?${params.toString()}`
       console.log("🔗 Specific level chords API URL:", url)
 
       const response = await fetch(url, {

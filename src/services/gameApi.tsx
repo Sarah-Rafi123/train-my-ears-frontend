@@ -37,6 +37,7 @@ export interface GameResult {
     correctAnswers: number
   }
   feedback?: string
+  isGuestMode?: boolean
 }
 
 export interface StartGameResponse {
@@ -62,35 +63,39 @@ export interface ApiErrorResponse {
 }
 
 export const gameApi = {
-  startGame: async (userId: string, instrumentId: string, level: number): Promise<StartGameResponse> => {
+  startGame: async (userId: string | null, instrumentId: string, level: number): Promise<StartGameResponse> => {
     try {
-      console.log("🎮 Starting game API call:", { userId, instrumentId, level })
-      const response = await fetch(`http://16.16.104.51/api/simple-game/start`, {
+      console.log("🎮 Starting game API call:", { userId, instrumentId, level, isGuestMode: !userId })
+
+      const requestBody: any = {
+        instrumentId,
+        level,
+      }
+
+      // Only include userId if it's not null (for authenticated users)
+      if (userId) {
+        requestBody.userId = userId
+      }
+
+      const response = await fetch(`https://trainmyears.softaims.com/api/simple-game/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          userId,
-          instrumentId,
-          level,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       console.log("📊 Start game response status:", response.status)
-
       const data = await response.json()
       console.log("📥 Start game response data:", JSON.stringify(data, null, 2))
 
       if (!response.ok) {
         console.error("❌ Start game failed with status:", response.status)
-
         // For 403 errors, throw the parsed error data so we can extract the subscription error
         if (response.status === 403) {
           throw new Error(JSON.stringify(data))
         }
-
         // For other errors, extract the message
         const errorMessage = data.error?.message || data.message || `HTTP error! status: ${response.status}`
         throw new Error(errorMessage)
@@ -109,41 +114,44 @@ export const gameApi = {
   },
 
   submitAnswer: async (
-    userId: string,
+    userId: string | null,
     gameRoundId: string,
     selectedChordId: string,
     responseTimeMs: number,
   ): Promise<SubmitAnswerResponse> => {
     try {
-      console.log("🎯 Submitting answer API call:", { userId, gameRoundId, selectedChordId, responseTimeMs })
+      console.log("🎯 Submitting answer API call:", { userId, gameRoundId, selectedChordId, responseTimeMs, isGuestMode: !userId })
 
-      const response = await fetch(`http://16.16.104.51/api/simple-game/submit-answer`, {
+      const requestBody: any = {
+        gameRoundId,
+        selectedChordId,
+        responseTimeMs,
+      }
+
+      // Only include userId if it's not null (for authenticated users)
+      if (userId) {
+        requestBody.userId = userId
+      }
+
+      const response = await fetch(`https://trainmyears.softaims.com/api/simple-game/submit-answer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          userId,
-          gameRoundId,
-          selectedChordId,
-          responseTimeMs,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       console.log("📊 Submit answer response status:", response.status)
-
       const data = await response.json()
       console.log("📥 Submit answer response data:", JSON.stringify(data, null, 2))
 
       if (!response.ok) {
         console.error("❌ Submit answer failed with status:", response.status)
-
         // For 403 errors, throw the parsed error data
         if (response.status === 403) {
           throw new Error(JSON.stringify(data))
         }
-
         const errorMessage = data.error?.message || data.message || `HTTP error! status: ${response.status}`
         throw new Error(errorMessage)
       }
@@ -160,6 +168,7 @@ export const gameApi = {
           accuracy: data.data.result.stats.accuracy,
           totalAttempts: data.data.result.stats.totalAttempts,
           correctAnswers: data.data.result.stats.correctAnswers,
+          isGuestMode: !userId,
         })
       }
 

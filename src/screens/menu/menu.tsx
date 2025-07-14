@@ -1,5 +1,4 @@
 "use client"
-
 import { View, ScrollView, Text } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -7,6 +6,7 @@ import { useState } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import MenuOption from "@/src/components/widgets/MenuOption"
 import FeedbackModal from "@/src/components/ui/modal/feedback-modal"
+import { LoginRequiredModal } from "@/src/components/ui/modal/login-required-modal" // Import the new modal
 import { useAuth } from "@/src/context/AuthContext"
 
 interface MenuScreenProps {
@@ -29,6 +29,7 @@ export default function MenuScreen({
   const navigation = useNavigation()
   const { user } = useAuth()
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false)
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false) // New state for login modal
 
   const handleViewSample = () => {
     console.log("View Sample pressed")
@@ -45,7 +46,13 @@ export default function MenuScreen({
   const handleViewStats = () => {
     console.log("View Stats pressed")
     onViewStats?.()
-    navigation.navigate("Stats" as never)
+    if (!user) {
+      // If user is not logged in, show the modal
+      setShowLoginRequiredModal(true)
+    } else {
+      // If user is logged in, navigate to Stats screen
+      navigation.navigate("Stats" as never)
+    }
   }
 
   const handleLeaderboard = () => {
@@ -77,6 +84,11 @@ export default function MenuScreen({
     navigation.goBack()
   }
 
+  const handleLoginFromModal = () => {
+    setShowLoginRequiredModal(false)
+    navigation.navigate("Register" as never) // Navigate to your registration/login screen
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header with back button */}
@@ -92,10 +104,12 @@ export default function MenuScreen({
           <MenuOption title="Leader Board" onPress={handleLeaderboard} />
           <MenuOption title="Share" onPress={handleShare} />
           <MenuOption title="Share Feedback" onPress={handleShareFeedback} />
-
           {/* Small text for View Feedback */}
           <View className="mt-6 px-2">
-            <Text className="text-sm text-[#003049] hover:font-bold hover:text-black underline text-center" onPress={handleViewFeedback}>
+            <Text
+              className="text-sm text-[#003049] hover:font-bold hover:text-black underline text-center"
+              onPress={handleViewFeedback}
+            >
               View Feedback
             </Text>
           </View>
@@ -107,6 +121,13 @@ export default function MenuScreen({
         visible={feedbackModalVisible}
         onClose={() => setFeedbackModalVisible(false)}
         userEmail={user?.email}
+      />
+
+      {/* Login Required Modal */}
+      <LoginRequiredModal
+        visible={showLoginRequiredModal}
+        onClose={() => setShowLoginRequiredModal(false)}
+        onLogin={handleLoginFromModal}
       />
     </SafeAreaView>
   )

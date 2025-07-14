@@ -17,9 +17,9 @@ export const instrumentsApi = {
   // Fetch all instruments
   getInstruments: async (): Promise<InstrumentsResponse> => {
     try {
-      console.log("🎵 Fetching instruments from:", `http://16.16.104.51/api/instruments`)
+      console.log("🎵 Fetching instruments from:", `https://trainmyears.softaims.com/api/instruments`)
 
-      const response = await fetch(`http://16.16.104.51/api/instruments`, {
+      const response = await fetch(`https://trainmyears.softaims.com/api/instruments`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

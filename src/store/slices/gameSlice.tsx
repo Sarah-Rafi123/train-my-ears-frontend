@@ -47,21 +47,18 @@ const extractErrorDetails = (errorString: string): { message: string; code?: str
   try {
     // Try to parse as JSON first (for 403 errors with structured data)
     const errorData = JSON.parse(errorString)
-
     if (errorData.error) {
       return {
         message: errorData.error.message || "An unexpected error occurred",
         code: errorData.error.code,
       }
     }
-
     if (errorData.message) {
       return {
         message: errorData.message,
         code: undefined,
       }
     }
-
     // If it's a JSON object but doesn't match expected structure
     return {
       message: "An unexpected error occurred",
@@ -76,49 +73,45 @@ const extractErrorDetails = (errorString: string): { message: string; code?: str
   }
 }
 
-// Async thunk for starting game
+// Async thunk for starting game - userId is now optional
 export const startGame = createAsyncThunk<
   StartGameResponse,
-  { userId: string; instrumentId: string; level: number },
+  { userId: string | null; instrumentId: string; level: number },
   { rejectValue: { message: string; code?: string } }
 >("game/startGame", async ({ userId, instrumentId, level }, { rejectWithValue }) => {
   try {
-    console.log("🎮 Starting game with:", { userId, instrumentId, level })
+    console.log("🎮 Starting game with:", { userId, instrumentId, level, isGuestMode: !userId })
     const response = await gameApi.startGame(userId, instrumentId, level)
     console.log("✅ Start game successful:", response)
     return response
   } catch (error) {
     console.error("❌ Start game error:", error)
-
     if (error instanceof Error) {
       const errorDetails = extractErrorDetails(error.message)
       console.log("📋 Extracted error details:", errorDetails)
       return rejectWithValue(errorDetails)
     }
-
     return rejectWithValue({ message: "Failed to start game" })
   }
 })
 
-// Async thunk for submitting answer
+// Async thunk for submitting answer - userId is now optional
 export const submitAnswer = createAsyncThunk<
   SubmitAnswerResponse,
-  { userId: string; gameRoundId: string; selectedChordId: string; responseTimeMs: number },
+  { userId: string | null; gameRoundId: string; selectedChordId: string; responseTimeMs: number },
   { rejectValue: { message: string; code?: string } }
 >("game/submitAnswer", async ({ userId, gameRoundId, selectedChordId, responseTimeMs }, { rejectWithValue }) => {
   try {
-    console.log("🎯 Submitting answer:", { userId, gameRoundId, selectedChordId, responseTimeMs })
+    console.log("🎯 Submitting answer:", { userId, gameRoundId, selectedChordId, responseTimeMs, isGuestMode: !userId })
     const response = await gameApi.submitAnswer(userId, gameRoundId, selectedChordId, responseTimeMs)
     console.log("✅ Submit answer successful:", response)
     return response
   } catch (error) {
     console.error("❌ Submit answer error:", error)
-
     if (error instanceof Error) {
       const errorDetails = extractErrorDetails(error.message)
       return rejectWithValue(errorDetails)
     }
-
     return rejectWithValue({ message: "Failed to submit answer" })
   }
 })
@@ -196,7 +189,6 @@ const gameSlice = createSlice({
         state.gameResult = action.payload.data.result
         state.error = null
         state.errorCode = null
-
         // Update current stats from the API response
         if (action.payload.data.result.stats) {
           state.currentStats = action.payload.data.result.stats
@@ -213,4 +205,5 @@ const gameSlice = createSlice({
 
 export const { clearError, clearGameResult, setCurrentLevel, startResponseTimer, resetGame, updateStats } =
   gameSlice.actions
+
 export default gameSlice.reducer

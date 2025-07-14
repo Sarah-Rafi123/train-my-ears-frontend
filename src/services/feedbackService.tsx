@@ -42,17 +42,16 @@ interface GetFeedbackResponse {
 }
 
 class FeedbackService {
-
   async submitFeedback(feedbackData: FeedbackRequest): Promise<FeedbackResponse> {
     try {
       console.log("🚀 Submitting feedback...")
-      console.log("📡 API URL:", `http://16.16.104.51/users/feedback`)
+      console.log("📡 API URL:", `https://trainmyears.softaims.com/api/users/feedback`)
       console.log("📤 Request data:", {
         message: feedbackData.message,
         email: feedbackData.email || "No email provided",
       })
 
-      const response = await fetch(`http://16.16.104.51/users/feedback`, {
+      const response = await fetch(`https://trainmyears.softaims.com/api/users/feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,31 +63,47 @@ class FeedbackService {
       console.log("📊 Response status:", response.status)
       console.log("📊 Response ok:", response.ok)
 
-      const data = await response.json()
-      console.log("📥 API Response:", JSON.stringify(data, null, 2))
-
       if (!response.ok) {
-        console.error("❌ Feedback submission failed:", data)
-        throw new Error(data.error?.message || data.message || "Failed to submit feedback")
+        let errorData: any
+        try {
+          errorData = await response.json()
+        } catch (jsonError) {
+          // If response is not JSON, get it as text
+          errorData = await response.text()
+          console.warn("⚠️ Server returned non-JSON error response:", errorData)
+        }
+        console.error("❌ Feedback submission failed:", errorData)
+        throw new Error(
+          errorData?.error?.message ||
+            errorData?.message ||
+            `Server error: ${response.status} ${response.statusText || ""}` ||
+            "Failed to submit feedback",
+        )
       }
 
+      const data = await response.json()
+      console.log("📥 API Response:", JSON.stringify(data, null, 2))
       console.log("✅ Feedback submitted successfully!")
       return data
     } catch (error) {
-      console.error("💥 Feedback submission error:", error)
-      if (error instanceof Error) {
-        throw new Error(`Network error: ${error.message}`)
+      console.error("💥 Feedback submission error caught in service:", error)
+      if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+        // This is a true network error (e.g., CORS, no internet, DNS issue)
+        throw new Error(
+          "Network error: Could not connect to the server. Please check your internet connection or server status.",
+        )
       }
-      throw new Error("Network error. Please check your connection and try again.")
+      // Re-throw other errors (e.g., from !response.ok block)
+      throw error
     }
   }
 
   async getFeedback(page = 1, limit = 10): Promise<GetFeedbackResponse> {
     try {
       console.log("🚀 Fetching feedback...")
-      console.log("📡 API URL:", `http://16.16.104.51/users/feedback?page=${page}&limit=${limit}`)
+      console.log("📡 API URL:", `https://trainmyears.softaims.com/api/users/feedback?page=${page}&limit=${limit}`)
 
-      const response = await fetch(`http://16.16.104.51/users/feedback?page=${page}&limit=${limit}`, {
+      const response = await fetch(`https://trainmyears.softaims.com/api/users/feedback?page=${page}&limit=${limit}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -98,23 +113,39 @@ class FeedbackService {
       console.log("📊 Response status:", response.status)
       console.log("📊 Response ok:", response.ok)
 
-      const data = await response.json()
-      console.log("📥 API Response:", JSON.stringify(data, null, 2))
-
       if (!response.ok) {
-        console.error("❌ Feedback fetch failed:", data)
-        throw new Error(data.error?.message || data.message || "Failed to fetch feedback")
+        let errorData: any
+        try {
+          errorData = await response.json()
+        } catch (jsonError) {
+          // If response is not JSON, get it as text
+          errorData = await response.text()
+          console.warn("⚠️ Server returned non-JSON error response:", errorData)
+        }
+        console.error("❌ Feedback fetch failed:", errorData)
+        throw new Error(
+          errorData?.error?.message ||
+            errorData?.message ||
+            `Server error: ${response.status} ${response.statusText || ""}` ||
+            "Failed to fetch feedback",
+        )
       }
 
+      const data = await response.json()
+      console.log("📥 API Response:", JSON.stringify(data, null, 2))
       console.log("✅ Feedback fetched successfully!")
       console.log("📊 Pagination info:", data.data.pagination)
       return data
     } catch (error) {
-      console.error("💥 Feedback fetch error:", error)
-      if (error instanceof Error) {
-        throw new Error(`Network error: ${error.message}`)
+      console.error("💥 Feedback fetch error caught in service:", error)
+      if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+        // This is a true network error (e.g., CORS, no internet, DNS issue)
+        throw new Error(
+          "Network error: Could not connect to the server. Please check your internet connection or server status.",
+        )
       }
-      throw new Error("Network error. Please check your connection and try again.")
+      // Re-throw other errors (e.g., from !response.ok block)
+      throw error
     }
   }
 }

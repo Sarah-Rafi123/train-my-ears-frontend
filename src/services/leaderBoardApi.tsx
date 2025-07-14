@@ -49,7 +49,7 @@ export const leaderboardApi = {
       const params = new URLSearchParams({
         sortBy,
       })
-      const url = `http://16.16.104.51/api/stats/leaderboard/level/${levelId}?${params.toString()}`
+      const url = `https://trainmyears.softaims.com/api/stats/leaderboard/level/${levelId}?${params.toString()}`
       console.log("🔗 Leaderboard API URL:", url)
 
       const response = await fetch(url, {
@@ -106,7 +106,7 @@ export const leaderboardApi = {
         sortBy,
       })
 
-      const url = `http://16.16.104.51/api/stats/leaderboard/level/${levelId}?${params.toString()}`
+      const url = `https://trainmyears.softaims.com/api/stats/leaderboard/level/${levelId}?${params.toString()}`
       console.log("🔗 Sorted leaderboard API URL:", url)
 
       const response = await fetch(url, {

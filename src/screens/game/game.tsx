@@ -1,8 +1,7 @@
 "use client"
-
-import { View, Text, ScrollView, ActivityIndicator } from "react-native"
+import type React from "react"
 import { useState, useEffect } from "react"
-import { useNavigation, useRoute } from "@react-navigation/native"
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
 import { startGame, submitAnswer, clearError, clearGameResult, setCurrentLevel } from "@/src/store/slices/gameSlice"
@@ -18,14 +17,14 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
 
 interface GameScreenProps {
+  navigation: any
+  route: any
   onBack?: () => void
   onMoreDetails?: () => void
   onSaveProgress?: () => void
 }
 
-export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: GameScreenProps) {
-  const navigation = useNavigation()
-  const route = useRoute()
+const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMoreDetails, onSaveProgress }) => {
   const dispatch = useAppDispatch()
 
   // Get auth data
@@ -68,8 +67,8 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
     }
   }
 
-  // Use IDs from route params or context
-  const finalUserId = userIdFromRoute || userId
+  // Use IDs from route params or context (userId can be null for guest mode)
+  const finalUserId = userIdFromRoute || userId || null
 
   // Initialize game when component mounts
   useEffect(() => {
@@ -78,18 +77,18 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
       instrumentId: finalInstrumentId,
       instrument: instrumentFromRoute,
       level: currentLevel,
+      isGuestMode: !finalUserId,
     })
-
-    if (finalUserId && finalInstrumentId) {
+    if (finalInstrumentId) {
       dispatch(
         startGame({
-          userId: finalUserId,
+          userId: finalUserId, // Can be null for guest mode
           instrumentId: finalInstrumentId,
           level: currentLevel,
         }),
       )
     } else {
-      console.error("❌ GameScreen: Missing required data:", {
+      console.error("❌ GameScreen: Missing required instrumentId:", {
         userId: finalUserId,
         instrumentId: finalInstrumentId,
       })
@@ -114,7 +113,6 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
       setShowResult(true)
       // Hide chords after submitting answer
       setShowChords(false)
-
       // Log the updated stats when we get a result
       console.log("🎯 Game result received with stats:", {
         isCorrect: gameResult.isCorrect,
@@ -122,24 +120,26 @@ export default function GameScreen({ onBack, onMoreDetails, onSaveProgress }: Ga
         accuracy: gameResult.stats.accuracy,
         totalAttempts: gameResult.stats.totalAttempts,
         correctAnswers: gameResult.stats.correctAnswers,
+        isGuestMode: !finalUserId,
       })
     }
   }, [gameResult])
-// In your GameScreen, add this useEffect to debug:
-useEffect(() => {
-  console.log("🔍 Current stats in GameScreen:", {
-    streak: currentStats.streak,
-    accuracy: currentStats.accuracy,
-    totalAttempts: currentStats.totalAttempts,
-    correctAnswers: currentStats.correctAnswers,
-  })
-}, [currentStats])
+
+  // In your GameScreen, add this useEffect to debug:
+  useEffect(() => {
+    console.log("🔍 Current stats in GameScreen:", {
+      streak: currentStats.streak,
+      accuracy: currentStats.accuracy,
+      totalAttempts: currentStats.totalAttempts,
+      correctAnswers: currentStats.correctAnswers,
+      isGuestMode: !finalUserId,
+    })
+  }, [currentStats])
 
   // Handle errors with appropriate modals
   useEffect(() => {
     if (error && errorCode) {
       console.log("🔴 GameScreen: Handling error:", { error, errorCode })
-
       if (errorCode === "SUBSCRIPTION_REQUIRED") {
         setShowSubscriptionModal(true)
       } else {
@@ -168,16 +168,18 @@ useEffect(() => {
       // If chords are visible, just replay the audio
       console.log("🔄 GameScreen: Replaying audio for current round")
       await playAudioSafely(currentGameRound.targetChord.audioFileUrl)
-    } else if (!showChords && finalUserId && finalInstrumentId) {
+    } else if (!showChords && finalInstrumentId) {
       // If chords are hidden (after submitting answer), start a new game round
-      console.log("🔄 GameScreen: Starting new game round")
+      // Works for both authenticated users and guests
+      console.log("🔄 GameScreen: Starting new game round", {
+        isGuestMode: !finalUserId,
+      })
       dispatch(clearGameResult())
       setShowResult(false)
       setSelectedChordId(null)
-
       dispatch(
         startGame({
-          userId: finalUserId,
+          userId: finalUserId, // Can be null for guest mode
           instrumentId: finalInstrumentId,
           level: currentLevel,
         }),
@@ -186,23 +188,21 @@ useEffect(() => {
   }
 
   const handleChordSelect = (chordId: string) => {
-    if (isSubmittingAnswer || !currentGameRound || !finalUserId) return
-
+    if (isSubmittingAnswer || !currentGameRound) return
     setSelectedChordId(chordId)
-
     // Calculate response time
     const responseTime = responseStartTime ? Date.now() - responseStartTime : 0
-
     console.log("🎯 GameScreen: Submitting answer:", {
       chordId,
       responseTime,
       gameRoundId: currentGameRound.gameRoundId,
+      isGuestMode: !finalUserId,
     })
 
-    // Submit answer
+    // Submit answer (works for both authenticated users and guests)
     dispatch(
       submitAnswer({
-        userId: finalUserId,
+        userId: finalUserId, // Can be null for guest mode
         gameRoundId: currentGameRound.gameRoundId,
         selectedChordId: chordId,
         responseTimeMs: responseTime,
@@ -211,18 +211,19 @@ useEffect(() => {
   }
 
   const handleLevelDown = () => {
-    if (currentLevel > 1 && finalUserId && finalInstrumentId) {
+    if (currentLevel > 1 && finalInstrumentId) {
       const newLevel = currentLevel - 1
-      console.log("📉 GameScreen: Level down to:", newLevel)
+      console.log("📉 GameScreen: Level down to:", newLevel, {
+        isGuestMode: !finalUserId,
+      })
       dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
       setShowResult(false)
       setSelectedChordId(null)
       setShowChords(true)
-
       dispatch(
         startGame({
-          userId: finalUserId,
+          userId: finalUserId, // Can be null for guest mode
           instrumentId: finalInstrumentId,
           level: newLevel,
         }),
@@ -231,18 +232,19 @@ useEffect(() => {
   }
 
   const handleLevelUp = () => {
-    if (currentLevel < 4 && finalUserId && finalInstrumentId) {
+    if (currentLevel < 4 && finalInstrumentId) {
       const newLevel = currentLevel + 1
-      console.log("📈 GameScreen: Level up to:", newLevel)
+      console.log("📈 GameScreen: Level up to:", newLevel, {
+        isGuestMode: !finalUserId,
+      })
       dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
       setShowResult(false)
       setSelectedChordId(null)
       setShowChords(true)
-
       dispatch(
         startGame({
-          userId: finalUserId,
+          userId: finalUserId, // Can be null for guest mode
           instrumentId: finalInstrumentId,
           level: newLevel,
         }),
@@ -251,7 +253,9 @@ useEffect(() => {
   }
 
   const handleMoreDetails = () => {
-    console.log("🔍 GameScreen: More Details pressed")
+    console.log("🔍 GameScreen: More Details pressed", {
+      isGuestMode: !finalUserId,
+    })
     onMoreDetails?.()
     navigation.navigate("Menu" as never, {
       accuracy: currentStats.accuracy.toFixed(1) + "%",
@@ -259,6 +263,7 @@ useEffect(() => {
       streaks: currentStats.streak,
       selectedNote: selectedChordId,
       gameResult: gameResult?.isCorrect ? "correct" : "incorrect",
+      isGuestMode: !finalUserId,
     })
   }
 
@@ -278,7 +283,6 @@ useEffect(() => {
   const handleSubscriptionCancel = () => {
     setShowSubscriptionModal(false)
     dispatch(clearError())
-
     if (currentLevel > 1) {
       const previousLevel = currentLevel - 1
       dispatch(setCurrentLevel(previousLevel))
@@ -294,11 +298,10 @@ useEffect(() => {
   const handleGameErrorRetry = () => {
     setShowGameErrorModal(false)
     dispatch(clearError())
-
-    if (finalUserId && finalInstrumentId) {
+    if (finalInstrumentId) {
       dispatch(
         startGame({
-          userId: finalUserId,
+          userId: finalUserId, // Can be null for guest mode
           instrumentId: finalInstrumentId,
           level: currentLevel,
         }),
@@ -354,23 +357,10 @@ useEffect(() => {
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
           {/* Stats Row - Now using real-time stats from API */}
           <View className="flex-row justify-center mb-6 gap-x-2">
-            <StatCard 
-              value={Math.round(currentStats.accuracy) + "%"} 
-              label="Accuracy" 
-              size="large" 
-            />
-            <StatCard 
-              value={currentLevel.toString()} 
-              label="Level" 
-              size="large" 
-              valueColor="dark"
-            />
-            <StatCard 
-              value={currentStats.streak.toString()} 
-              label="Streaks" 
-              size="large" 
-            />
-             <StatCard 
+            <StatCard value={Math.round(currentStats.accuracy) + "%"} label="Accuracy" size="large" />
+            <StatCard value={currentLevel.toString()} label="Level" size="large" valueColor="dark" />
+            <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
+            <StatCard
               value="" // Not used when showFraction is true
               label="Wins / Attempts"
               size="large"
@@ -396,7 +386,9 @@ useEffect(() => {
                 gameResult.isCorrect ? "text-green-600" : "text-red-600"
               }`}
             >
-              {gameResult.isCorrect ? "Correct!" : `Sorry, that was ${gameResult.correctChord.displayName}. Try Again!`}
+              {gameResult.isCorrect
+                ? "Correct!"
+                : `Sorry, that was ${gameResult.correctChord?.displayName || "the correct answer"}. Try Again!`}
             </Text>
           </View>
         )}
@@ -409,7 +401,7 @@ useEffect(() => {
             onChordPress={handleChordSelect}
             disabled={isSubmittingAnswer}
             showResult={showResult}
-            correctChordId={gameResult?.correctChord.id}
+            correctChordId={gameResult?.correctChord?.id || null}
           />
         )}
 
@@ -440,11 +432,14 @@ useEffect(() => {
       {/* Fixed More Details Button at bottom */}
       <View className="px-6 pb-8 pt-4 justify-center items-center">
         <MoreDetailsButton onPress={handleMoreDetails} />
-        <View className="pt-4">
-          <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
-            Save your progress
-          </Text>
-        </View>
+        {/* Only show Save Progress for logged-in users */}
+        {finalUserId && (
+          <View className="pt-4">
+            <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
+              Save your progress
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Subscription Required Modal */}
@@ -470,3 +465,52 @@ useEffect(() => {
     </SafeAreaView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  text: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  button: {
+    backgroundColor: "blue",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  bottomContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+    padding: 20,
+    alignItems: "center",
+  },
+  detailsButton: {
+    backgroundColor: "green",
+    padding: 15,
+    borderRadius: 8,
+  },
+  detailsButtonText: {
+    color: "white",
+    fontSize: 18,
+    textAlign: "center",
+  },
+})
+
+export default GameScreen

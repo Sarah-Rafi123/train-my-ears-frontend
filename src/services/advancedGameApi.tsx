@@ -26,6 +26,7 @@ export interface AdvancedGameRound {
     name: string
     displayName: string
   }
+  isGuestMode?: boolean
 }
 
 export interface SequenceComparisonItem {
@@ -56,6 +57,7 @@ export interface AdvancedGameResult {
     correctAnswers: number
   }
   responseTimeMs: number
+  isGuestMode?: boolean
 }
 
 export interface StartAdvancedGameResponse {
@@ -81,35 +83,39 @@ export interface AdvancedGameApiErrorResponse {
 }
 
 export const advancedGameApi = {
-  startGame: async (userId: string, instrumentId: string, level: number): Promise<StartAdvancedGameResponse> => {
+  startGame: async (userId: string | null, instrumentId: string, level: number): Promise<StartAdvancedGameResponse> => {
     try {
-      console.log("🎮 Starting advanced game API call:", { userId, instrumentId, level })
-      const response = await fetch(`http://16.16.104.51/api/advanced-game/start`, {
+      console.log("🎮 Starting advanced game API call:", { userId, instrumentId, level, isGuestMode: !userId })
+
+      const requestBody: any = {
+        instrumentId,
+        level,
+      }
+
+      // Only include userId if it's not null (for authenticated users)
+      if (userId) {
+        requestBody.userId = userId
+      }
+
+      const response = await fetch(`https://trainmyears.softaims.com/api/advanced-game/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          userId,
-          instrumentId,
-          level,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       console.log("📊 Start advanced game response status:", response.status)
-
       const data = await response.json()
       console.log("📥 Start advanced game response data:", JSON.stringify(data, null, 2))
 
       if (!response.ok) {
         console.error("❌ Start advanced game failed with status:", response.status)
-
         // For 403 errors, throw the parsed error data so we can extract the subscription error
         if (response.status === 403) {
           throw new Error(JSON.stringify(data))
         }
-
         // For other errors, extract the message
         const errorMessage = data.error?.message || data.message || `HTTP error! status: ${response.status}`
         throw new Error(errorMessage)
@@ -134,7 +140,7 @@ export const advancedGameApi = {
 
   // Add retry logic with exponential backoff to the submitSequence function
   submitSequence: async (
-    userId: string,
+    userId: string | null,
     gameSessionId: string,
     submittedSequence: string[],
     responseTimeMs: number,
@@ -150,20 +156,27 @@ export const advancedGameApi = {
           gameSessionId,
           submittedSequence,
           responseTimeMs,
+          isGuestMode: !userId,
         })
 
-        const response = await fetch(`http://16.16.104.51/api/advanced-game/submit-sequence`, {
+        const requestBody: any = {
+          gameSessionId,
+          submittedSequence,
+          responseTimeMs,
+        }
+
+        // Only include userId if it's not null (for authenticated users)
+        if (userId) {
+          requestBody.userId = userId
+        }
+
+        const response = await fetch(`https://trainmyears.softaims.com/api/advanced-game/submit-sequence`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify({
-            userId,
-            gameSessionId,
-            submittedSequence,
-            responseTimeMs,
-          }),
+          body: JSON.stringify(requestBody),
         })
 
         console.log("📊 Submit sequence response status:", response.status)
@@ -184,12 +197,10 @@ export const advancedGameApi = {
 
         if (!response.ok) {
           console.error("❌ Submit sequence failed with status:", response.status)
-
           // For 403 errors, throw the parsed error data
           if (response.status === 403) {
             throw new Error(JSON.stringify(data))
           }
-
           const errorMessage = data.error?.message || data.message || `HTTP error! status: ${response.status}`
           throw new Error(errorMessage)
         }
@@ -206,6 +217,7 @@ export const advancedGameApi = {
             accuracy: data.data.result.stats.accuracy,
             totalAttempts: data.data.result.stats.totalAttempts,
             correctAnswers: data.data.result.stats.correctAnswers,
+            isGuestMode: !userId,
           })
         }
 
@@ -231,7 +243,6 @@ export const advancedGameApi = {
   // Utility function to log audio URLs for debugging
   logAudioUrls: (gameRound: AdvancedGameRound) => {
     console.log("🎵 API: Received audio URLs from server:")
-
     if (gameRound.sequenceAudioUrls && gameRound.sequenceAudioUrls.length > 0) {
       gameRound.sequenceAudioUrls.forEach((url, index) => {
         const fileName = url.split("/").pop() || url
@@ -258,8 +269,7 @@ export const advancedGameApi = {
   getUserProgress: async (userId: string): Promise<any> => {
     try {
       console.log("📊 Getting user progress:", { userId })
-
-      const response = await fetch(`http://16.16.104.51/api/users/${userId}/progress`, {
+      const response = await fetch(`https://trainmyears.softaims.com/api/users/${userId}/progress`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -267,7 +277,6 @@ export const advancedGameApi = {
       })
 
       console.log("📊 User progress response status:", response.status)
-
       const data = await response.json()
 
       if (!response.ok) {
@@ -287,8 +296,7 @@ export const advancedGameApi = {
   getInstruments: async (): Promise<any> => {
     try {
       console.log("🎸 Getting available instruments")
-
-      const response = await fetch(`http://16.16.104.51/api/instruments`, {
+      const response = await fetch(`https://trainmyears.softaims.com/api/instruments`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -296,7 +304,6 @@ export const advancedGameApi = {
       })
 
       console.log("🎸 Instruments response status:", response.status)
-
       const data = await response.json()
 
       if (!response.ok) {
@@ -316,8 +323,7 @@ export const advancedGameApi = {
   getLevels: async (): Promise<any> => {
     try {
       console.log("🏆 Getting available levels")
-
-      const response = await fetch(`http://16.16.104.51/api/levels`, {
+      const response = await fetch(`https://trainmyears.softaims.com/api/levels`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -325,7 +331,6 @@ export const advancedGameApi = {
       })
 
       console.log("🏆 Levels response status:", response.status)
-
       const data = await response.json()
 
       if (!response.ok) {
@@ -345,8 +350,7 @@ export const advancedGameApi = {
   getGameHistory: async (userId: string, limit = 10): Promise<any> => {
     try {
       console.log("📜 Getting game history:", { userId, limit })
-
-      const response = await fetch(`http://16.16.104.51/api/users/${userId}/history?limit=${limit}`, {
+      const response = await fetch(`https://trainmyears.softaims.com/api/users/${userId}/history?limit=${limit}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -354,7 +358,6 @@ export const advancedGameApi = {
       })
 
       console.log("📜 Game history response status:", response.status)
-
       const data = await response.json()
 
       if (!response.ok) {

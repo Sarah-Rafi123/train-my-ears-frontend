@@ -284,7 +284,6 @@
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-frontendtrainmyears/Pods-frontendtrainmyears-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
@@ -402,8 +401,8 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.brianandrews.trainmyears";
-				PRODUCT_NAME = "frontendtrainmyears";
+				PRODUCT_BUNDLE_IDENTIFIER = com.brianandrews.trainmyears;
+				PRODUCT_NAME = frontendtrainmyears;
 				SWIFT_OBJC_BRIDGING_HEADER = "frontendtrainmyears/frontendtrainmyears-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -433,8 +432,8 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.brianandrews.trainmyears";
-				PRODUCT_NAME = "frontendtrainmyears";
+				PRODUCT_BUNDLE_IDENTIFIER = com.brianandrews.trainmyears;
+				PRODUCT_NAME = frontendtrainmyears;
 				SWIFT_OBJC_BRIDGING_HEADER = "frontendtrainmyears/frontendtrainmyears-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;

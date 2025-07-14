@@ -26,7 +26,7 @@ class AudioService {
       // If it's not already a full URL, construct it
       let fullUrl = audioUrl;
       if (!isRemoteUrl) {
-        const baseUrl = "http://16.16.104.51" ;
+        const baseUrl = "https://trainmyears.softaims.com" ;
         fullUrl = `${baseUrl}${audioUrl.startsWith("/") ? audioUrl : "/" + audioUrl}`;
       }
 

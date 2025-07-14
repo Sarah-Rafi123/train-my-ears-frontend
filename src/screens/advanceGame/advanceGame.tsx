@@ -1,5 +1,4 @@
 "use client"
-
 import { View, Text, ScrollView, ActivityIndicator, Dimensions } from "react-native"
 import { useState, useEffect } from "react"
 import { useNavigation, useRoute } from "@react-navigation/native"
@@ -16,7 +15,6 @@ import {
 } from "@/src/store/slices/advancedGameSlice"
 import { audioService } from "@/src/services/audioService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
-
 import CircularIndicator from "@/src/components/widgets/CircularIndicator"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
@@ -95,7 +93,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   // If still no instrument ID, try to get it from the stored instrument IDs
   if (!finalInstrumentId) {
     console.log("🔍 AdvancedGameScreen: No instrument ID found, checking stored IDs...")
-
     // Use guitar as default if no specific instrument is specified
     if (guitarId) {
       finalInstrumentId = guitarId
@@ -106,8 +103,8 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }
 
-  // Use IDs from route params or context
-  const finalUserId = userIdFromRoute || userId
+  // Use IDs from route params or context (userId can be null for guest mode)
+  const finalUserId = userIdFromRoute || userId || null
 
   // Log the final IDs being used
   console.log("🎮 AdvancedGameScreen: Final IDs determined:", {
@@ -116,6 +113,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     instrument: instrumentFromRoute,
     guitarIdFromContext: guitarId,
     pianoIdFromContext: pianoId,
+    isGuestMode: !finalUserId,
   })
 
   // Function to format chord name for display in indicators
@@ -125,7 +123,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     if (parts.length >= 2) {
       const note = parts[0].toUpperCase()
       const quality = parts[1]
-
       if (quality === "minor") {
         return `${note} m`
       } else if (quality === "major") {
@@ -135,7 +132,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         return `${note} ${quality.charAt(0)}`
       }
     }
-
     // Fallback: just capitalize first letter
     return chordName.charAt(0).toUpperCase() + chordName.slice(1, 3)
   }
@@ -146,7 +142,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     if (parts.length >= 2) {
       const note = parts[0].toUpperCase()
       const quality = parts[1]
-
       if (quality === "minor") {
         return `${note} Minor`
       } else if (quality === "major") {
@@ -156,7 +151,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         return `${note} ${quality.charAt(0).toUpperCase() + quality.slice(1)}`
       }
     }
-
     // Fallback: capitalize properly
     return chordName
       .split(" ")
@@ -164,26 +158,25 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       .join(" ")
   }
 
-  // Remove all the complex ref logic and replace the useEffect with this simpler version:
+  // Updated initialization logic to work without userId requirement
   useEffect(() => {
     const initializeGame = async () => {
-      // Only initialize once when component mounts with required data
-      if (finalUserId && finalInstrumentId && !hasInitialized && !isInitializing && !currentGameRound && !isApiCallInProgress) {
-        console.log("🎮 AdvancedGameScreen: Initializing game for level:", currentLevel)
-
+      // Only require instrumentId, userId is optional for guest mode
+      if (finalInstrumentId && !hasInitialized && !isInitializing && !currentGameRound && !isApiCallInProgress) {
+        console.log("🎮 AdvancedGameScreen: Initializing game for level:", currentLevel, {
+          isGuestMode: !finalUserId,
+        })
         setIsInitializing(true)
         setHasInitialized(true)
         setIsApiCallInProgress(true)
-
         try {
           await dispatch(
             startAdvancedGame({
-              userId: finalUserId,
+              userId: finalUserId, // Can be null for guest mode
               instrumentId: finalInstrumentId,
               level: currentLevel,
             }),
           ).unwrap()
-
           console.log("✅ Game initialized successfully")
         } catch (error) {
           console.error("❌ Error initializing game:", error)
@@ -192,24 +185,32 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           setIsInitializing(false)
           setIsApiCallInProgress(false)
         }
-      } else if (!finalUserId || !finalInstrumentId) {
-        console.error("❌ Missing required data for game initialization")
+      } else if (!finalInstrumentId) {
+        console.error("❌ Missing required instrumentId for game initialization")
         setShowGameErrorModal(true)
       }
     }
-
     initializeGame()
-  }, [finalUserId, finalInstrumentId, hasInitialized, isInitializing, currentGameRound, currentLevel, dispatch, isApiCallInProgress])
+  }, [
+    finalUserId,
+    finalInstrumentId,
+    hasInitialized,
+    isInitializing,
+    currentGameRound,
+    currentLevel,
+    dispatch,
+    isApiCallInProgress,
+  ])
 
-  // Replace the complex startNewGame function with this simpler version:
+  // Updated startNewGame to work without userId requirement
   const startNewGame = async (levelToUse: number) => {
-    if (!finalUserId || !finalInstrumentId || isInitializing || isApiCallInProgress) {
-      console.log("🔄 Cannot start game: missing data or already initializing/API call in progress")
+    if (!finalInstrumentId || isInitializing || isApiCallInProgress) {
+      console.log("🔄 Cannot start game: missing instrumentId or already initializing/API call in progress")
       return
     }
-
-    console.log("🎮 Starting new game at level:", levelToUse)
-
+    console.log("🎮 Starting new game at level:", levelToUse, {
+      isGuestMode: !finalUserId,
+    })
     setIsInitializing(true)
     setIsApiCallInProgress(true)
     setShowResult(false)
@@ -226,12 +227,11 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     try {
       await dispatch(
         startAdvancedGame({
-          userId: finalUserId,
+          userId: finalUserId, // Can be null for guest mode
           instrumentId: finalInstrumentId,
           level: levelToUse,
         }),
       ).unwrap()
-
       console.log("✅ New game started successfully")
     } catch (error) {
       console.error("❌ Error starting new game:", error)
@@ -248,12 +248,13 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     const debouncedSubmit = debounce(() => {
       if (
         currentGameRound &&
-        finalUserId &&
         selectedSequence.length === currentGameRound.sequenceLength &&
         !isSubmittingSequence &&
         !showResult
       ) {
-        console.log("🎯 AdvancedGameScreen: Auto-submitting sequence (debounced)")
+        console.log("🎯 AdvancedGameScreen: Auto-submitting sequence (debounced)", {
+          isGuestMode: !finalUserId,
+        })
         handleSubmitSequence()
       }
     }, 1000) // 1 second debounce time
@@ -268,7 +269,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   useEffect(() => {
     if (gameResult) {
       setShowResult(true)
-
       // Log the updated stats when we get a result
       console.log("🎯 Advanced game result received with stats:", {
         isCorrect: gameResult.isCorrect,
@@ -276,6 +276,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         accuracy: gameResult.stats.accuracy,
         totalAttempts: gameResult.stats.totalAttempts,
         correctAnswers: gameResult.stats.correctAnswers,
+        isGuestMode: !finalUserId,
       })
     }
   }, [gameResult])
@@ -284,7 +285,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   useEffect(() => {
     if (error && errorCode) {
       console.log("🔴 AdvancedGameScreen: Handling error:", { error, errorCode })
-
       if (errorCode === "SUBSCRIPTION_REQUIRED") {
         setShowSubscriptionModal(true)
       } else {
@@ -299,7 +299,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   // Update the playSequenceAudio function in the AdvancedGameScreen component
   const playSequenceAudio = async () => {
     if (!currentGameRound?.sequenceAudioUrls || isPlayingSequence) return
-
     try {
       setIsPlayingSequence(true)
       setAudioError(null)
@@ -318,7 +317,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           await audioService.playAudio(audioUrl)
         } catch (audioError) {
           console.error(`❌ Error playing audio ${i + 1}:`, audioError)
-
           // Try to continue with next audio file instead of stopping the whole sequence
           if (i < currentGameRound.sequenceAudioUrls.length - 1) {
             setAudioError(`Error playing chord ${i + 1}. Continuing with next chord.`)
@@ -332,7 +330,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           await new Promise((resolve) => setTimeout(resolve, 1000))
         }
       }
-
       console.log("✅ AdvancedGameScreen: Sequence audio playback completed")
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown audio error"
@@ -345,8 +342,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
   // Updated handlePlayAgain to start new game immediately
   const handlePlayAgain = () => {
-    if (!finalUserId || !finalInstrumentId) return
-    console.log("🔄 AdvancedGameScreen: Play Again clicked")
+    if (!finalInstrumentId) return
+    console.log("🔄 AdvancedGameScreen: Play Again clicked", {
+      isGuestMode: !finalUserId,
+    })
     setHasInitialized(false) // Reset initialization flag
     startNewGame(currentLevel)
   }
@@ -368,7 +367,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const handleSubmitSequence = () => {
     if (
       !currentGameRound ||
-      !finalUserId ||
       selectedSequence.length !== currentGameRound.sequenceLength ||
       isSubmittingSequence ||
       isApiCallInProgress
@@ -379,19 +377,19 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
     // Calculate response time
     const responseTime = responseStartTime ? Date.now() - responseStartTime : 0
-
     console.log("🎯 AdvancedGameScreen: Auto-submitting sequence:", {
       sequence: selectedSequence,
       responseTime,
       gameSessionId: currentGameRound.gameSessionId,
+      isGuestMode: !finalUserId,
     })
 
     setIsApiCallInProgress(true)
 
-    // Submit sequence
+    // Submit sequence (works for both authenticated users and guests)
     dispatch(
       submitSequence({
-        userId: finalUserId,
+        userId: finalUserId, // Can be null for guest mode
         gameSessionId: currentGameRound.gameSessionId,
         submittedSequence: selectedSequence,
         responseTimeMs: responseTime,
@@ -403,26 +401,40 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
   // Updated handleLevelDown to start new game immediately
   const handleLevelDown = () => {
-    if (currentLevel > 1 && finalUserId && finalInstrumentId) {
+    if (currentLevel > 1 && finalInstrumentId) {
       const newLevel = currentLevel - 1
-      console.log("📉 AdvancedGameScreen: Level down to:", newLevel)
+      console.log("📉 AdvancedGameScreen: Level down to:", newLevel, {
+        isGuestMode: !finalUserId,
+      })
       setHasInitialized(false) // Reset initialization flag
       startNewGame(newLevel)
     }
   }
 
-  // Updated handleLevelUp to start new game immediately
+  // Updated handleLevelUp to show subscription modal for guests at level 3+
   const handleLevelUp = () => {
-    if (currentLevel < 4 && finalUserId && finalInstrumentId) {
+    if (currentLevel < 4 && finalInstrumentId) {
       const newLevel = currentLevel + 1
-      console.log("📈 AdvancedGameScreen: Level up to:", newLevel)
+      console.log("📈 AdvancedGameScreen: Attempting level up to:", newLevel, {
+        isGuestMode: !finalUserId,
+      })
+
+      // If the new level is 3 or above AND the user is a guest, show subscription modal
+      if (newLevel >= 3 && !finalUserId) {
+        console.log("🚫 AdvancedGameScreen: Subscription required for guest mode at level 3+")
+        setShowSubscriptionModal(true)
+        return // Prevent starting the game
+      }
+
       setHasInitialized(false) // Reset initialization flag
       startNewGame(newLevel)
     }
   }
 
   const handleMoreDetails = () => {
-    console.log("🔍 AdvancedGameScreen: More Details pressed")
+    console.log("🔍 AdvancedGameScreen: More Details pressed", {
+      isGuestMode: !finalUserId,
+    })
     onMoreDetails?.()
     navigation.navigate("Menu" as never, {
       accuracy: currentStats.accuracy.toFixed(1) + "%",
@@ -430,6 +442,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       streaks: currentStats.streak,
       gameType: "advanced",
       gameResult: gameResult?.isCorrect ? "correct" : "incorrect",
+      isGuestMode: !finalUserId,
     })
   }
 
@@ -449,7 +462,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const handleSubscriptionCancel = () => {
     setShowSubscriptionModal(false)
     dispatch(clearError())
-
     if (currentLevel > 1) {
       const previousLevel = currentLevel - 1
       startNewGame(previousLevel)
@@ -464,8 +476,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const handleGameErrorRetry = () => {
     setShowGameErrorModal(false)
     dispatch(clearError())
-
-    if (finalUserId && finalInstrumentId) {
+    if (finalInstrumentId) {
       startNewGame(currentLevel)
     }
   }
@@ -487,12 +498,13 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     for (let i = 0; i < currentGameRound.sequenceLength; i++) {
       if (showResult && gameResult) {
         // Show result indicators with chord names and tick/cross icons
-        const comparison = gameResult.sequenceComparison.find((comp) => comp.position === i + 1)
+        // Add null check for gameResult.sequenceComparison
+        const comparison = gameResult.sequenceComparison?.find((comp) => comp.position === i + 1)
         if (comparison) {
           // Find the chord name for display
-          const correctChord = gameResult.correctSequence.find((chord) => chord.position === i + 1)
+          // Add null check for gameResult.correctSequence
+          const correctChord = gameResult.correctSequence?.find((chord) => chord.position === i + 1)
           const chordText = correctChord ? formatChordForDisplay(correctChord.name) : ""
-
           indicators.push({
             type: comparison.correct ? "success" : "error",
             chordText,
@@ -508,7 +520,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           const selectedChordId = selectedSequence[i]
           const selectedChord = currentGameRound.chordPool.find((chord) => chord.id === selectedChordId)
           const chordText = selectedChord ? formatChordForDisplay(selectedChord.name) : ""
-
           indicators.push({
             type: "filled",
             chordText,
@@ -547,7 +558,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     // Handle remaining chords
     if (remainder > 0) {
       const remainingChords = chords.slice(completeRows * buttonsPerRow)
-
       if (remainder === 1) {
         // If only 1 chord left, take 1 from the previous row to make 2 rows of 2 each
         // But since we want at least 3 per row, take 2 from previous row to make 3
@@ -636,31 +646,15 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
           {/* Stats Row - Now using real-time stats from API with Wins/Attempts card */}
           <View className="flex-row justify-between mb-8 gap-x-1">
-            <StatCard 
-              value={currentStats.accuracy.toFixed(1) + "%"} 
-              label="Accuracy" 
-              size="large" 
-           
-            />
-            <StatCard 
-              value={currentLevel.toString()} 
-              label="Level" 
-              size="large" 
-           
-            />
-            <StatCard 
-              value={currentStats.streak.toString()} 
-              label="Streaks" 
-              size="large" 
-      
-            />
-            <StatCard 
+            <StatCard value={currentStats.accuracy.toFixed(1) + "%"} label="Accuracy" size="large" />
+            <StatCard value={currentLevel.toString()} label="Level" size="large" />
+            <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
+            <StatCard
               showFraction={true}
               numerator={currentStats.correctAnswers}
               denominator={currentStats.totalAttempts}
-              label="Wins / Attempts" 
-              size="large" 
-     
+              label="Wins / Attempts"
+              size="large"
               value="" // Not used when showFraction is true
             />
           </View>
@@ -737,7 +731,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             >
               {gameResult.isCorrect ? "Perfect Sequence!" : "Incorrect Sequence"}
             </Text>
-
             {/* Show correct sequence in text format */}
             <View className="bg-gray-50 rounded-lg p-4 mb-4">
               <Text className="text-gray-700 text-lg font-semibold text-center mb-2">
@@ -745,19 +738,11 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
               </Text>
               <Text className="text-gray-800 text-base text-center leading-6">
                 {gameResult.correctSequence
-                  .sort((a, b) => a.position - b.position)
+                  ?.sort((a, b) => a.position - b.position)
                   .map((chord) => formatChordForSequence(chord.name))
                   .join(" → ")}
               </Text>
             </View>
-            {/* {!gameResult.isCorrect && (
-              <View className="bg-red-50 rounded-lg p-4 mb-4">
-                <Text className="text-red-700 text-lg font-semibold text-center mb-2">Your Answer:</Text>
-                <Text className="text-red-800 text-base text-center leading-6">
-                  {gameResult.submittedSequence.map((chord) => formatChordForSequence(chord.name)).join(" → ")}
-                </Text>
-              </View>
-            )} */}
           </View>
         )}
 
@@ -840,7 +825,8 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       {/* Fixed Bottom Section */}
       <View className="px-6 pb-8 pt-4 items-center justify-center bg-white">
         <MoreDetailsButton onPress={handleMoreDetails} />
-        <SaveProgressButton onPress={handleSaveProgress} />
+        {/* Only show Save Progress for logged-in users */}
+        {finalUserId && <SaveProgressButton onPress={handleSaveProgress} />}
       </View>
 
       {/* Subscription Required Modal */}
