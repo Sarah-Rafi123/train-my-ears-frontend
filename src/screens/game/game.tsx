@@ -388,7 +388,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             >
               {gameResult.isCorrect
                 ? "Correct!"
-                : `Sorry, that was ${gameResult.correctChord?.displayName || "the correct answer"}. Try Again!`}
+                : `Sorry, that was not ${gameResult.correctChord?.displayName || "the correct answer"}. Try Again!`}
             </Text>
           </View>
         )}
@@ -433,7 +433,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       <View className="px-6 pb-8 pt-4 justify-center items-center">
         <MoreDetailsButton onPress={handleMoreDetails} />
         {/* Only show Save Progress for logged-in users */}
-        {finalUserId && (
+        {!finalUserId && (
           <View className="pt-4">
             <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
               Save your progress

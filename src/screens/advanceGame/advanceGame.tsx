@@ -609,8 +609,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#003049" />
           <Text className="mt-4 text-[#003049] text-lg">Loading advanced game...</Text>
-          {/* Add timeout message after 10 seconds */}
-          <Text className="mt-2 text-gray-500 text-sm">If this takes too long, please check your connection</Text>
         </View>
       </SafeAreaView>
     )
@@ -640,7 +638,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Audio Error Warning (if any) */}
         {audioError && (
           <View className="mx-6 mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
             <Text className="text-yellow-800 text-sm">⚠️ Audio playback issue: {audioError}</Text>
@@ -737,10 +734,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             </Text>
             {/* Show correct sequence in text format */}
             <View className="bg-gray-50 rounded-lg p-4 mb-4">
-              <Text className="text-gray-700 text-lg font-semibold text-center mb-2">
+              <Text className="text-black text-lg font-semibold text-center mb-2">
                 {gameResult.isCorrect ? "Your Answer:" : "Correct Sequence:"}
               </Text>
-              <Text className="text-gray-800 text-base text-center leading-6">
+              <Text className="text-black text-base text-center leading-6">
                 {gameResult.correctSequence
                   ?.sort((a, b) => a.position - b.position)
                   .map((chord) => formatChordForSequence(chord.name))
@@ -749,8 +746,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             </View>
           </View>
         )}
-
-        {/* Chord Pool Buttons - Updated to ensure exactly 3 buttons per row */}
         {currentGameRound && (
           <View className="px-6 mb-6">
             {organizeChordRows(currentGameRound.chordPool).map((row, rowIndex) => (
@@ -830,7 +825,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       <View className="px-6 pb-8 pt-4 items-center justify-center bg-white">
         <MoreDetailsButton onPress={handleMoreDetails} />
         {/* Only show Save Progress for logged-in users */}
-        {finalUserId && <SaveProgressButton onPress={handleSaveProgress} />}
+        {!finalUserId && <SaveProgressButton onPress={handleSaveProgress} />}
       </View>
 
       {/* Subscription Required Modal */}
