@@ -6,11 +6,11 @@ interface GuestButtonProps {
   className?: string
 }
 
-export default function GuestButton({ onPress, className = "" }: GuestButtonProps) {
+export default function GuestButton({ onPress, className }: GuestButtonProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`bg-white border-2 border-[#1e3a5f] rounded-2xl py-4 px-6 flex-row  mb-4 items-center justify-center ${className}`}
+      className={` border-2 border-[#1e3a5f] rounded-2xl py-4 px-6 flex-row  mb-4 items-center justify-center ${className}`}
       accessibilityRole="button"
       accessibilityLabel="Start as guest"
     >

@@ -24,7 +24,10 @@ import { useFonts } from "expo-font"
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect, useCallback, useState } from "react"
 import { View, Text, ActivityIndicator, Platform } from "react-native"
+import Purchases from "react-native-purchases"
+import RevenueCatScreen from "./src/screens/revenuecatScreen/revenuecatScreen"
 
+Purchases.setLogLevel(Purchases.LOG_LEVEL.VERBOSE)
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync()
 
@@ -69,6 +72,15 @@ export default function RootLayout() {
     // "NATS-Bold": require("./src/assets/fonts/NATS-Bold.ttf"),
   })
 
+   useEffect(() => {
+    if (Platform.OS === 'ios') {
+      Purchases.configure({apiKey: 'appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi'});
+    } else if (Platform.OS === 'android') {
+       Purchases.configure({apiKey: 'appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi'});
+  }
+Purchases.getOfferings().then(console.log);
+  }, []);
+
   useEffect(() => {
     async function prepare() {
       try {
@@ -105,7 +117,8 @@ export default function RootLayout() {
     <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <Provider store={store}>
         <AuthProvider>
-          <NavigationContainer>
+          {/* <RevenueCatScreen /> */}
+         <NavigationContainer>
             <Stack.Navigator
               initialRouteName="Home"
               screenOptions={{
@@ -125,7 +138,7 @@ export default function RootLayout() {
               <Stack.Screen name="Advance" component={AdvanceGameScreen} />
               <Stack.Screen name="Sample" component={SampleScreen} />
             </Stack.Navigator>
-          </NavigationContainer>
+          </NavigationContainer> 
         </AuthProvider>
       </Provider>
         </View>

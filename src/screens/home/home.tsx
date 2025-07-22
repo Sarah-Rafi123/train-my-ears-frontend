@@ -1,13 +1,13 @@
 "use client"
 
-import { View, Text, Image, Dimensions, Platform } from "react-native"
-import GuestButton from "@/src/components/ui/buttons/GuestButton"
-import { SafeAreaView } from "react-native-safe-area-context"
-import RegisterLoginButton from "@/src/components/ui/buttons/RegisterLoginButton"
-import { useNavigation } from "@react-navigation/native"
-import { useState } from "react" // Keep useState
-import { useAuth } from "@/src/context/AuthContext" // Keep useAuth
 import Homebg from "@/src/assets/images/Homebg.png"
+import GuestButton from "@/src/components/ui/buttons/GuestButton"
+import RegisterLoginButton from "@/src/components/ui/buttons/RegisterLoginButton"
+import { useAuth } from "@/src/context/AuthContext"; // Keep useAuth
+import { useNavigation } from "@react-navigation/native"
+import { useState } from "react"; // Keep useState
+import { Dimensions, Image, Platform, Text, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 
 interface TrainMyEarScreenProps {
   onGetStarted?: () => void
@@ -90,7 +90,7 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
         }}
         resizeMode="cover"
       />
-      <View className="mt-auto bg-white px-6 pt-48 h-[60%]">
+      <View className="mt-auto bg-white px-6 pt-40 h-[60%]">
         <Text
           style={titleStyle}
           adjustsFontSizeToFit
@@ -100,7 +100,7 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
         </Text>
         <Text
           style={subtitleStyle}
-          adjustsFontSizeToFit // Keep adjustsFontSizeToFit
+          adjustsFontSizeToFit 
           
         >
           A simple tool to help recognize chords by ear.

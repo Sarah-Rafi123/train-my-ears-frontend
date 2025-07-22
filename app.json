@@ -4,7 +4,12 @@
     "slug": "frontend_trainmyears",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "@/src/assets/images/trainmyearsLogo.png",
+    "splash": {
+      "image": "@/src/assets/images/trainmyearsLogo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "scheme": "frontendtrainmyears",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
