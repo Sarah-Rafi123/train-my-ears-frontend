@@ -19,7 +19,7 @@ export default function RegisterLoginButton({ onPress, className = "" }: Registe
       accessibilityRole="button"
       accessibilityLabel="Register or Login"
       style={{
-        paddingVertical: responsiveValue(8), // py-4 is 16px
+        paddingVertical: responsiveValue(6), // py-4 is 16px
         paddingHorizontal: responsiveValue(24), // px-6 is 24px
       }}
     >

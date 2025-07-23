@@ -49,8 +49,8 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
     fontFamily: "NATS-Regular",
     color: "#003049",
     textAlign: "center" as const,
-    marginBottom: responsiveValue(30),
-    paddingVertical: responsiveValue(Platform.OS === "ios" ? 6 : 3),
+    marginBottom: responsiveValue(6),
+    paddingVertical: responsiveValue(Platform.OS === "ios" ? 3 : 3),
     paddingHorizontal: responsiveValue(8),
   }
 
@@ -140,7 +140,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
         className="flex-row items-center"
         style={{
           paddingHorizontal: responsiveValue(24), // px-6
-          paddingVertical: responsiveValue(32), // py-8
+          paddingVertical: responsiveValue(), // py-8
         }}
       >
         <BackButton onPress={onBack} />

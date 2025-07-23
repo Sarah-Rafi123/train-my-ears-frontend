@@ -110,7 +110,7 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
         styles.contentContainer,
         {
           height: screenHeight * 0.5,
-          paddingTop: responsiveValue(50),
+          paddingTop: responsiveValue(40),
           borderTopLeftRadius: responsiveValue(30),
           borderTopRightRadius: responsiveValue(30),
         }
