@@ -1,14 +1,13 @@
 "use client"
-import { View, Text, SafeAreaView, Image, Alert, Platform } from "react-native"
+import { View, Text, SafeAreaView, Image, Alert, Platform, Dimensions, StyleSheet } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/src/context/AuthContext"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import InstrumentCard from "@/src/components/widgets/InstrumentCard"
 import { instrumentsApi, type Instrument } from "@/src/services/instrumentApi"
-// Import your musical background image
 import musicbg from "@/src/assets/images/musicbg.png"
-import { __DEV__ } from "react-native"
+
 
 interface SelectInstrumentScreenProps {
   onBack?: () => void
@@ -17,36 +16,44 @@ interface SelectInstrumentScreenProps {
 
 export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: SelectInstrumentScreenProps) {
   const navigation = useNavigation()
-  // Get data from auth context
   const { guitarId, pianoId, userId, token, setGuitarId, setPianoId } = useAuth()
-  // Local state for instruments
   const [instruments, setInstruments] = useState<Instrument[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Create platform-specific text styles for "TRAIN MY EAR" and subtitle
+  const screenWidth = Dimensions.get("window").width
+  const screenHeight = Dimensions.get("window").height
+
+  const BASE_WIDTH = 375 // Base width for scaling (e.g., iPhone 8)
+  const BASE_HEIGHT = 667 // Base height for scaling
+  const widthScale = screenWidth / BASE_WIDTH
+  const heightScale = screenHeight / BASE_HEIGHT
+  const responsiveScale = Math.min(widthScale, heightScale) // Use smaller scale for better fit
+
+  const responsiveValue = (value: number) => Math.round(value * responsiveScale)
+
   const titleStyle = {
-    fontSize: Platform.OS === "ios" ? 32 : 32,
-    lineHeight: Platform.OS === "ios" ? 40 : 40,
+    fontSize: responsiveValue(32),
+    lineHeight: responsiveValue(40),
     fontFamily: "NATS-Regular",
     color: "#003049",
     textAlign: "center" as const,
     fontWeight: "bold" as const,
-    paddingVertical: Platform.OS === "ios" ? 8 : 4,
-    letterSpacing: 2, // Added letter spacing
+    paddingVertical: responsiveValue(Platform.OS === "ios" ? 8 : 4),
+    letterSpacing: responsiveValue(2),
   }
+
   const subtitleStyle = {
-    fontSize: Platform.OS === "ios" ? 20 : 20,
-    lineHeight: Platform.OS === "ios" ? 28 : 28,
+    fontSize: responsiveValue(20),
+    lineHeight: responsiveValue(28),
     fontFamily: "NATS-Regular",
     color: "#003049",
     textAlign: "center" as const,
-    marginBottom: 30, // Adjusted margin to match HomeScreen
-    paddingVertical: Platform.OS === "ios" ? 6 : 3,
-    paddingHorizontal: 8,
+    marginBottom: responsiveValue(30),
+    paddingVertical: responsiveValue(Platform.OS === "ios" ? 6 : 3),
+    paddingHorizontal: responsiveValue(8),
   }
 
-  // Fetch instruments when component mounts
   useEffect(() => {
     fetchInstruments()
   }, [])
@@ -60,7 +67,6 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       if (response.success && response.data.instruments) {
         setInstruments(response.data.instruments)
         console.log("✅ SelectInstrumentScreen: Instruments loaded successfully")
-        // Store instrument IDs in context
         const guitarInstrument = response.data.instruments.find(
           (instrument) => instrument.name.toLowerCase() === "guitar",
         )
@@ -82,7 +88,6 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       const errorMessage = err instanceof Error ? err.message : "Failed to load instruments"
       setError(errorMessage)
       console.error("❌ SelectInstrumentScreen: Error fetching instruments:", errorMessage)
-      // Show error to user in development mode
       if (__DEV__) {
         Alert.alert("Error", `Failed to load instruments: ${errorMessage}`)
       }
@@ -93,9 +98,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
 
   const handleInstrumentSelect = async (instrument: "guitar" | "piano") => {
     console.log(`🎯 SelectInstrumentScreen: Selected instrument: ${instrument}`)
-    // Call the optional callback
     onInstrumentSelect?.(instrument)
-    // Get the appropriate instrument ID from context
     let selectedInstrumentId: string | null = null
     if (instrument === "guitar") {
       selectedInstrumentId = guitarId
@@ -104,13 +107,11 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       selectedInstrumentId = pianoId
       console.log("🎹 Selected Piano ID:", "cmbyuwdi20003qlhg0w2epml0")
     }
-    // If instrument ID is not available, try to get it from the loaded instruments
     if (!selectedInstrumentId && instruments.length > 0) {
       const foundInstrument = instruments.find((inst) => inst.name.toLowerCase() === instrument)
       if (foundInstrument) {
         selectedInstrumentId = foundInstrument.id
         console.log(`🎼 Found ${instrument} ID from loaded instruments:`, selectedInstrumentId)
-        // Store it in context for future use
         if (instrument === "guitar") {
           await setGuitarId("cmbyuwdi00002qlhguosiz78c")
         } else if (instrument === "piano") {
@@ -134,51 +135,116 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-row items-center px-6 py-8">
+    <SafeAreaView style={styles.safeArea}>
+      <View
+        className="flex-row items-center"
+        style={{
+          paddingHorizontal: responsiveValue(24), // px-6
+          paddingVertical: responsiveValue(32), // py-8
+        }}
+      >
         <BackButton onPress={onBack} />
         <View className="flex-1">
-          <Text className="text-[#003049] text-lg font-semibold text-center mt-5 mr-10">Select an Instrument</Text>
+          <Text
+            className="text-[#003049] font-semibold text-center"
+            style={{
+              fontSize: responsiveValue(18), // text-lg
+              marginTop: responsiveValue(10), // mt-5
+              marginRight: responsiveValue(40), // mr-10
+            }}
+          >
+            Select an Instrument
+          </Text>
         </View>
       </View>
-      <View className="h-64 w-full mt-28">
+      <View
+        className="w-full"
+        style={{
+          height: responsiveValue(150), // h-64
+          marginTop: responsiveValue(112), // mt-28
+        }}
+      >
         <Image source={musicbg} className="w-full h-full" resizeMode="contain" />
       </View>
-      <View className="flex-1 px-6 pt-8">
-        <View className="mb-8 mt-auto">
-          <Text
-            style={titleStyle} // Apply the new style object
-            adjustsFontSizeToFit
-            numberOfLines={1}
-            minimumFontScale={0.8}
-          >
+      <View
+        className="flex-1 px-6 pt-8"
+        style={{
+          paddingHorizontal: responsiveValue(24), // px-6
+          paddingTop: responsiveValue(32), // pt-8
+        }}
+      >
+        <View
+          className="mb-8 mt-auto"
+          style={{
+            marginBottom: responsiveValue(32), // mb-8
+          }}
+        >
+          <Text style={titleStyle} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.8}>
             TRAIN MY EAR
           </Text>
-          <Text
-            style={subtitleStyle} // Apply the new style object
-            adjustsFontSizeToFit
-            numberOfLines={2}
-          >
+          <Text style={subtitleStyle} adjustsFontSizeToFit numberOfLines={2}>
             A simple tool to help recognize chords by ear.
           </Text>
         </View>
         {loading && (
-          <View className="mb-16 items-center">
-            <Text className="text-[#003049] text-lg">Loading instruments...</Text>
+          <View
+            className="mb-16 items-center"
+            style={{
+              marginBottom: responsiveValue(64), // mb-16
+            }}
+          >
+            <Text
+              className="text-[#003049]"
+              style={{
+                fontSize: responsiveValue(18), // text-lg
+              }}
+            >
+              Loading instruments...
+            </Text>
           </View>
         )}
         {error && !loading && (
-          <View className="mb-16 items-center">
-            <Text className="text-red-500 text-lg text-center mb-4">Failed to load instruments</Text>
-            <Text className="text-gray-600 text-center mb-4">{error}</Text>
-            <Text className="text-[#006AE6] text-lg font-semibold" onPress={fetchInstruments}>
+          <View
+            className="mb-16 items-center"
+            style={{
+              marginBottom: responsiveValue(64), // mb-16
+            }}
+          >
+            <Text
+              className="text-red-500 text-center"
+              style={{
+                fontSize: responsiveValue(18), // text-lg
+                marginBottom: responsiveValue(16), // mb-4
+              }}
+            >
+              Failed to load instruments
+            </Text>
+            <Text
+              className="text-gray-600 text-center"
+              style={{
+                marginBottom: responsiveValue(16), // mb-4
+              }}
+            >
+              {error}
+            </Text>
+            <Text
+              className="text-[#006AE6] font-semibold"
+              onPress={fetchInstruments}
+              style={{
+                fontSize: responsiveValue(18), // text-lg
+              }}
+            >
               Retry
             </Text>
           </View>
         )}
-        {/* Instrument cards */}
         {!loading && !error && (
-          <View className="mb-16">
+          <View
+            className="mb-16"
+            style={{
+              marginBottom: responsiveValue(64), // mb-16
+            }}
+          >
             <InstrumentCard instrument="guitar" onPress={() => handleInstrumentSelect("guitar")} />
             <InstrumentCard instrument="piano" onPress={() => handleInstrumentSelect("piano")} />
           </View>
@@ -187,3 +253,10 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
     </SafeAreaView>
   )
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+})

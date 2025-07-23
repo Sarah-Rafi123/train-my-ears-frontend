@@ -1,4 +1,4 @@
-import { TouchableOpacity, View } from "react-native"
+import { TouchableOpacity, View, Dimensions } from "react-native"
 import LeftIconSVG from "@/src/assets/svgs/LeftIcon"
 import { useNavigation } from "@react-navigation/native"
 
@@ -8,13 +8,15 @@ interface BackButtonProps {
 
 export default function BackButton({ onPress }: BackButtonProps) {
   const navigation = useNavigation()
+  const screenWidth = Dimensions.get("window").width
+  const BASE_WIDTH = 375
+  const scaleFactor = screenWidth / BASE_WIDTH
+  const responsiveValue = (value: number) => Math.round(value * scaleFactor)
 
   const handlePress = () => {
     if (onPress) {
-      // Use custom onPress if provided
       onPress()
     } else {
-      // Default behavior: go back to previous screen
       navigation.goBack()
     }
   }
@@ -22,12 +24,22 @@ export default function BackButton({ onPress }: BackButtonProps) {
   return (
     <TouchableOpacity
       onPress={handlePress}
-      className="w-10 h-10 justify-center items-center"
+      className="justify-center items-center"
       accessibilityLabel="Go back"
       accessibilityRole="button"
+      style={{
+        width: responsiveValue(40), // w-10
+        height: responsiveValue(40), // h-10
+      }}
     >
-      <View className="w-6 h-6">
-        <LeftIconSVG />
+      <View
+        style={{
+          width: responsiveValue(24), // w-6
+          height: responsiveValue(24), // h-6
+        }}
+      >
+        {/* Assuming LeftIconSVG accepts width and height props for scaling */}
+        <LeftIconSVG width={responsiveValue(24)} height={responsiveValue(24)} />
       </View>
     </TouchableOpacity>
   )

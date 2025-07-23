@@ -1,12 +1,10 @@
-"use client"
-
 import Homebg from "@/src/assets/images/Homebg.png"
 import GuestButton from "@/src/components/ui/buttons/GuestButton"
 import RegisterLoginButton from "@/src/components/ui/buttons/RegisterLoginButton"
-import { useAuth } from "@/src/context/AuthContext"; // Keep useAuth
+import { useAuth } from "@/src/context/AuthContext"
 import { useNavigation } from "@react-navigation/native"
-import { useState } from "react"; // Keep useState
-import { Dimensions, Image, Platform, Text, View } from "react-native"
+import { useState } from "react"
+import { Dimensions, Image, Platform, Text, View, StyleSheet } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 interface TrainMyEarScreenProps {
@@ -15,11 +13,25 @@ interface TrainMyEarScreenProps {
 
 export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
   const navigation = useNavigation()
-  const { logout, isAuthenticated, user } = useAuth() // Keep useAuth destructuring
-  const [isLoggingOut, setIsLoggingOut] = useState(false) // Keep isLoggingOut state
+  const { logout, isAuthenticated, user } = useAuth()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
   const screenWidth = Dimensions.get("window").width
   const screenHeight = Dimensions.get("window").height
-  const imageHeight = screenHeight * 0.6
+
+  // Define a base width and height for scaling (e.g., iPhone 8 dimensions)
+  const BASE_WIDTH = 375
+  const BASE_HEIGHT = 667
+
+  // Calculate scale factors for width and height
+  const widthScale = screenWidth / BASE_WIDTH
+  const heightScale = screenHeight / BASE_HEIGHT
+
+  // Use the smaller scale factor to ensure elements don't become too large on very wide/tall screens
+  const responsiveScale = Math.min(widthScale, heightScale)
+
+  // Utility function to apply responsive scaling to a value
+  const responsiveValue = (value: number) => Math.round(value * responsiveScale)
 
   const handleRegisterLogin = () => {
     console.log("Register or Login pressed")
@@ -27,7 +39,6 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
   }
 
   const handleGuestStart = async () => {
-    // Make async again
     try {
       console.log("Start as guest pressed")
       if (isAuthenticated) {
@@ -38,7 +49,6 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
           name: user?.name,
         })
         setIsLoggingOut(true)
-        // Call logout to clear any existing session
         await logout()
         console.log("✅ Successfully logged out, proceeding as guest")
       } else {
@@ -48,7 +58,6 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
       navigation.navigate("SelectInstrument" as never)
     } catch (error) {
       console.error("❌ Error during guest logout process:", error)
-      // Navigate anyway even if logout fails
       console.log("⚠️ Proceeding to SelectInstrument despite logout error")
       navigation.navigate("SelectInstrument" as never)
     } finally {
@@ -56,60 +65,96 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
     }
   }
 
-  // Create platform-specific text styles
+  // Create platform-specific and responsive text styles
   const titleStyle = {
-    fontSize: Platform.OS === "ios" ? 32 : 32, // Slightly smaller on iOS
-    lineHeight: Platform.OS === "ios" ? 40 : 40, // Explicit line height
+    fontSize: responsiveValue(32),
+    lineHeight: responsiveValue(40),
     fontFamily: "NATS-Regular",
     color: "#003049",
     textAlign: "center" as const,
     fontWeight: "bold" as const,
-    paddingVertical: Platform.OS === "ios" ? 8 : 4, // Extra padding on iOS
-    letterSpacing: 2, // Added letter spacing from previous request
+    paddingVertical: responsiveValue(Platform.OS === "ios" ? 4 : 4),
+    letterSpacing: responsiveValue(2),
   }
+
   const subtitleStyle = {
-    fontSize: Platform.OS === "ios" ? 20 : 20, // Slightly smaller on iOS
-    lineHeight: Platform.OS === "ios" ? 28 : 28, // Explicit line height
+    fontSize: responsiveValue(20),
+    lineHeight: responsiveValue(28),
     fontFamily: "NATS-Regular",
     color: "#003049",
     textAlign: "center" as const,
-    marginBottom: 30,
-    paddingVertical: Platform.OS === "ios" ? 6 : 3, // Extra padding on iOS
-    paddingHorizontal: 8, // Horizontal padding to prevent edge clipping
+    marginBottom: responsiveValue(30),
+    paddingVertical: responsiveValue(Platform.OS === "ios" ? 6 : 3),
+    paddingHorizontal: responsiveValue(8),
   }
 
   return (
-    <SafeAreaView className="flex-1 relative">
-      <Image
-        source={Homebg}
-        className="absolute top-0 left-0"
-        style={{
-          width: screenWidth,
-          height: imageHeight,
-          zIndex: 100,
-        }}
-        resizeMode="cover"
-      />
-      <View className="mt-auto bg-white px-6 pt-40 h-[60%]">
-        <Text
-          style={titleStyle}
-          adjustsFontSizeToFit
-          numberOfLines={1}
-        >
+    <SafeAreaView style={styles.safeArea}>
+      {/* Background Image */}
+      <View style={styles.backgroundContainer}>
+        <Image
+          source={Homebg}
+          style={[
+            styles.backgroundImage,
+            {
+              width: screenWidth,
+              height: screenHeight * 0.6,
+            }
+          ]}
+          resizeMode="cover"
+        />
+      </View>
+
+      {/* Content Overlay */}
+      <View style={[
+        styles.contentContainer,
+        {
+          height: screenHeight * 0.5,
+          paddingTop: responsiveValue(50),
+          borderTopLeftRadius: responsiveValue(30),
+          borderTopRightRadius: responsiveValue(30),
+        }
+      ]}>
+        <Text style={titleStyle} adjustsFontSizeToFit numberOfLines={1}>
           TRAIN MY EAR
         </Text>
-        <Text
-          style={subtitleStyle}
-          adjustsFontSizeToFit 
-          
-        >
+        <Text style={subtitleStyle} adjustsFontSizeToFit>
           A simple tool to help recognize chords by ear.
         </Text>
-        <View className="mb-16">
-          <GuestButton onPress={handleGuestStart} isLoading={isLoggingOut} /> {/* Keep isLoading */}
+        <View style={{ marginBottom: responsiveValue(64) }}>
+          <GuestButton onPress={handleGuestStart} isLoading={isLoggingOut} />
           <RegisterLoginButton onPress={handleRegisterLogin} />
         </View>
       </View>
     </SafeAreaView>
   )
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "black",
+  },
+  backgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+  },
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  contentContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    paddingHorizontal: 24,
+    zIndex: 200,
+  },
+})
