@@ -1,9 +1,9 @@
 "use client"
-
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react"
 import { loadStoredAuth, logoutUser } from "../store/slices/authSlice"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { useClerk } from "@clerk/clerk-expo" // Import useClerk
 
 interface AuthContextType {
   user: any
@@ -45,6 +45,7 @@ interface AuthProviderProps {
 export default function AuthProvider({ children }: AuthProviderProps) {
   const dispatch = useAppDispatch()
   const { user, userId, token, isAuthenticated, isLoading } = useAppSelector((state) => state.auth)
+  const { signOut } = useClerk() // Get signOut from Clerk
 
   // Local state for instrument IDs
   const [guitarId, setGuitarIdState] = useState<string | null>(null)
@@ -53,7 +54,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     console.log("🚀 AuthProvider: Loading stored authentication data...")
     dispatch(loadStoredAuth())
-
     // Load stored instrument IDs
     loadStoredInstrumentIds()
   }, [dispatch])
@@ -63,12 +63,10 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     try {
       const storedGuitarId = await AsyncStorage.getItem("guitarId")
       const storedPianoId = await AsyncStorage.getItem("pianoId")
-
       if (storedGuitarId) {
         setGuitarIdState(storedGuitarId)
         console.log("🎸 AuthProvider: Loaded stored guitar ID:", storedGuitarId)
       }
-
       if (storedPianoId) {
         setPianoIdState(storedPianoId)
         console.log("🎹 AuthProvider: Loaded stored piano ID:", storedPianoId)
@@ -84,7 +82,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       await AsyncStorage.removeItem("pianoId")
       console.log("🧹 Cleared old instrument IDs from storage.")
     }
-
     clearOldInstrumentIds()
   }, [])
 
@@ -129,12 +126,10 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     try {
       const storedGuitarId = await AsyncStorage.getItem("guitarId")
       const storedPianoId = await AsyncStorage.getItem("pianoId")
-
       console.log("🎵 AuthProvider: Retrieved instrument IDs:", {
         guitarId: storedGuitarId,
         pianoId: storedPianoId,
       })
-
       return {
         guitarId: storedGuitarId,
         pianoId: storedPianoId,
@@ -149,14 +144,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const getStoredAuthData = async () => {
     try {
       console.log("🔍 AuthContext: Getting all stored auth data...")
-
       const storedToken = await AsyncStorage.getItem("token")
       const storedRefreshToken = await AsyncStorage.getItem("refreshToken")
       const storedUserString = await AsyncStorage.getItem("user")
       const storedUserId = await AsyncStorage.getItem("userId")
       const storedGuitarId = await AsyncStorage.getItem("guitarId")
       const storedPianoId = await AsyncStorage.getItem("pianoId")
-
       const authData = {
         token: storedToken,
         refreshToken: storedRefreshToken,
@@ -165,7 +158,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         guitarId: storedGuitarId,
         pianoId: storedPianoId,
       }
-
       console.log("📱 AuthContext: Retrieved auth data:", {
         hasToken: !!storedToken,
         hasRefreshToken: !!storedRefreshToken,
@@ -175,7 +167,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         guitarId: storedGuitarId,
         pianoId: storedPianoId,
       })
-
       return authData
     } catch (error) {
       console.error("❌ AuthContext: Error getting stored auth data:", error)
@@ -233,7 +224,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const logAllStoredData = async () => {
     console.log("🔍 === AuthContext: LOGGING ALL STORED AUTH DATA ===")
     const authData = await getStoredAuthData()
-
     if (authData) {
       console.log("📊 AuthContext: Complete Auth Data Summary:")
       console.log("🔑 Token Length:", authData.token?.length || 0)
@@ -241,7 +231,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       console.log("🆔 User ID:", authData.userId)
       console.log("🎸 Guitar ID:", authData.guitarId)
       console.log("🎹 Piano ID:", authData.pianoId)
-
       if (authData.user) {
         console.log("👨‍💼 AuthContext: User Details:")
         console.log("  - ID:", authData.user.id)
@@ -261,8 +250,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         if (authData.user.subscriptionId) {
           console.log("  - Subscription ID:", authData.user.subscriptionId)
         }
+        if (authData.user.clerkId) {
+          console.log("  - Clerk ID:", authData.user.clerkId)
+        }
+        if (authData.user.provider) {
+          console.log("  - Provider:", authData.user.provider)
+        }
       }
-
       // Compare with Redux state
       console.log("🔄 AuthContext: Redux vs Storage Comparison:")
       console.log("  - Redux User ID:", userId)
@@ -286,14 +280,22 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         userEmail: user?.email,
         isAuthenticated: isAuthenticated,
       })
-
       // Dispatch the logout thunk which handles API call and state clearing
       const result = await dispatch(logoutUser())
-      
       if (logoutUser.fulfilled.match(result)) {
-        console.log("✅ AuthProvider: Logout completed successfully")
+        console.log("✅ AuthProvider: Backend logout completed successfully")
       } else if (logoutUser.rejected.match(result)) {
-        console.log("⚠️ AuthProvider: Logout completed with API error, but local data cleared")
+        console.log("⚠️ AuthProvider: Backend logout completed with API error, but local data cleared")
+      }
+
+      // Also sign out from Clerk
+      try {
+        console.log("🔐 AuthProvider: Signing out from Clerk...")
+        await signOut()
+        console.log("✅ AuthProvider: Clerk sign out successful")
+      } catch (clerkError) {
+        console.error("❌ AuthProvider: Error signing out from Clerk:", clerkError)
+        // Decide if you want to re-throw or just log. For now, we log and continue.
       }
 
       // Clear instrument IDs as well since user is logging out
@@ -305,10 +307,9 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       } catch (instrumentError) {
         console.error("❌ AuthProvider: Error clearing instrument IDs:", instrumentError)
       }
-
       console.log("🎯 AuthProvider: Logout process completed")
     } catch (error) {
-      console.error("❌ AuthProvider: Logout error:", error)
+      console.error("❌ AuthProvider: Overall logout error:", error)
       // Even if there's an error, we should still try to clear local state
       try {
         await AsyncStorage.multiRemove(["token", "refreshToken", "user", "userId", "guitarId", "pianoId"])

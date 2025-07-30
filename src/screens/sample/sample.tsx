@@ -223,9 +223,6 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
         </View>
         <View className="h-20" />
       </ScrollView>
-      <View className="pb-8 pt-4">
-        <View className="w-32 h-1 bg-black rounded-full self-center" />
-      </View>
     </SafeAreaView>
   )
 }

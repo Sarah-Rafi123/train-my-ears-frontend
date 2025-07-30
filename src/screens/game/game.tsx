@@ -1,6 +1,6 @@
 "use client"
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
@@ -26,10 +26,8 @@ interface GameScreenProps {
 
 const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMoreDetails, onSaveProgress }) => {
   const dispatch = useAppDispatch()
-
   // Get auth data
   const { userId, guitarId, pianoId } = useAuth()
-
   // Get game state from Redux
   const {
     currentGameRound,
@@ -50,6 +48,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
   // Add state to track if chords should be visible
   const [showChords, setShowChords] = useState(true)
+
+  // Use a ref to track the ID of the round whose audio was last played
+  const lastPlayedRoundIdRef = useRef<string | null>(null)
+  // Use a ref to track the previous game round ID to detect actual changes
+  const prevGameRoundIdRef = useRef<string | null>(null)
+
+  // NEW STATE: To signal when UI is ready for a specific game round
+  const [uiReadyForRoundId, setUiReadyForRoundId] = useState<string | null>(null)
 
   // Get route params
   const routeParams = route.params as any
@@ -96,16 +102,44 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     }
   }, [dispatch, finalUserId, finalInstrumentId, currentLevel])
 
-  // Play audio when game round loads
+  // Effect to reset UI states and signal UI readiness for a new round
   useEffect(() => {
-    if (currentGameRound?.targetChord?.audioFileUrl) {
-      playAudioSafely(currentGameRound.targetChord.audioFileUrl)
-      // Reset chord visibility when new game round loads
+    const currentRoundId = currentGameRound?.gameRoundId || null
+
+    if (currentGameRound) {
+      // Reset UI states for a new round
       setShowChords(true)
       setShowResult(false)
       setSelectedChordId(null)
+      // Signal that UI is ready for this specific round
+      setUiReadyForRoundId(currentRoundId)
+    } else {
+      // If currentGameRound becomes null (e.g., during loading or error), reset UI readiness
+      setUiReadyForRoundId(null)
     }
-  }, [currentGameRound])
+
+    // Always update prevGameRoundIdRef to the current round ID for the next render cycle
+    prevGameRoundIdRef.current = currentRoundId
+  }, [currentGameRound]) // Only depend on currentGameRound
+
+  // Play audio when game round loads AND UI is ready, ensuring it plays only once per round
+  useEffect(() => {
+    const currentRoundId = currentGameRound?.gameRoundId || null
+
+    // Only play audio if:
+    // 1. currentGameRound is defined and has an audio URL
+    // 2. The current round ID matches the UI ready ID
+    // 3. The current round ID has not been played yet (prevents re-playing same ID)
+    if (
+      currentGameRound?.targetChord?.audioFileUrl &&
+      currentRoundId &&
+      currentRoundId === uiReadyForRoundId && // Ensure UI is ready for this round
+      currentRoundId !== lastPlayedRoundIdRef.current // Ensure this specific round's audio hasn't been played
+    ) {
+      playAudioSafely(currentGameRound.targetChord.audioFileUrl)
+      lastPlayedRoundIdRef.current = currentRoundId // Mark this round's audio as played
+    }
+  }, [currentGameRound, uiReadyForRoundId]) // Depend on both currentGameRound and uiReadyForRoundId
 
   // Handle game result
   useEffect(() => {
@@ -154,7 +188,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   const playAudioSafely = async (audioUrl: string) => {
     try {
       setAudioError(null)
-      console.log("🎵 GameScreen: Playing audio:", audioUrl)
+      // The audioService.playAudio now handles stopping previous sounds internally
       await audioService.playAudio(audioUrl)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown audio error"
@@ -170,13 +204,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       await playAudioSafely(currentGameRound.targetChord.audioFileUrl)
     } else if (!showChords && finalInstrumentId) {
       // If chords are hidden (after submitting answer), start a new game round
-      // Works for both authenticated users and guests
       console.log("🔄 GameScreen: Starting new game round", {
         isGuestMode: !finalUserId,
       })
       dispatch(clearGameResult())
-      setShowResult(false)
-      setSelectedChordId(null)
+      // No need to manually reset UI states here, the useEffect for currentGameRound will handle it
+      // No need to manually reset uiReadyForRoundId, it will be set by the useEffect
       dispatch(
         startGame({
           userId: finalUserId, // Can be null for guest mode
@@ -198,7 +231,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       gameRoundId: currentGameRound.gameRoundId,
       isGuestMode: !finalUserId,
     })
-
     // Submit answer (works for both authenticated users and guests)
     dispatch(
       submitAnswer({
@@ -218,9 +250,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       })
       dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
-      setShowResult(false)
-      setSelectedChordId(null)
-      setShowChords(true)
+      // No need to manually reset UI states here, the useEffect for currentGameRound will handle it
+      // No need to manually reset uiReadyForRoundId, it will be set by the useEffect
       dispatch(
         startGame({
           userId: finalUserId, // Can be null for guest mode
@@ -239,9 +270,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       })
       dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
-      setShowResult(false)
-      setSelectedChordId(null)
-      setShowChords(true)
+      // No need to manually reset UI states here, the useEffect for currentGameRound will handle it
+      // No need to manually reset uiReadyForRoundId, it will be set by the useEffect
       dispatch(
         startGame({
           userId: finalUserId, // Can be null for guest mode
@@ -345,7 +375,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       <View className="flex-row items-center px-6 py-4">
         <BackButton onPress={onBack} />
       </View>
-
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Audio Error Warning (if any) */}
         {audioError && (
@@ -353,7 +382,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             <Text className="text-yellow-800 text-sm">⚠️ Audio playback issue: {audioError}</Text>
           </View>
         )}
-
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
           {/* Stats Row - Now using real-time stats from API */}
           <View className="flex-row justify-center mb-6 gap-x-2">
@@ -369,7 +397,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
               denominator={currentStats.totalAttempts || 0}
             />
           </View>
-
           {/* Play Again Button */}
           {currentGameRound && (
             <View className="px-6 mb-6">
@@ -377,7 +404,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             </View>
           )}
         </View>
-
         {/* Game Result Feedback */}
         {showResult && gameResult && (
           <View className="px-6 mb-6">
@@ -388,11 +414,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             >
               {gameResult.isCorrect
                 ? "Correct!"
-                : `Sorry, that was not ${gameResult.correctChord?.displayName || "the correct answer"}. Try Again!`}
+                : `Sorry, that was ${gameResult.correctChord?.displayName}. Try Again!`}
             </Text>
           </View>
         )}
-
         {/* Note Grid with chord options - Only show when showChords is true */}
         {currentGameRound && showChords && (
           <NoteGrid
@@ -404,7 +429,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             correctChordId={gameResult?.correctChord?.id || null}
           />
         )}
-
         {/* Level Control Buttons */}
         <View className="px-6 mb-4 items-center gap-y-3">
           {currentLevel > 1 && (
@@ -424,11 +448,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             />
           )}
         </View>
-
         {/* Extra space to ensure content doesn't get hidden behind fixed button */}
         <View className="h-20" />
       </ScrollView>
-
       {/* Fixed More Details Button at bottom */}
       <View className="px-6 pb-8 pt-4 justify-center items-center">
         <MoreDetailsButton onPress={handleMoreDetails} />
@@ -441,7 +463,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
           </View>
         )}
       </View>
-
       {/* Subscription Required Modal */}
       <SubscriptionModal
         visible={showSubscriptionModal}
@@ -451,7 +472,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
         onUpgrade={handleSubscriptionUpgrade}
         onCancel={handleSubscriptionCancel}
       />
-
       {/* Game Error Modal */}
       <GameErrorModal
         visible={showGameErrorModal}

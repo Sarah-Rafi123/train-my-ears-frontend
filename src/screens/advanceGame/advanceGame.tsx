@@ -1,6 +1,6 @@
 "use client"
 import { View, Text, ScrollView, ActivityIndicator, Dimensions } from "react-native"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
@@ -27,6 +27,7 @@ import { Feather } from "@expo/vector-icons"
 import StatCard from "@/src/components/widgets/StatsCard"
 // Import the debounce function at the top of the file
 import { debounce } from "@/src/lib/utils"
+import { StyleSheet } from "react-native"
 
 interface AdvancedGameScreenProps {
   onBack?: () => void
@@ -38,13 +39,11 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const navigation = useNavigation()
   const route = useRoute()
   const dispatch = useAppDispatch()
-
   // Get screen dimensions for responsive layout
   const screenWidth = Dimensions.get("window").width
 
   // Get auth data
   const { userId, guitarId, pianoId } = useAuth()
-
   // Get advanced game state from Redux
   const {
     currentGameRound,
@@ -63,14 +62,22 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const [audioError, setAudioError] = useState<string | null>(null)
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
-  const [isPlayingSequence, setIsPlayingSequence] = useState(isPlayingSequence)
+  const [isPlayingSequence, setIsPlayingSequence] = useState(false) // Initialize to false
+  const [showChords, setShowChords] = useState(false) // Declare setShowChords
+  const [selectedChordId, setSelectedChordId] = useState<string | null>(null) // Declare setSelectedChordId
 
   // Use simpler state tracking instead of complex refs
   const [isInitializing, setIsInitializing] = useState(false)
   const [hasInitialized, setHasInitialized] = useState(false)
-
   // Add API call prevention state
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false)
+
+  // Use a ref to track the ID of the round whose audio was last played
+  const lastPlayedRoundIdRef = useRef<string | null>(null)
+  // Use a ref to track the previous game round ID to detect actual changes
+  const prevGameRoundIdRef = useRef<string | null>(null)
+  // NEW STATE: To signal when UI is ready for a specific game round
+  const [uiReadyForRoundId, setUiReadyForRoundId] = useState<string | null>(null)
 
   // Get route params
   const routeParams = route.params as any
@@ -215,17 +222,14 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     setIsApiCallInProgress(true)
     setShowResult(false)
     setAudioError(null)
-
     // Use clearRoundData instead of resetGame to preserve currentLevel and stats
     dispatch(clearRoundData())
-
     // Set the level if different (this will update Redux state)
     // This dispatch is now redundant if level is only updated on fulfilled, but kept for clarity
     // The actual level update happens in the fulfilled case of startAdvancedGame
     if (levelToUse !== currentLevel) {
       dispatch(setCurrentLevel(levelToUse))
     }
-
     try {
       await dispatch(
         startAdvancedGame({
@@ -262,10 +266,8 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         handleSubmitSequence()
       }
     }, 1000) // 1 second debounce time
-
     // Call the debounced function when conditions are met
     debouncedSubmit()
-
     // No need for cleanup as the debounce function handles it
   }, [selectedSequence.length, currentGameRound, finalUserId, isSubmittingSequence, showResult])
 
@@ -277,10 +279,13 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       console.log("🎯 Advanced game result received with stats:", {
         isCorrect: gameResult.isCorrect,
         streak: gameResult.stats.streak,
-        accuracy: gameResult.stats.accuracy,
-        totalAttempts: gameResult.stats.totalAttempts,
-        correctAnswers: gameResult.stats.correctAnswers,
+        accuracy: currentStats.accuracy,
+        totalAttempts: currentStats.totalAttempts,
+        correctAnswers: currentStats.correctAnswers,
         isGuestMode: !finalUserId,
+        // ADD THESE LOGS FOR DEBUGGING
+        correctSequenceData: gameResult.correctSequence,
+        sequenceComparisonData: gameResult.sequenceComparison,
       })
     }
   }, [gameResult])
@@ -301,7 +306,59 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }, [error, errorCode])
 
-  // Update the playSequenceAudio function in the AdvancedGameScreen component
+  // Effect to reset UI states and signal UI readiness for a new round
+  useEffect(() => {
+    const currentRoundId = currentGameRound?.gameRoundId || null
+
+    if (currentGameRound) {
+      // Reset UI states for a new round
+      setShowChords(true) // Assuming showChords is relevant for advanced game too
+      setShowResult(false)
+      setSelectedChordId(null) // Assuming selectedChordId is relevant for advanced game too
+      // Signal that UI is ready for this specific round
+      setUiReadyForRoundId(currentRoundId)
+    } else {
+      // If currentGameRound becomes null (e.g., during loading or error), reset UI readiness
+      setUiReadyForRoundId(null)
+    }
+
+    // Always update prevGameRoundIdRef to the current round ID for the next render cycle
+    prevGameRoundIdRef.current = currentRoundId
+  }, [currentGameRound]) // Only depend on currentGameRound
+
+  // Play audio when game round loads AND UI is ready, ensuring it plays only once per round
+  useEffect(() => {
+    const currentRoundId = currentGameRound?.gameRoundId || null
+
+    // Only play audio if:
+    // 1. currentGameRound is defined and has an audio URL
+    // 2. The current round ID matches the UI ready ID
+    // 3. The current round ID has not been played yet (prevents re-playing same ID)
+    if (
+      currentGameRound?.sequenceAudioUrls &&
+      currentGameRound.sequenceAudioUrls.length > 0 &&
+      currentRoundId &&
+      currentRoundId === uiReadyForRoundId && // Ensure UI is ready for this round
+      currentRoundId !== lastPlayedRoundIdRef.current // Ensure this specific round's audio hasn't been played
+    ) {
+      playSequenceAudio()
+      lastPlayedRoundIdRef.current = currentRoundId // Mark this round's audio as played
+    }
+  }, [currentGameRound, uiReadyForRoundId]) // Depend on both currentGameRound and uiReadyForRoundId
+
+  const playAudioSafely = async (audioUrl: string) => {
+    try {
+      setAudioError(null)
+      // The audioService.playAudio now handles stopping previous sounds internally
+      await audioService.playAudio(audioUrl)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown audio error"
+      console.error("❌ AdvancedGameScreen: Audio playback failed:", errorMessage)
+      setAudioError(errorMessage)
+    }
+  }
+
+  // Updated the playSequenceAudio function in the AdvancedGameScreen component
   const playSequenceAudio = async () => {
     if (!currentGameRound?.sequenceAudioUrls || isPlayingSequence) return
     try {
@@ -309,15 +366,12 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       setAudioError(null)
       console.log("🎵 AdvancedGameScreen: Playing sequence audio...")
       console.log("🎵 AdvancedGameScreen: Audio URLs to play:", currentGameRound.sequenceAudioUrls)
-
       for (let i = 0; i < currentGameRound.sequenceAudioUrls.length; i++) {
         const audioUrl = currentGameRound.sequenceAudioUrls[i]
         console.log(`🎵 Playing audio ${i + 1}/${currentGameRound.sequenceAudioUrls.length}:`, audioUrl)
-
         // Extract file name for clearer logging
         const fileName = audioUrl.split("/").pop() || audioUrl
         console.log(`🎵 File name: ${fileName}`)
-
         try {
           await audioService.playAudio(audioUrl)
         } catch (audioError) {
@@ -329,7 +383,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             setAudioError(`Error playing chord ${i + 1}.`)
           }
         }
-
         // Wait a bit between audio files
         if (i < currentGameRound.sequenceAudioUrls.length - 1) {
           await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -357,7 +410,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
   const handleChordSelect = (chordId: string) => {
     if (isSubmittingSequence || !currentGameRound || showResult) return
-
     // Add chord to sequence if not full
     if (selectedSequence.length < currentGameRound.sequenceLength) {
       dispatch(addToSequence(chordId))
@@ -379,7 +431,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       console.log("🔄 Cannot submit sequence: conditions not met or API call in progress")
       return
     }
-
     // Calculate response time
     const responseTime = responseStartTime ? Date.now() - responseStartTime : 0
     console.log("🎯 AdvancedGameScreen: Auto-submitting sequence:", {
@@ -388,9 +439,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       gameSessionId: currentGameRound.gameSessionId,
       isGuestMode: !finalUserId,
     })
-
     setIsApiCallInProgress(true)
-
     // Submit sequence (works for both authenticated users and guests)
     dispatch(
       submitSequence({
@@ -423,7 +472,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       console.log("📈 AdvancedGameScreen: Attempting level up to:", newLevel, {
         isGuestMode: !finalUserId,
       })
-
       // If the new level is 3 or above, show subscription modal for ALL users
       if (newLevel >= 3) {
         // Removed `&& !finalUserId`
@@ -431,7 +479,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         setShowSubscriptionModal(true)
         return // Prevent starting the game
       }
-
       setHasInitialized(false) // Reset initialization flag
       startNewGame(newLevel)
     }
@@ -492,49 +539,62 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     showIcon?: boolean
   }> => {
     if (!currentGameRound) return []
-
     const indicators: Array<{
       type: "success" | "error" | "empty" | "filled"
       chordText?: string
       showIcon?: boolean
     }> = []
 
-    for (let i = 0; i < currentGameRound.sequenceLength; i++) {
-      if (showResult && gameResult) {
-        // Show result indicators with chord names and tick/cross icons
-        // Add null check for gameResult.sequenceComparison
-        const comparison = gameResult.sequenceComparison?.find((comp) => comp.position === i + 1)
-        if (comparison) {
-          // Find the chord name for display
-          // Add null check for gameResult.correctSequence
-          const correctChord = gameResult.correctSequence?.find((chord) => chord.position === i + 1)
-          const chordText = correctChord ? formatChordForDisplay(correctChord.name) : ""
-          indicators.push({
-            type: comparison.correct ? "success" : "error",
-            chordText,
-            showIcon: true, // Show tick/cross icons in result view
-          })
+    if (showResult && gameResult && gameResult.correctSequence) {
+      // Sort correct sequence to ensure correct order for display
+      const sortedCorrectSequence = [...gameResult.correctSequence].sort((a, b) => a.position - b.position)
+
+      for (let i = 0; i < currentGameRound.sequenceLength; i++) {
+        const correctChord = sortedCorrectSequence[i] // Get chord by index after sorting
+        // Find comparison by position, or default to an incorrect comparison if not found
+        const comparison = gameResult.sequenceComparison?.find(
+          (comp) => comp.position === (correctChord?.position || i + 1),
+        )
+
+        let type: "success" | "error" | "empty" | "filled" = "empty"
+        let chordText = ""
+        let showIcon = false
+
+        if (correctChord) {
+          chordText = formatChordForDisplay(correctChord.name)
+          if (comparison) {
+            type = comparison.correct ? "success" : "error"
+            showIcon = true
+          } else {
+            // Fallback: If correctChord exists but no comparison for this position, assume it's an error
+            // This might indicate an issue with the sequenceComparison data from the API
+            type = "error"
+            showIcon = true
+          }
         } else {
-          indicators.push({ type: "empty" })
+          // This case means correctSequence is shorter than sequenceLength, or data is missing for this position
+          type = "empty"
+          showIcon = false
         }
-      } else {
-        // Show selection indicators with selected chord names (no icons during gameplay)
+        indicators.push({ type, chordText, showIcon })
+      }
+    } else {
+      // Original logic for when not showing result (during user selection)
+      for (let i = 0; i < currentGameRound.sequenceLength; i++) {
         if (i < selectedSequence.length) {
-          // Find the chord name from the selected chord ID
           const selectedChordId = selectedSequence[i]
           const selectedChord = currentGameRound.chordPool.find((chord) => chord.id === selectedChordId)
           const chordText = selectedChord ? formatChordForDisplay(selectedChord.name) : ""
           indicators.push({
             type: "filled",
             chordText,
-            showIcon: false, // No icons during gameplay
+            showIcon: false,
           })
         } else {
           indicators.push({ type: "empty" })
         }
       }
     }
-
     return indicators
   }
 
@@ -542,23 +602,19 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const organizeChordRows = (chords: any[]) => {
     const rows = []
     const buttonsPerRow = 3
-
     // If we have fewer than 3 chords total, put them all in one row
     if (chords.length <= buttonsPerRow) {
       return [chords]
     }
-
     // Calculate how many complete rows of 3 we can make
     const completeRows = Math.floor(chords.length / buttonsPerRow)
     const remainder = chords.length % buttonsPerRow
-
     // Create complete rows of 3
     for (let i = 0; i < completeRows; i++) {
       const startIndex = i * buttonsPerRow
       const endIndex = startIndex + buttonsPerRow
       rows.push(chords.slice(startIndex, endIndex))
     }
-
     // Handle remaining chords
     if (remainder > 0) {
       const remainingChords = chords.slice(completeRows * buttonsPerRow)
@@ -587,7 +643,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         }
       }
     }
-
     return rows
   }
 
@@ -636,14 +691,12 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
       <View className="flex-row items-center px-6 py-4">
         <BackButton onPress={onBack} />
       </View>
-
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {audioError && (
           <View className="mx-6 mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
             <Text className="text-yellow-800 text-sm">⚠️ Audio playback issue: {audioError}</Text>
           </View>
         )}
-
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
           {/* Stats Row - Now using real-time stats from API with Wins/Attempts card */}
           <View className="flex-row justify-between mb-8 gap-x-1">
@@ -660,7 +713,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             />
           </View>
         </View>
-
         {/* Play Again Button - Updated to show proper text based on game state */}
         {currentGameRound && (
           <View className="px-6 mb-8">
@@ -688,7 +740,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             </TouchableOpacity>
           </View>
         )}
-
         {/* Sequence Indicators - Now showing chord names with full-circle tick/cross icons */}
         {currentGameRound && (
           <View className="flex-row justify-center gap-x-4 mb-8">
@@ -708,7 +759,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             ))}
           </View>
         )}
-
         {/* Auto-submit status indicator */}
         {currentGameRound &&
           selectedSequence.length === currentGameRound.sequenceLength &&
@@ -721,29 +771,43 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
               </View>
             </View>
           )}
-
         {/* Game Result Feedback */}
         {showResult && gameResult && (
           <View className="px-6 mb-6">
-            <Text
-              className={`text-2xl font-bold text-center mb-4 ${
-                gameResult.isCorrect ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              {gameResult.isCorrect ? "Perfect Sequence!" : "Incorrect Sequence"}
-            </Text>
-            {/* Show correct sequence in text format */}
-            <View className="bg-gray-50 rounded-lg p-4 mb-4">
-              <Text className="text-black text-lg font-semibold text-center mb-2">
-                {gameResult.isCorrect ? "Your Answer:" : "Correct Sequence:"}
-              </Text>
-              <Text className="text-black text-base text-center leading-6">
-                {gameResult.correctSequence
-                  ?.sort((a, b) => a.position - b.position)
-                  .map((chord) => formatChordForSequence(chord.name))
-                  .join(" → ")}
-              </Text>
-            </View>
+            {/* Define correctSequenceDisplay here */}
+            {(() => {
+              const correctSequenceDisplay =
+                gameResult.correctSequence && Array.isArray(gameResult.correctSequence)
+                  ? gameResult.correctSequence
+                      .sort((a, b) => a.position - b.position)
+                      .map((chord) => formatChordForSequence(chord.name))
+                      .join(" → ")
+                  : "N/A" // Fallback if correctSequence is not an array or is null/undefined
+
+              return (
+                <Text
+                  className={`text-2xl font-bold text-center mb-4 ${gameResult.isCorrect ? "text-green-600" : "text-red-600"}`}
+                >
+                  {gameResult.isCorrect ? "Perfect Sequence!" : `Sorry, the sequence was: ${correctSequenceDisplay}`}
+                </Text>
+              )
+            })()}
+            {/* The commented-out block below is no longer needed as the sequence is now integrated into the main message */}
+            {/*
+            {gameResult.correctSequence && gameResult.correctSequence.length > 0 && (
+              <View className="bg-gray-50 rounded-lg p-4 mb-4">
+                <Text className="text-black text-lg font-semibold text-center mb-2">
+                  {gameResult.isCorrect ? "Your Answer:" : "Correct Sequence:"}
+                </Text>
+                <Text className="text-black text-base text-center leading-6">
+                  {gameResult.correctSequence
+                    ?.sort((a, b) => a.position - b.position)
+                    .map((chord) => formatChordForSequence(chord.name))
+                    .join(" → ")}
+                </Text>
+              </View>
+            )}
+            */}
           </View>
         )}
         {currentGameRound && (
@@ -796,7 +860,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             ))}
           </View>
         )}
-
         {/* Level Control Buttons */}
         <View className="px-6 mb-4 items-center gap-y-3">
           {currentLevel > 1 && (
@@ -816,18 +879,15 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             />
           )}
         </View>
-
         {/* Extra space to ensure content doesn't get hidden behind fixed button */}
         <View className="h-32" />
       </ScrollView>
-
       {/* Fixed Bottom Section */}
       <View className="px-6 pb-8 pt-4 items-center justify-center bg-white">
         <MoreDetailsButton onPress={handleMoreDetails} />
         {/* Only show Save Progress for logged-in users */}
         {!finalUserId && <SaveProgressButton onPress={handleSaveProgress} />}
       </View>
-
       {/* Subscription Required Modal */}
       <SubscriptionModal
         visible={showSubscriptionModal}
@@ -837,7 +897,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         onUpgrade={handleSubscriptionUpgrade}
         onCancel={handleSubscriptionCancel}
       />
-
       {/* Game Error Modal */}
       <GameErrorModal
         visible={showGameErrorModal}
@@ -851,3 +910,50 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     </SafeAreaView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  text: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  button: {
+    backgroundColor: "blue",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  bottomContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+    padding: 20,
+    alignItems: "center",
+  },
+  detailsButton: {
+    backgroundColor: "green",
+    padding: 15,
+    borderRadius: 8,
+  },
+  detailsButtonText: {
+    color: "white",
+    fontSize: 18,
+    textAlign: "center",
+  },
+})

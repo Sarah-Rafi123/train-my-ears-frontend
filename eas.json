@@ -18,16 +18,18 @@
       "distribution": "internal"
     },
     "production": {
-      
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {
     "production": {
-      "ios":{
-        "appleId":"bob@experientialretreats.com",
-        "ascAppId":"6748353964",
-        "appleTeamId":"Q2Z3X4Y5Z6"
+      "ios": {
+        "appleId": "bob@experientialretreats.com",
+        "ascAppId": "6748353964",
+        "appleTeamId": "Q2Z3X4Y5Z6"
       }
     }
   }

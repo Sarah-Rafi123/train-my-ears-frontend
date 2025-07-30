@@ -1,11 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 
-// Types
 interface User {
   id: string
   name: string
   email: string
+  clerkId: string | null
+  provider: "apple" | "facebook" | "google" | null
   createdAt: string
   updatedAt?: string
   subscriptionId?: string | null
@@ -21,7 +22,7 @@ interface AuthResponse {
   data: {
     user: User
     token: string
-    refreshToken: string
+    refreshToken?: string
   }
 }
 
@@ -35,7 +36,7 @@ interface ErrorResponse {
 
 interface AuthState {
   user: User | null
-  userId: string | null // Added userId to state
+  userId: string | null 
   token: string | null
   refreshToken: string | null
   isLoading: boolean
@@ -54,18 +55,24 @@ interface LoginData {
   password: string
 }
 
+// New: Interface for social login data
+interface SocialLoginData {
+  clerkId: string
+  email: string
+  name: string
+  provider: "apple" | "facebook" | "google"
+}
+
 // Helper function to extract error message from various response formats
 const extractErrorMessage = (data: any): string => {
   // Format: { error: { message: "Error message" } }
   if (data.error && data.error.message) {
     return data.error.message
   }
-
   // Format: { message: "Error message" }
   if (data.message) {
     return data.message
   }
-
   // Fallback
   return "An unexpected error occurred. Please try again."
 }
@@ -74,7 +81,6 @@ const extractErrorMessage = (data: any): string => {
 const saveAuthDataToStorage = async (token: string, refreshToken: string, user: User) => {
   try {
     const userId = user.id // Extract user ID
-
     console.log("🔐 Saving authentication data to AsyncStorage...")
     console.log("📝 Token:", token)
     console.log("🔄 Refresh Token:", refreshToken)
@@ -86,13 +92,14 @@ const saveAuthDataToStorage = async (token: string, refreshToken: string, user: 
     console.log("🎯 User Accuracy:", user.overallAccuracy)
     console.log("🎮 Total Games:", user.totalGamesPlayed)
     console.log("📅 Created At:", user.createdAt)
+    if (user.clerkId) console.log("☁️ Clerk ID:", user.clerkId)
+    if (user.provider) console.log("🌐 Provider:", user.provider)
 
     // Save to AsyncStorage
     await AsyncStorage.setItem("token", token)
     await AsyncStorage.setItem("refreshToken", refreshToken)
     await AsyncStorage.setItem("user", JSON.stringify(user))
     await AsyncStorage.setItem("userId", userId) // Save user ID separately
-
     console.log("✅ Successfully saved all authentication data to AsyncStorage")
 
     // Verify data was saved correctly
@@ -100,12 +107,10 @@ const saveAuthDataToStorage = async (token: string, refreshToken: string, user: 
     const savedRefreshToken = await AsyncStorage.getItem("refreshToken")
     const savedUser = await AsyncStorage.getItem("user")
     const savedUserId = await AsyncStorage.getItem("userId")
-
     console.log("🔍 Verification - Saved Token:", savedToken ? "✅ Present" : "❌ Missing")
     console.log("🔍 Verification - Saved Refresh Token:", savedRefreshToken ? "✅ Present" : "❌ Missing")
     console.log("🔍 Verification - Saved User:", savedUser ? "✅ Present" : "❌ Missing")
     console.log("🔍 Verification - Saved User ID:", savedUserId)
-
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser)
       console.log("🔍 Verification - Parsed User Object:", parsedUser)
@@ -151,7 +156,6 @@ export const registerUser = createAsyncThunk<AuthResponse, RegisterData, { rejec
         email: userData.email,
         password: "[HIDDEN]", // Don't log password
       })
-
       const response = await fetch(`https://trainmyears.softaims.com/api/auth/register`, {
         method: "POST",
         headers: {
@@ -160,25 +164,20 @@ export const registerUser = createAsyncThunk<AuthResponse, RegisterData, { rejec
         },
         body: JSON.stringify(userData),
       })
-
       console.log("📊 Response status:", response.status)
       console.log("📊 Response ok:", response.ok)
-
       const data = await response.json()
       console.log("📥 Full API Response:", JSON.stringify(data, null, 2))
-
       if (!response.ok) {
         console.error("❌ Registration failed with status:", response.status)
         console.error("❌ Error response:", data)
         return rejectWithValue(extractErrorMessage(data))
       }
-
       // Validate response structure
       if (!data.success || !data.data || !data.data.user || !data.data.token || !data.data.refreshToken) {
         console.error("❌ Invalid response structure:", data)
         return rejectWithValue("Invalid response from server")
       }
-
       // Extract user ID
       const userId = data.data.user.id
       console.log("✅ Registration successful!")
@@ -189,10 +188,8 @@ export const registerUser = createAsyncThunk<AuthResponse, RegisterData, { rejec
         email: data.data.user.email,
         level: data.data.user.currentLevel,
       })
-
       // Save authentication data to AsyncStorage with detailed logging
       await saveAuthDataToStorage(data.data.token, data.data.refreshToken, data.data.user)
-
       return data
     } catch (error) {
       console.error("💥 Registration network error:", error)
@@ -215,7 +212,6 @@ export const loginUser = createAsyncThunk<AuthResponse, LoginData, { rejectValue
         email: loginData.email,
         password: "[HIDDEN]", // Don't log password
       })
-
       const response = await fetch(`https://trainmyears.softaims.com/api/auth/login`, {
         method: "POST",
         headers: {
@@ -224,25 +220,20 @@ export const loginUser = createAsyncThunk<AuthResponse, LoginData, { rejectValue
         },
         body: JSON.stringify(loginData),
       })
-
       console.log("📊 Response status:", response.status)
       console.log("📊 Response ok:", response.ok)
-
       const data = await response.json()
       console.log("📥 Full API Response:", JSON.stringify(data, null, 2))
-
       if (!response.ok) {
         console.error("❌ Login failed with status:", response.status)
         console.error("❌ Error response:", data)
         return rejectWithValue(extractErrorMessage(data))
       }
-
       // Validate response structure
       if (!data.success || !data.data || !data.data.user || !data.data.token || !data.data.refreshToken) {
         console.error("❌ Invalid response structure:", data)
         return rejectWithValue("Invalid response from server")
       }
-
       // Extract user ID
       const userId = data.data.user.id
       console.log("✅ Login successful!")
@@ -256,10 +247,8 @@ export const loginUser = createAsyncThunk<AuthResponse, LoginData, { rejectValue
         accuracy: data.data.user.overallAccuracy,
         totalGames: data.data.user.totalGamesPlayed,
       })
-
       // Save authentication data to AsyncStorage with detailed logging
       await saveAuthDataToStorage(data.data.token, data.data.refreshToken, data.data.user)
-
       return data
     } catch (error) {
       console.error("💥 Login network error:", error)
@@ -271,37 +260,115 @@ export const loginUser = createAsyncThunk<AuthResponse, LoginData, { rejectValue
   },
 )
 
+// New: Async thunk for social login
+export const socialLoginUser = createAsyncThunk<AuthResponse, SocialLoginData, { rejectValue: string }>(
+  "auth/socialLogin",
+  async (socialData, { rejectWithValue }) => {
+    try {
+      console.log("🚀 Starting social login process...")
+      // UPDATED URL: Changed from /api/users/social-login to /api/auth/social-login
+      console.log("📡 Making social login API call to:", `https://trainmyears.softaims.com/api/auth/social-login`)
+      console.log("📤 Request data:", socialData)
+
+      const response = await fetch(`https://trainmyears.softaims.com/api/auth/social-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(socialData),
+      })
+
+      console.log("📊 Response status:", response.status)
+      console.log("📊 Response ok:", response.ok)
+      const data = await response.json()
+      console.log("📥 Full API Response:", JSON.stringify(data, null, 2))
+
+      if (!response.ok) {
+        console.error("❌ Social login failed with status:", response.status)
+        console.error("❌ Error response:", data)
+        return rejectWithValue(extractErrorMessage(data))
+      }
+
+      // Validate response structure
+      // Backend social login currently returns 'token' but not 'refreshToken'.
+      // Provide a placeholder for refreshToken if it's missing.
+      if (!data.success || !data.data || !data.data.user || !data.data.token) {
+        console.error("❌ Invalid response structure for social login:", data)
+        return rejectWithValue("Invalid response from server for social login")
+      }
+
+      const backendAuthResponse: AuthResponse = {
+        success: true,
+        data: {
+          user: data.data.user,
+          token: data.data.token,
+          refreshToken: data.data.refreshToken || "social_login_no_refresh_token", // Placeholder
+        },
+      }
+
+      console.log("✅ Social login successful!")
+      await saveAuthDataToStorage(
+        backendAuthResponse.data.token,
+        backendAuthResponse.data.refreshToken || "social_login_no_refresh_token",
+        backendAuthResponse.data.user,
+      )
+      return backendAuthResponse
+    } catch (error) {
+      console.error("💥 Social login network error:", error)
+      if (error instanceof Error) {
+        return rejectWithValue(`Network error: ${error.message}`)
+      }
+      return rejectWithValue("Network error during social login. Please check your connection and try again.")
+    }
+  },
+)
+
 // Async thunk for logout
 export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
       console.log("🚀 Starting logout process...")
-      
-      // Get refresh token from AsyncStorage
+      // Get both token and refresh token from AsyncStorage
+      const token = await AsyncStorage.getItem("token")
       const refreshToken = await AsyncStorage.getItem("refreshToken")
-      
-      if (!refreshToken) {
-        console.log("ℹ️ No refresh token found, proceeding with local logout")
+
+      let tokenToSend: string | null = null
+      let payloadKey = "refreshToken" // Default to sending refresh token
+
+      if (!refreshToken || refreshToken === "social_login_no_refresh_token") {
+        // If no refresh token or it's the social login placeholder,
+        // use the access token for logout if available.
+        console.log("ℹ️ No refresh token found or it's a social login placeholder. Attempting logout with access token.")
+        tokenToSend = token
+        payloadKey = "token" // Change payload key to 'token'
+      } else {
+        // Otherwise, use the actual refresh token
+        tokenToSend = refreshToken
+        payloadKey = "refreshToken"
+      }
+
+      if (!tokenToSend) {
+        console.log("ℹ️ No token available to send for logout, proceeding with local logout only.")
         await clearAuthDataFromStorage()
         return
       }
 
       console.log("📡 Making logout API call to:", `https://trainmyears.softaims.com/api/auth/logout`)
-      console.log("📤 Request data: { refreshToken: [HIDDEN] }")
-      
+      console.log(`📤 Request data: { ${payloadKey}: [HIDDEN] }`)
+
       const response = await fetch(`https://trainmyears.softaims.com/api/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({ refreshToken }),
+        body: JSON.stringify({ [payloadKey]: tokenToSend }), // Dynamically set key based on what's sent
       })
 
       console.log("📊 Logout response status:", response.status)
       console.log("📊 Logout response ok:", response.ok)
-
       if (!response.ok) {
         const data = await response.json()
         console.error("❌ Logout API failed:", data)
@@ -309,14 +376,11 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
       } else {
         console.log("✅ Successfully logged out from server")
       }
-
       // Always clear local data regardless of API response
       await clearAuthDataFromStorage()
-
     } catch (error) {
       console.error("💥 Logout network error:", error)
       console.log("⚠️ Continuing with local logout despite network error")
-      
       // Still clear local data even if network fails
       try {
         await clearAuthDataFromStorage()
@@ -332,17 +396,14 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
 export const loadStoredAuth = createAsyncThunk("auth/loadStored", async () => {
   try {
     console.log("🔍 Loading stored authentication data...")
-
     const token = await AsyncStorage.getItem("token")
     const refreshToken = await AsyncStorage.getItem("refreshToken")
     const userString = await AsyncStorage.getItem("user")
     const userId = await AsyncStorage.getItem("userId")
-
     console.log("📱 Stored Token:", token ? "✅ Found" : "❌ Not found")
     console.log("📱 Stored Refresh Token:", refreshToken ? "✅ Found" : "❌ Not found")
     console.log("📱 Stored User:", userString ? "✅ Found" : "❌ Not found")
     console.log("📱 Stored User ID:", userId)
-
     if (token && refreshToken && userString) {
       const user = JSON.parse(userString)
       console.log("✅ Successfully loaded stored auth data:")
@@ -351,10 +412,10 @@ export const loadStoredAuth = createAsyncThunk("auth/loadStored", async () => {
       console.log("📧 User Email:", user.email)
       console.log("👨‍💼 User Name:", user.name)
       console.log("📊 User Level:", user.currentLevel)
-
+      if (user.clerkId) console.log("☁️ Clerk ID:", user.clerkId)
+      if (user.provider) console.log("🌐 Provider:", user.provider)
       return { token, refreshToken, user, userId }
     }
-
     console.log("ℹ️ No stored authentication data found")
     return null
   } catch (error) {
@@ -378,14 +439,12 @@ const authSlice = createSlice({
         userId: state.userId,
         userEmail: state.user?.email,
       })
-
       state.user = null
       state.userId = null
       state.token = null
       state.refreshToken = null
       state.isAuthenticated = false
       state.error = null
-
       // Clear AsyncStorage (fire and forget for sync action)
       clearAuthDataFromStorage().catch((error) => {
         console.error("❌ Error in sync logout storage clear:", error)
@@ -408,15 +467,13 @@ const authSlice = createSlice({
           userName: action.payload.data.user.name,
           userEmail: action.payload.data.user.email,
         })
-
         state.isLoading = false
         state.user = action.payload.data.user
         state.userId = userId // Set userId in state
         state.token = action.payload.data.token
-        state.refreshToken = action.payload.data.refreshToken
+        state.refreshToken = action.payload.data.refreshToken || "social_login_no_refresh_token" // Handle optional refresh token
         state.isAuthenticated = true
         state.error = null
-
         console.log("🎯 Redux state updated - user is now authenticated with ID:", userId)
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -440,21 +497,49 @@ const authSlice = createSlice({
           userLevel: action.payload.data.user.currentLevel,
           userStreak: action.payload.data.user.currentStreak,
         })
-
         state.isLoading = false
         state.user = action.payload.data.user
         state.userId = userId // Set userId in state
         state.token = action.payload.data.token
-        state.refreshToken = action.payload.data.refreshToken
+        state.refreshToken = action.payload.data.refreshToken || "social_login_no_refresh_token" // Handle optional refresh token
         state.isAuthenticated = true
         state.error = null
-
         console.log("🎯 Redux state updated - user is now authenticated with ID:", userId)
       })
       .addCase(loginUser.rejected, (state, action) => {
         console.log("❌ Login rejected:", action.payload)
         state.isLoading = false
         state.error = action.payload || "Login failed"
+      })
+      // New: Social Login user
+      .addCase(socialLoginUser.pending, (state) => {
+        console.log("⏳ Social login pending...")
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(socialLoginUser.fulfilled, (state, action) => {
+        console.log("✅ Social login fulfilled - updating state")
+        const userId = action.payload.data.user.id
+        console.log("📝 Setting user data in Redux state:", {
+          userId: userId,
+          userName: action.payload.data.user.name,
+          userEmail: action.payload.data.user.email,
+          clerkId: action.payload.data.user.clerkId,
+          provider: action.payload.data.user.provider,
+        })
+        state.isLoading = false
+        state.user = action.payload.data.user
+        state.userId = userId // Set userId in state
+        state.token = action.payload.data.token
+        state.refreshToken = action.payload.data.refreshToken || "social_login_no_refresh_token" // Handle optional refresh token
+        state.isAuthenticated = true
+        state.error = null
+        console.log("🎯 Redux state updated - user is now authenticated via social login with ID:", userId)
+      })
+      .addCase(socialLoginUser.rejected, (state, action) => {
+        console.log("❌ Social login rejected:", action.payload)
+        state.isLoading = false
+        state.error = action.payload || "Social login failed"
       })
       // Logout user (async)
       .addCase(logoutUser.pending, (state) => {
@@ -495,16 +580,14 @@ const authSlice = createSlice({
             userName: action.payload.user.name,
             userEmail: action.payload.user.email,
           })
-
           state.user = action.payload.user
           state.userId = userId // Set userId in state
           state.token = action.payload.token
           state.refreshToken = action.payload.refreshToken
           state.isAuthenticated = true
-
           console.log("🎯 User session restored successfully with ID:", userId)
         } else {
-          console.log("ℹ️ No stored auth data to load")
+          console.log("ℹ️ No stored authentication data found")
         }
       })
   },
