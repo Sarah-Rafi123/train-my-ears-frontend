@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native"
 import { useState } from "react"
 import { Dimensions, Image, Platform, Text, View, StyleSheet } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { useClerk } from "@clerk/clerk-expo"
 
 interface TrainMyEarScreenProps {
   onGetStarted?: () => void
@@ -15,6 +16,7 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
   const navigation = useNavigation()
   const { logout, isAuthenticated, user } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+const { signOut } = useClerk()
 
   const screenWidth = Dimensions.get("window").width
   const screenHeight = Dimensions.get("window").height
@@ -39,31 +41,41 @@ export default function HomeScreen({ onGetStarted }: TrainMyEarScreenProps) {
   }
 
   const handleGuestStart = async () => {
-    try {
-      console.log("Start as guest pressed")
-      if (isAuthenticated) {
-        console.log("🔓 User is authenticated, logging out before guest access...")
-        console.log("👤 Current user:", {
-          userId: user?.id,
-          email: user?.email,
-          name: user?.name,
-        })
-        setIsLoggingOut(true)
-        await logout()
-        console.log("✅ Successfully logged out, proceeding as guest")
-      } else {
-        console.log("ℹ️ No authenticated user, proceeding directly as guest")
-      }
-      console.log("🎵 Navigating to SelectInstrument as guest")
-      navigation.navigate("SelectInstrument" as never)
-    } catch (error) {
-      console.error("❌ Error during guest logout process:", error)
-      console.log("⚠️ Proceeding to SelectInstrument despite logout error")
-      navigation.navigate("SelectInstrument" as never)
-    } finally {
-      setIsLoggingOut(false)
+  try {
+    console.log("Start as guest pressed")
+
+    if (isAuthenticated) {
+      console.log("🔓 User is authenticated, logging out before guest access...")
+      console.log("👤 Current user:", {
+        userId: user?.id,
+        email: user?.email,
+        name: user?.name,
+      })
+
+      setIsLoggingOut(true)
+
+      // Call both logout functions
+      await Promise.allSettled([
+        logout(),     // your custom logout (maybe clears local state or async storage)
+        signOut(),    // Clerk's logout
+      ])
+
+      console.log("✅ Successfully logged out from both Clerk and App context")
+    } else {
+      console.log("ℹ️ No authenticated user, proceeding directly as guest")
     }
+
+    console.log("🎵 Navigating to SelectInstrument as guest")
+    navigation.navigate("SelectInstrument" as never)
+  } catch (error) {
+    console.error("❌ Error during guest logout process:", error)
+    console.log("⚠️ Proceeding to SelectInstrument despite logout error")
+    navigation.navigate("SelectInstrument" as never)
+  } finally {
+    setIsLoggingOut(false)
   }
+}
+
 
   // Create platform-specific and responsive text styles
   const titleStyle = {
