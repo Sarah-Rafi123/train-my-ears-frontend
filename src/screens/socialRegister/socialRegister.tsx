@@ -77,7 +77,7 @@ export default function SocialRegisterScreen() {
             >
               <Text className="text-black font-sans text-2xl">Continue with email</Text>
             </TouchableOpacity>
-             <Button title="Logout" onPress={() => signOut()} />  
+             {/* <Button title="Logout" onPress={() => signOut()} />   */}
             <View className="mt-10 items-center">
               <Text className="text-[#003049] text-lg text-center">Already have an account?</Text>
               <TouchableOpacity className="mt-1" onPress={() => navigation.navigate("Login" as never)}>

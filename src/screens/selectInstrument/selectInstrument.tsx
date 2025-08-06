@@ -1,5 +1,6 @@
 "use client"
-import { View, Text, SafeAreaView, Image, Alert, Platform, Dimensions, StyleSheet } from "react-native"
+
+import { View, Text, SafeAreaView, Image, Alert, Platform, Dimensions, StyleSheet, TouchableOpacity } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/src/context/AuthContext"
@@ -7,7 +8,7 @@ import BackButton from "@/src/components/ui/buttons/BackButton"
 import InstrumentCard from "@/src/components/widgets/InstrumentCard"
 import { instrumentsApi, type Instrument } from "@/src/services/instrumentApi"
 import musicbg from "@/src/assets/images/musicbg.png"
-
+import { useClerk } from "@clerk/clerk-expo"
 
 interface SelectInstrumentScreenProps {
   onBack?: () => void
@@ -20,6 +21,8 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   const [instruments, setInstruments] = useState<Instrument[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const { signOut } = useClerk()
 
   const screenWidth = Dimensions.get("window").width
   const screenHeight = Dimensions.get("window").height
@@ -134,6 +137,23 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      console.log("🔓 Logging out user...")
+
+      // Call both logout functions
+      await signOut()  // Clerk logout
+      console.log("✅ Successfully logged out from Clerk.")
+
+      // Optionally, also clear local authentication state (if needed)
+      // await yourCustomLogout()
+
+      navigation.navigate("Home")  // Navigate to Home screen after logout
+    } catch (error) {
+      console.error("❌ Error during logout:", error)
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View
@@ -143,7 +163,8 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
           paddingVertical: responsiveValue(), // py-8
         }}
       >
-        <BackButton onPress={onBack} />
+        {!token && <BackButton onPress={onBack} />} {/* Show BackButton only when there is no token */}
+        
         <View className="flex-1">
           <Text
             className="text-[#003049] font-semibold text-center"
@@ -156,7 +177,18 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
             Select an Instrument
           </Text>
         </View>
+
+        {/* Show logout button in the top-right corner if token exists */}
+        {token && (
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        )}
       </View>
+
       <View
         className="w-full"
         style={{
@@ -166,6 +198,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       >
         <Image source={musicbg} className="w-full h-full" resizeMode="contain" />
       </View>
+
       <View
         className="flex-1 px-6 pt-8"
         style={{
@@ -258,5 +291,18 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "white",
+  },
+  logoutButton: {
+    position: "absolute",
+    top: 8,
+    right: 16,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutText: {
+    color: "#0FFFF",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 })

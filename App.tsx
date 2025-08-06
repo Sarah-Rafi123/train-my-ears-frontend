@@ -19,13 +19,14 @@ import AdvanceGameScreen from "./src/screens/advanceGame/advanceGame"
 import UserStatsScreen from "./src/screens/userStats/userStats"
 import ViewFeedbackScreen from "./src/screens/viewFeedback/viewFeedback"
 import AuthProvider from "./src/context/AuthContext"
-import { ClerkProvider, ClerkLoaded} from '@clerk/clerk-expo'
+import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo'
 import { useFonts } from "expo-font"
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect, useCallback, useState } from "react"
 import { View, Text, ActivityIndicator, Platform } from "react-native"
 import Purchases from "react-native-purchases"
 import RevenueCatScreen from "./src/screens/revenuecatScreen/revenuecatScreen"
+import AsyncStorage from "@react-native-async-storage/async-storage" // Import AsyncStorage
 
 Purchases.setLogLevel(Purchases.LOG_LEVEL.VERBOSE)
 // Prevent splash screen from auto-hiding
@@ -60,26 +61,38 @@ const LoadingScreen = () => (
 
 export default function RootLayout() {
   const publishableKey = "pk_test_ZXRoaWNhbC10YWhyLTYxLmNsZXJrLmFjY291bnRzLmRldiQ"
-  if(!publishableKey) {
+  if (!publishableKey) {
     console.error("Clerk publishable key is missing")
     return null
   }
   const [appIsReady, setAppIsReady] = useState(false)
-
   const [fontsLoaded, fontError] = useFonts({
     "NATS-Regular": require("./src/assets/fonts/NATS-Regular.ttf"),
     // Add more font weights if available
     // "NATS-Bold": require("./src/assets/fonts/NATS-Bold.ttf"),
   })
 
-   useEffect(() => {
-    if (Platform.OS === 'ios') {
-      Purchases.configure({apiKey: 'appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi'});
-    } else if (Platform.OS === 'android') {
-       Purchases.configure({apiKey: 'appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi'});
-  }
-Purchases.getOfferings().then(console.log);
-  }, []);
+  // Check for stored token in AsyncStorage
+  const [hasToken, setHasToken] = useState(false)
+
+  useEffect(() => {
+    async function checkToken() {
+      const token = await AsyncStorage.getItem("token") // Retrieve token from AsyncStorage
+      if (token) {
+        setHasToken(true) // If token exists, user is authenticated
+      }
+    }
+    checkToken()
+  }, [])
+
+  useEffect(() => {
+    if (Platform.OS === "ios") {
+      Purchases.configure({ apiKey: "appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi" })
+    } else if (Platform.OS === "android") {
+      Purchases.configure({ apiKey: "appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi" })
+    }
+    Purchases.getOfferings().then(console.log)
+  }, [])
 
   useEffect(() => {
     async function prepare() {
@@ -112,38 +125,37 @@ Purchases.getOfferings().then(console.log);
   }
 
   return (
-     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
       <ClerkLoaded>
-    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <Provider store={store}>
-        <AuthProvider>
-          {/* <RevenueCatScreen /> */}
-         <NavigationContainer>
-            <Stack.Navigator
-              initialRouteName="Home"
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="ViewFeedback" component={ViewFeedbackScreen} />
-              <Stack.Screen name="SocialRegister" component={SocialRegisterScreen} />
-              <Stack.Screen name="Register" component={RegisterScreen} />
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Home" component={HomeScreen} />
-              <Stack.Screen name="SelectInstrument" component={SelectInstrumentScreen} />
-              <Stack.Screen name="Game" component={GameScreen} />
-              <Stack.Screen name="Menu" component={MenuScreen} />
-              <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
-              <Stack.Screen name="Stats" component={UserStatsScreen} />
-              <Stack.Screen name="Advance" component={AdvanceGameScreen} />
-              <Stack.Screen name="Sample" component={SampleScreen} />
-            </Stack.Navigator>
-          </NavigationContainer> 
-        </AuthProvider>
-      </Provider>
+        <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+          <Provider store={store}>
+            <AuthProvider>
+              {/* <RevenueCatScreen /> */}
+              <NavigationContainer>
+                <Stack.Navigator
+                  initialRouteName={hasToken ? "SelectInstrument" : "Home"} // Conditional initial route
+                  screenOptions={{
+                    headerShown: false,
+                  }}
+                >
+                  <Stack.Screen name="ViewFeedback" component={ViewFeedbackScreen} />
+                  <Stack.Screen name="SocialRegister" component={SocialRegisterScreen} />
+                  <Stack.Screen name="Register" component={RegisterScreen} />
+                  <Stack.Screen name="Login" component={LoginScreen} />
+                  <Stack.Screen name="Home" component={HomeScreen} />
+                  <Stack.Screen name="SelectInstrument" component={SelectInstrumentScreen} />
+                  <Stack.Screen name="Game" component={GameScreen} />
+                  <Stack.Screen name="Menu" component={MenuScreen} />
+                  <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+                  <Stack.Screen name="Stats" component={UserStatsScreen} />
+                  <Stack.Screen name="Advance" component={AdvanceGameScreen} />
+                  <Stack.Screen name="Sample" component={SampleScreen} />
+                </Stack.Navigator>
+              </NavigationContainer>
+            </AuthProvider>
+          </Provider>
         </View>
-    </ClerkLoaded>
+      </ClerkLoaded>
     </ClerkProvider>
-   
   )
 }

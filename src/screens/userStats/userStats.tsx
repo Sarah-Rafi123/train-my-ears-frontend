@@ -1,6 +1,6 @@
 "use client"
 
-import { View, Text, ScrollView, SafeAreaView } from "react-native"
+import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, StyleSheet, Image, Alert, Platform, Dimensions } from "react-native"
 import { useState, useCallback, useEffect } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import ChordCard from "@/src/components/widgets/ChordCard"
@@ -18,7 +18,7 @@ interface StatsScreenProps {
 }
 
 export default function UserStatsScreen({ navigation, route, onBack }: StatsScreenProps) {
-  const { userId } = useAuth()
+  const { userId, user } = useAuth() // We now have access to the user object
   const [selectedMode, setSelectedMode] = useState<"simple" | "advanced">("simple")
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null)
   const [todayProgressData, setTodayProgressData] = useState<DailyProgressData | null>(null)
@@ -105,8 +105,6 @@ export default function UserStatsScreen({ navigation, route, onBack }: StatsScre
     fetchProgressData()
   }, [userId])
 
-  
-
   // Handle level change with API call
   const handleLevelChange = useCallback(async (level: number) => {
     console.log(`Level ${level} selected, fetching level-specific data`)
@@ -158,6 +156,9 @@ export default function UserStatsScreen({ navigation, route, onBack }: StatsScre
 
   const todayProgressValues = getTodayProgressValues()
 
+  // Get the first letter of the user's name
+  const userFirstLetter = user?.name?.charAt(0).toUpperCase() || "A"; // Default to "A" if no first name
+
   return (
     <SafeAreaView className="flex-1 pt-8 bg-[#F2F5F6]">
       {/* Header with back button */}
@@ -170,7 +171,7 @@ export default function UserStatsScreen({ navigation, route, onBack }: StatsScre
       <View className="flex-1 relative">
         {/* Chord Card - positioned to overlap both sections */}
         <View className="absolute -top-16 left-0 right-0 z-10 px-6">
-          <ChordCard chord="AM" className="w-32 h-32 self-center" />
+          <ChordCard chord={userFirstLetter} className="w-32 h-32 self-center" /> {/* Use the first letter */}
         </View>
 
         {/* White background section stretching to end of screen */}
@@ -251,7 +252,7 @@ export default function UserStatsScreen({ navigation, route, onBack }: StatsScre
                       historyData.map((entry, index) => (
                         <View
                           key={`${entry.date}-${index}`}
-                          className={`flex-row py-4 px-6 ${index !== historyData.length - 1 ? "border-b border-gray-100" : ""}`}
+                          className={`flex-row mb-3 py-4 px-6 ${index !== historyData.length - 1 ? "border-b border-gray-100" : ""}`}
                         >
                           <Text className="flex-1 text-[#003049] text-base">{entry.date}</Text>
                           <Text className="w-20 text-center text-[#003049] text-base font-medium">{entry.streak}</Text>
