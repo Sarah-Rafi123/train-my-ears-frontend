@@ -1,7 +1,7 @@
 // Alternative implementation using OAuth directly
 "use client"
 
-import { Text, TouchableOpacity, View, ActivityIndicator } from "react-native"
+import { Text, TouchableOpacity, View, ActivityIndicator, Alert } from "react-native"
 import AppleWhiteSvg from "@/src/assets/svgs/Apple_white"
 import GoogleSvg from "@/src/assets/svgs/Google"
 import FacebookWhiteSvg from "@/src/assets/svgs/Facebook_white"
@@ -79,6 +79,29 @@ export default function SocialButton({
     }
   }
 
+  // Helper function to check if error is related to email already existing with another provider
+  const isEmailConflictError = (error: any): boolean => {
+    const errorMessage = error?.message || error || ""
+    const isServerError = errorMessage.includes("500") || errorMessage.includes("Unique constraint failed")
+    const isClerkIdConflict = errorMessage.includes("clerkId") || errorMessage.includes("Unique constraint")
+    return isServerError && isClerkIdConflict
+  }
+
+  // Helper function to show email conflict popup
+  const showEmailConflictPopup = (email: string) => {
+    Alert.alert(
+      "Account Already Exists",
+      `An account with the email "${email}" already exists with a different social provider. Please sign in using the original provider or use a different email address.`,
+      [
+        {
+          text: "OK",
+          style: "default",
+        },
+      ],
+      { cancelable: true }
+    )
+  }
+
   const onPress = useCallback(async () => {
     try {
       setIsLoading(true)
@@ -148,7 +171,23 @@ export default function SocialButton({
             console.log("✅ Backend login successful")
             navigation.navigate("SelectInstrument" as never)
           } else {
-            throw new Error(result.payload || "Backend login failed")
+            const error = result.payload || "Backend login failed"
+            
+            // Check if this is an email conflict error
+            if (isEmailConflictError(error)) {
+              console.log("🚨 Email conflict detected - showing popup")
+              showEmailConflictPopup(email)
+            } else {
+              console.error("❌ Other backend error:", error)
+              // You can show a generic error alert here if needed
+              Alert.alert(
+                "Login Error",
+                "Something went wrong during login. Please try again.",
+                [{ text: "OK", style: "default" }]
+              )
+            }
+            
+            throw new Error(error)
           }
         } catch (error) {
           console.error("❌ User processing error:", error)
@@ -166,7 +205,7 @@ export default function SocialButton({
       disabled={isLoading}
     >
       {isLoading ? (
-        <ActivityIndicator size="small" color="black" />
+       <View className="mr-2">{getIcon()}</View>
       ) : (
         <View className="mr-2">{getIcon()}</View>
       )}

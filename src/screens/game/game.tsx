@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
+
 import { startGame, submitAnswer, clearError, clearGameResult, setCurrentLevel } from "@/src/store/slices/gameSlice"
 import { audioService } from "@/src/services/audioService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
@@ -28,6 +29,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   const dispatch = useAppDispatch()
   // Get auth data
   const { userId, guitarId, pianoId } = useAuth()
+// Get current token
   // Get game state from Redux
   const {
     currentGameRound,
@@ -78,6 +80,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
 
   // Initialize game when component mounts
   useEffect(() => {
+    // Check if user is in guest mode (no token and no userId) and trying to access level 3 or 4
+    if ( !finalUserId && currentLevel >= 3) {
+      setShowSubscriptionModal(true)
+      return
+    }
+
     console.log("🎮 GameScreen: Initializing game with:", {
       userId: finalUserId,
       instrumentId: finalInstrumentId,
@@ -100,7 +108,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       })
       setShowGameErrorModal(true)
     }
-  }, [dispatch, finalUserId, finalInstrumentId, currentLevel])
+    return () => {
+      audioService.stopAudio(); // Ensure the audio stops
+    };
+  }, [dispatch, finalUserId, finalInstrumentId, currentLevel]) // Add token to dependencies
 
   // Effect to reset UI states and signal UI readiness for a new round
   useEffect(() => {
@@ -120,6 +131,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
 
     // Always update prevGameRoundIdRef to the current round ID for the next render cycle
     prevGameRoundIdRef.current = currentRoundId
+    return () => {
+      audioService.stopAudio(); // Ensure the audio stops
+    };
   }, [currentGameRound]) // Only depend on currentGameRound
 
   // Play audio when game round loads AND UI is ready, ensuring it plays only once per round
@@ -139,6 +153,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       playAudioSafely(currentGameRound.targetChord.audioFileUrl)
       lastPlayedRoundIdRef.current = currentRoundId // Mark this round's audio as played
     }
+    return () => {
+      audioService.stopAudio(); // Ensure the audio stops
+    };
   }, [currentGameRound, uiReadyForRoundId]) // Depend on both currentGameRound and uiReadyForRoundId
 
   // Handle game result
@@ -157,6 +174,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
         isGuestMode: !finalUserId,
       })
     }
+    return () => {
+      audioService.stopAudio(); // Ensure the audio stops
+    };
   }, [gameResult])
 
   // In your GameScreen, add this useEffect to debug:
@@ -168,6 +188,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       correctAnswers: currentStats.correctAnswers,
       isGuestMode: !finalUserId,
     })
+    return () => {
+      audioService.stopAudio(); // Ensure the audio stops
+    };
   }, [currentStats])
 
   // Handle errors with appropriate modals
@@ -183,6 +206,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       // Generic error without code
       setShowGameErrorModal(true)
     }
+    return () => {
+      audioService.stopAudio(); // Ensure the audio stops
+    };
   }, [error, errorCode])
 
   const playAudioSafely = async (audioUrl: string) => {
@@ -263,6 +289,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   }
 
   const handleLevelUp = () => {
+    // Check if user is in guest mode (no token and no userId) and trying to access level 3 or 4
+    if ( !finalUserId && currentLevel >= 2) {
+      setShowSubscriptionModal(true)
+      return
+    }
+
     if (currentLevel < 4 && finalInstrumentId) {
       const newLevel = currentLevel + 1
       console.log("📈 GameScreen: Level up to:", newLevel, {
@@ -427,6 +459,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             disabled={isSubmittingAnswer}
             showResult={showResult}
             correctChordId={gameResult?.correctChord?.id || null}
+            selectedChordStyle={{ borderColor: 'black', borderWidth: 2 }} // Added this prop
           />
         )}
         {/* Level Control Buttons */}
@@ -467,7 +500,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       <SubscriptionModal
         visible={showSubscriptionModal}
         message={
-          error || "Subscription required for Level 3 and above. Upgrade to Premium to unlock all levels and features!"
+          error || "Level 3 and above require an account. Sign up or subscribe to unlock all levels and features!"
         }
         onUpgrade={handleSubscriptionUpgrade}
         onCancel={handleSubscriptionCancel}

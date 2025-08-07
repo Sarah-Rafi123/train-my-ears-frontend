@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { View, Text, TouchableOpacity, Alert, Platform } from "react-native" // Import Platform
+import { View, Text, TouchableOpacity, Alert, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
 import { TextInput } from "react-native-paper"
@@ -62,17 +62,19 @@ export default function RegisterScreen() {
     password: false,
   })
   const [registrationAttempted, setRegistrationAttempted] = useState(false)
+  // NEW: Separate loading state for email/password registration
+  const [isEmailRegisterLoading, setIsEmailRegisterLoading] = useState(false)
 
   // Define platform-specific style for the title
   const titleStyle = {
-    fontSize: Platform.OS === "ios" ? 32 : 32, // Consistent font size
-    lineHeight: Platform.OS === "ios" ? 40 : 40, // Explicit line height
-    fontFamily: "NATS-Regular", // Assuming NATS-Regular is available
+    fontSize: Platform.OS === "ios" ? 32 : 32,
+    lineHeight: Platform.OS === "ios" ? 40 : 40,
+    fontFamily: "NATS-Regular",
     color: "#003049",
-    textAlign: "left" as const, // Keep left alignment for this screen
+    textAlign: "left" as const,
     fontWeight: "bold" as const,
     paddingVertical: Platform.OS === "ios" ? 8 : 4,
-    letterSpacing: 2, // Added letter spacing for consistency
+    letterSpacing: 2,
   }
 
   // Clear error when component mounts
@@ -84,7 +86,8 @@ export default function RegisterScreen() {
   useEffect(() => {
     if (registrationAttempted && isAuthenticated && !isLoading && !error) {
       setShowSuccessModal(true)
-      setRegistrationAttempted(false) // Reset the flag
+      setRegistrationAttempted(false)
+      setIsEmailRegisterLoading(false) // Reset email registration loading
     }
   }, [registrationAttempted, isAuthenticated, isLoading, error])
 
@@ -92,18 +95,17 @@ export default function RegisterScreen() {
   useEffect(() => {
     if (error && registrationAttempted) {
       setShowErrorModal(true)
-      setRegistrationAttempted(false) // Reset the flag
+      setRegistrationAttempted(false)
+      setIsEmailRegisterLoading(false) // Reset email registration loading on error
     }
   }, [error, registrationAttempted])
 
   // Log stored data after successful registration for verification
   useEffect(() => {
     if (isAuthenticated && !isLoading && !error) {
-      // Wait a bit to ensure AsyncStorage operations are complete
       setTimeout(async () => {
         console.log("🎉 RegisterScreen: Registration successful, logging all stored data...")
         await logAllStoredData()
-        // Also get and log the auth data directly
         const authData = await getStoredAuthData()
         if (authData) {
           console.log("✅ RegisterScreen: Successfully retrieved auth data after registration:", {
@@ -123,7 +125,6 @@ export default function RegisterScreen() {
   const handleInputChange = (field: "name" | "email" | "password", value: string) => {
     switch (field) {
       case "name":
-        // Limit name input to 50 characters
         if (value.length <= 50) {
           setName(value)
         }
@@ -135,7 +136,6 @@ export default function RegisterScreen() {
         setPassword(value)
         break
     }
-    // Clear validation error for this field when user starts typing
     if (validationErrors[field]) {
       setValidationErrors((prev) => ({
         ...prev,
@@ -146,7 +146,6 @@ export default function RegisterScreen() {
 
   const handleInputBlur = (field: "name" | "email" | "password") => {
     setTouched((prev) => ({ ...prev, [field]: true }))
-    // Validate single field on blur
     const errors = validateRegistrationForm(name, email, password)
     setValidationErrors((prev) => ({
       ...prev,
@@ -155,24 +154,23 @@ export default function RegisterScreen() {
   }
 
   const handleRegister = async () => {
-    // Mark all fields as touched to show validation errors
     setTouched({ name: true, email: true, password: true })
-    // Validate all fields
     const errors = validateRegistrationForm(name, email, password)
     setValidationErrors(errors)
-    // Check if there are validation errors
+    
     if (hasValidationErrors(errors)) {
       return
     }
-    // Check if any field is empty
+    
     if (!name.trim() || !email.trim() || !password) {
       Alert.alert("Missing Information", "Please fill in all required fields.", [{ text: "OK" }])
       return
     }
-    // Set flag to track registration attempt
+    
     setRegistrationAttempted(true)
+    setIsEmailRegisterLoading(true) // Set email registration loading
     console.log("🚀 RegisterScreen: Starting registration process for:", { name: name.trim(), email: email.trim() })
-    // All validations passed, proceed with registration
+    
     dispatch(
       registerUser({
         name: name.trim(),
@@ -185,7 +183,6 @@ export default function RegisterScreen() {
   const handleContinue = () => {
     setShowSuccessModal(false)
     console.log("➡️ RegisterScreen: Navigating to SelectInstrument screen")
-    // Navigate to the main app or home screen
     navigation.navigate("SelectInstrument" as never)
   }
 
@@ -214,10 +211,10 @@ export default function RegisterScreen() {
           <BackButton />
           <View className="mt-20">
             <Text
-              style={titleStyle} // Apply the new style object
-              adjustsFontSizeToFit // Ensure text fits
-              numberOfLines={1} // Limit to one line
-              minimumFontScale={0.8} // Allow font to scale down
+              style={titleStyle}
+              adjustsFontSizeToFit
+              numberOfLines={1}
+              minimumFontScale={0.8}
             >
               CREATE YOUR ACCOUNT
             </Text>
@@ -244,7 +241,6 @@ export default function RegisterScreen() {
                     <Text className="text-red-500 text-sm mt-1 ml-2">{validationErrors.name}</Text>
                   )}
                 </View>
-                {/* <Text className="text-gray-400 text-xs mt-1 mr-2">                  {name.length}/50                </Text> */}
               </View>
             </View>
             <View>
@@ -293,9 +289,9 @@ export default function RegisterScreen() {
           <PrimaryButton
             title="Create your account"
             onPress={handleRegister}
-            loading={isLoading}
+            loading={isEmailRegisterLoading} // Use separate loading state
             className="mt-6"
-            disabled={isLoading}
+            disabled={isEmailRegisterLoading}
           />
           <View className="my-8 mt-16">
             <Text className="text-center text-black mb-4">Sign up with</Text>

@@ -4,9 +4,9 @@
     "slug": "frontend_trainmyears",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/trainmyearsLogo.png",
+    "icon": "./src/assets/images/trainmyearsLogo.png",
     "splash": {
-      "image": "./assets/images/trainmyearsLogo.png",
+      "image": "./src/assets/images/trainmyearsLogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -19,6 +19,7 @@
       "bundleIdentifier": "com.brianandrews.trainmyears"
     },
     "android": {
+       "icon": "./src/assets/images/trainmyearsLogo.png",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -35,7 +36,7 @@
         }
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./src/assets/images/trainmyearsLogo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

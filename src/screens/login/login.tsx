@@ -10,17 +10,14 @@ import { clearError, loginUser } from "@/src/store/slices/authSlice"
 import { useAuth } from "@/src/context/AuthContext"
 import { useNavigation } from "@react-navigation/native"
 import { useEffect, useState } from "react"
-import { Alert, Text, TouchableOpacity, View, Platform } from "react-native" // Ensure Platform is imported
+import { Alert, Text, TouchableOpacity, View, Platform } from "react-native"
 import { Provider as PaperProvider, TextInput } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 export const useWarmUpBrowser = () => {
   useEffect(() => {
-    // Preloads the browser for Android devices to reduce authentication load time
-    // See: https://docs.expo.dev/guides/authentication/#improving-user-experience
     void WebBrowser.warmUpAsync()
     return () => {
-      // Cleanup: closes browser when component unmounts
       void WebBrowser.coolDownAsync()
     }
   }, [])
@@ -36,7 +33,6 @@ const validateLoginForm = (email: string, password: string) => {
   } else if (!/\S+@\S+\.\S+/.test(email)) {
     errors.email = "Please enter a valid email address"
   }
-  // Password validation - only check for minimum 6 characters
   if (!password) {
     errors.password = "Password is required"
   } else if (password.length < 6) {
@@ -54,7 +50,7 @@ export default function LoginScreen() {
   const navigation = useNavigation()
   const dispatch = useAppDispatch()
   const { isLoading, error, isAuthenticated } = useAppSelector((state) => state.auth)
-  const { logAllStoredData, getStoredAuthData, userId } = useAuth() // Get userId from context
+  const { logAllStoredData, getStoredAuthData, userId } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -66,17 +62,19 @@ export default function LoginScreen() {
     password: false,
   })
   const [loginAttempted, setLoginAttempted] = useState(false)
+  // NEW: Separate loading state for email/password login
+  const [isEmailLoginLoading, setIsEmailLoginLoading] = useState(false)
 
   // Define platform-specific style for the title
   const titleStyle = {
-    fontSize: Platform.OS === "ios" ? 32 : 32, // Consistent font size
-    lineHeight: Platform.OS === "ios" ? 40 : 40, // Explicit line height
-    fontFamily: "NATS-Regular", // Assuming NATS-Regular is available
+    fontSize: Platform.OS === "ios" ? 32 : 32,
+    lineHeight: Platform.OS === "ios" ? 40 : 40,
+    fontFamily: "NATS-Regular",
     color: "#003049",
-    textAlign: "left" as const, // Keep left alignment for this screen
+    textAlign: "left" as const,
     fontWeight: "bold" as const,
     paddingVertical: Platform.OS === "ios" ? 8 : 4,
-    letterSpacing: 2, // Added letter spacing for consistency
+    letterSpacing: 2,
   }
 
   // Clear error when component mounts
@@ -88,7 +86,8 @@ export default function LoginScreen() {
   useEffect(() => {
     if (loginAttempted && isAuthenticated && !isLoading && !error) {
       setShowSuccessModal(true)
-      setLoginAttempted(false) // Reset the flag
+      setLoginAttempted(false)
+      setIsEmailLoginLoading(false) // Reset email login loading
     }
   }, [loginAttempted, isAuthenticated, isLoading, error])
 
@@ -96,7 +95,8 @@ export default function LoginScreen() {
   useEffect(() => {
     if (error && loginAttempted) {
       setShowErrorModal(true)
-      setLoginAttempted(false) // Reset the flag
+      setLoginAttempted(false)
+      setIsEmailLoginLoading(false) // Reset email login loading on error
     }
   }, [error, loginAttempted])
 
@@ -131,7 +131,6 @@ export default function LoginScreen() {
         setPassword(value)
         break
     }
-    // Clear validation error for this field when user starts typing
     if (validationErrors[field]) {
       setValidationErrors((prev) => ({
         ...prev,
@@ -142,7 +141,6 @@ export default function LoginScreen() {
 
   const handleInputBlur = (field: "email" | "password") => {
     setTouched((prev) => ({ ...prev, [field]: true }))
-    // Validate single field on blur
     const errors = validateLoginForm(email, password)
     setValidationErrors((prev) => ({
       ...prev,
@@ -151,24 +149,23 @@ export default function LoginScreen() {
   }
 
   const handleLogin = async () => {
-    // Mark all fields as touched to show validation errors
     setTouched({ email: true, password: true })
-    // Validate all fields
     const errors = validateLoginForm(email, password)
     setValidationErrors(errors)
-    // Check if there are validation errors
+    
     if (hasLoginValidationErrors(errors)) {
       return
     }
-    // Check if any field is empty
+    
     if (!email.trim() || !password) {
       Alert.alert("Missing Information", "Please fill in all required fields.", [{ text: "OK" }])
       return
     }
-    // Set flag to track login attempt
+    
     setLoginAttempted(true)
+    setIsEmailLoginLoading(true) // Set email login loading
     console.log("🚀 LoginScreen: Starting login process for:", email)
-    // All validations passed, proceed with login
+    
     dispatch(
       loginUser({
         email: email.trim(),
@@ -180,7 +177,6 @@ export default function LoginScreen() {
   const handleContinue = () => {
     setShowSuccessModal(false)
     console.log("➡️ LoginScreen: Navigating to SelectInstrument screen")
-    // Navigate to the next screen
     navigation.navigate("SelectInstrument" as never)
   }
 
@@ -210,10 +206,10 @@ export default function LoginScreen() {
           <View></View>
           <View className="mt-20">
             <Text
-              style={titleStyle} // Apply the new style object
-              adjustsFontSizeToFit // Ensure text fits
-              numberOfLines={1} // Limit to one line
-              minimumFontScale={0.8} // Allow font to scale down
+              style={titleStyle}
+              adjustsFontSizeToFit
+              numberOfLines={1}
+              minimumFontScale={0.8}
             >
               LOGIN WITH EMAIL
             </Text>
@@ -266,9 +262,9 @@ export default function LoginScreen() {
           <PrimaryButton
             title="Login"
             onPress={handleLogin}
-            loading={isLoading}
+            loading={isEmailLoginLoading} // Use separate loading state
             className="mt-6"
-            disabled={isLoading}
+            disabled={isEmailLoginLoading}
           />
           <View className="my-8 mt-20">
             <Text className="text-center text-lg text-black mb-4">Sign in with</Text>

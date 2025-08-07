@@ -16,7 +16,7 @@ export const LoginRequiredModal: React.FC<LoginRequiredModalProps> = ({ visible,
           <Text style={styles.modalTitle}>Login Required</Text>
           <Text style={styles.modalText}>Please log in or register to view your stats and save your progress.</Text>
           <View style={styles.buttonContainer}>
-            <ActionButton title="Log In / Register" onPress={onLogin} />
+            <ActionButton title="Log In/Register" onPress={onLogin} />
             <TouchableOpacity onPress={onClose} style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>

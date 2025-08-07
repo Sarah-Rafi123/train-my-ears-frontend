@@ -15,7 +15,6 @@ export const useWarmUpBrowser = () => {
     // See: https://docs.expo.dev/guides/authentication/#improving-user-experience
     void WebBrowser.warmUpAsync()
     return () => {
-      // Cleanup: closes browser when component unmounts
       void WebBrowser.coolDownAsync()
     }
   }, [])
@@ -51,6 +50,7 @@ export default function SocialRegisterScreen() {
               <View className="w-24 h-2 bg-black rounded-full" />
             </View>
             <Text
+            className="my-6"
               style={titleStyle} // Apply the new style object
               adjustsFontSizeToFit // Ensure text fits
               numberOfLines={1} // Limit to one line

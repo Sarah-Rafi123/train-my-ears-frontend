@@ -32,7 +32,7 @@ export default function GuestButton({ onPress, className, isLoading }: GuestButt
           fontSize: responsiveValue(24), // text-2xl is 24px
         }}
       >
-        {isLoading ? "Logging out..." : "Guest"}
+        {isLoading ? "Guest" : "Guest"}
       </Text>
     </TouchableOpacity>
   )

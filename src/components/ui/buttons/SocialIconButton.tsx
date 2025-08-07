@@ -1,5 +1,5 @@
 import React from "react"
-import { TouchableOpacity, ActivityIndicator } from "react-native"
+import { TouchableOpacity, ActivityIndicator, Alert } from "react-native"
 import { useOAuth, useUser, useClerk, useAuth } from "@clerk/clerk-expo"
 import { useCallback, useState, useEffect } from "react"
 import { useAppDispatch } from "@/src/hooks/redux"
@@ -39,6 +39,29 @@ export default function SocialIconButton({ provider, onPress }: SocialIconButton
       default:
         throw new Error(`Unsupported provider: ${provider}`)
     }
+  }
+
+  // Helper function to check if error is related to email already existing with another provider
+  const isEmailConflictError = (error: any): boolean => {
+    const errorMessage = error?.message || error || ""
+    const isServerError = errorMessage.includes("500") || errorMessage.includes("Unique constraint failed")
+    const isClerkIdConflict = errorMessage.includes("clerkId") || errorMessage.includes("Unique constraint")
+    return isServerError && isClerkIdConflict
+  }
+
+  // Helper function to show email conflict popup
+  const showEmailConflictPopup = (email: string) => {
+    Alert.alert(
+      "Account Already Exists",
+      `An account with the email "${email}" already exists with a different social provider. Please sign in using the original provider or use a different email address.`,
+      [
+        {
+          text: "OK",
+          style: "default",
+        },
+      ],
+      { cancelable: true }
+    )
   }
 
   const renderIcon = () => {
@@ -143,8 +166,22 @@ export default function SocialIconButton({ provider, onPress }: SocialIconButton
             console.log(`✅ ${provider} backend login successful`)
             navigation.navigate("SelectInstrument" as never)
           } else {
-            console.error(`❌ ${provider} backend login failed:`, result.payload)
-            throw new Error(result.payload || `${provider} backend login failed`)
+            const error = result.payload || `${provider} backend login failed`
+            
+            // Check if this is an email conflict error
+            if (isEmailConflictError(error)) {
+              console.log("🚨 Email conflict detected - showing popup")
+              showEmailConflictPopup(email)
+            } else {
+              console.error(`❌ Other ${provider} backend error:`, error)
+              Alert.alert(
+                "Login Error",
+                "Something went wrong during login. Please try again.",
+                [{ text: "OK", style: "default" }]
+              )
+            }
+            
+            throw new Error(error)
           }
         } catch (error) {
           console.error(`❌ ${provider} user processing error:`, error)

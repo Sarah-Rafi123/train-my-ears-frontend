@@ -1,7 +1,7 @@
-import { TouchableOpacity, Text, View } from "react-native"
-import { Feather } from "@expo/vector-icons"
 import ArrowDownSvg from "@/src/assets/svgs/ArrowDown";
 import ArrowUpSvg from "@/src/assets/svgs/ArrowUp";
+import { Feather } from "@expo/vector-icons";
+import { Text, TouchableOpacity, View } from "react-native";
 interface ActionButtonProps {
   title: string
   variant?: "outline" | "filled"
@@ -31,7 +31,7 @@ export default function ActionButton({ title, variant = "outline", icon, onPress
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`${buttonClass} rounded-xl max-w-44 py-4 px-8 flex-row justify-center items-center shadow-sm`}
+      className={`${buttonClass} rounded-xl w-48 py-4 px-8 flex-row justify-center items-center shadow-sm`}
       accessibilityRole="button"
       accessibilityLabel={title}
     >
