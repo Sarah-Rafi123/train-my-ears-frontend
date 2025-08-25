@@ -1,7 +1,7 @@
 // Alternative implementation using OAuth directly
 "use client"
 
-import { Text, TouchableOpacity, View, ActivityIndicator, Alert } from "react-native"
+import { Text, TouchableOpacity, View, ActivityIndicator, Alert, Platform } from "react-native"
 import AppleWhiteSvg from "@/src/assets/svgs/Apple_white"
 import GoogleSvg from "@/src/assets/svgs/Google"
 import FacebookWhiteSvg from "@/src/assets/svgs/Facebook_white"
@@ -209,7 +209,7 @@ export default function SocialButton({
       ) : (
         <View className="mr-2">{getIcon()}</View>
       )}
-      <Text className={`font-sans text-2xl ${textClassName}`}>{getButtonText()}</Text>
+      <Text className={`font-sans text-2xl ${textClassName}`} style={{ paddingTop: Platform.OS === 'ios' ? 14 : 0 }}>{getButtonText()}</Text>
     </TouchableOpacity>
   )
-}
+} 

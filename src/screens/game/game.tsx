@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-nat
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
 
-import { startGame, submitAnswer, clearError, clearGameResult, setCurrentLevel } from "@/src/store/slices/gameSlice"
+import { startGame, submitAnswer, clearError, clearGameResult, clearGameRound, setCurrentLevel, resetGame } from "@/src/store/slices/gameSlice"
 import { audioService } from "@/src/services/audioService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import StatCard from "@/src/components/widgets/StatsCard"
@@ -80,6 +80,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
 
   // Initialize game when component mounts
   useEffect(() => {
+    // Clear any previous game state and stop audio when entering game screen fresh
+    dispatch(clearGameRound())
+    audioService.stopAudio()
+    
+    // Reset audio tracking refs to ensure fresh start
+    lastPlayedRoundIdRef.current = null
+    prevGameRoundIdRef.current = null
+    setUiReadyForRoundId(null)
+    
     // Check if user is in guest mode (no token and no userId) and trying to access level 3 or 4
     if ( !finalUserId && currentLevel >= 3) {
       setShowSubscriptionModal(true)

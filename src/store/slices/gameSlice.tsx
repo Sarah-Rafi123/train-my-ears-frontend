@@ -127,6 +127,11 @@ const gameSlice = createSlice({
     clearGameResult: (state) => {
       state.gameResult = null
     },
+    clearGameRound: (state) => {
+      state.currentGameRound = null
+      state.gameResult = null
+      state.responseStartTime = null
+    },
     setCurrentLevel: (state, action: PayloadAction<number>) => {
       state.currentLevel = action.payload
     },
@@ -203,7 +208,7 @@ const gameSlice = createSlice({
   },
 })
 
-export const { clearError, clearGameResult, setCurrentLevel, startResponseTimer, resetGame, updateStats } =
+export const { clearError, clearGameResult, clearGameRound, setCurrentLevel, startResponseTimer, resetGame, updateStats } =
   gameSlice.actions
 
 export default gameSlice.reducer

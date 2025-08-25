@@ -89,7 +89,8 @@ export default function RootLayout() {
     if (Platform.OS === "ios") {
       Purchases.configure({ apiKey: "appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi" })
     } else if (Platform.OS === "android") {
-      Purchases.configure({ apiKey: "appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi" })
+      // Replace with your Google Play API key from RevenueCat dashboard
+      Purchases.configure({ apiKey: "goog_YOUR_GOOGLE_PLAY_API_KEY" })
     }
     Purchases.getOfferings().then(console.log)
   }, [])

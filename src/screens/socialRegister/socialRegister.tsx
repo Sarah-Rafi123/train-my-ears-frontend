@@ -75,7 +75,7 @@ export default function SocialRegisterScreen() {
               className="w-full bg-white border border-black rounded-2xl py-4 px-4 mt-4 flex-row items-center justify-center"
               onPress={() => navigation.navigate("Register" as never)}
             >
-              <Text className="text-black font-sans text-2xl">Continue with email</Text>
+              <Text className="text-black font-sans text-2xl" style={{ paddingTop: Platform.OS === 'ios' ? 14 : 0 }}>Continue with email</Text>
             </TouchableOpacity>
              {/* <Button title="Logout" onPress={() => signOut()} />   */}
             <View className="mt-10 items-center">
