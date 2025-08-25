@@ -2,7 +2,7 @@
   "expo": {
     "name": "Train My Ear",
     "slug": "frontend_trainmyears",
-    "version": "3.0.0",
+    "version": "4.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
@@ -18,16 +18,17 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.brianandrews.trainmyears",
       "icon": "./assets/images/icon.png",
+      "buildNumber": "16",
       "infoPlist": {
         "CFBundleDisplayName": "Train My Ear",
         "CFBundleName": "Train My Ear",
-        "CFBundleShortVersionString": "3.0.0"
+        "CFBundleShortVersionString": "4.0.0"
       }
     },
     "android": {
       "icon": "./assets/images/icon.png",
       "package": "com.brianandrews.trainmyears",
-      "versionCode": 1,
+      "versionCode": 16,
       "intentFilters": [
         {
           "action": "VIEW",
