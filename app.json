@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "frontend_trainmyears",
+    "name": "Train My Ear",
     "slug": "frontend_trainmyears",
-    "version": "1.0.0",
+    "version": "3.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/images/trainmyearsLogo.png",
+    "icon": "./assets/images/icon.png",
     "splash": {
-      "image": "./src/assets/images/trainmyearsLogo.png",
+      "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -16,10 +16,18 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.brianandrews.trainmyears"
+      "bundleIdentifier": "com.brianandrews.trainmyears",
+      "icon": "./assets/images/icon.png",
+      "infoPlist": {
+        "CFBundleDisplayName": "Train My Ear",
+        "CFBundleName": "Train My Ear",
+        "CFBundleShortVersionString": "3.0.0"
+      }
     },
     "android": {
-       "icon": "./src/assets/images/trainmyearsLogo.png",
+      "icon": "./assets/images/icon.png",
+      "package": "com.brianandrews.trainmyears",
+      "versionCode": 1,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -36,11 +44,10 @@
         }
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./src/assets/images/trainmyearsLogo.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.brianandrews.trainmyears"
+      "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro"
