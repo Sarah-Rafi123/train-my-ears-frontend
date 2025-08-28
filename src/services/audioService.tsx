@@ -1,12 +1,11 @@
 import { Audio } from "expo-av"
+import { Platform } from "react-native"
 
 class AudioService {
   private sound: Audio.Sound | null = null
   private isPlaying = false
   // This promise will chain all audio operations, ensuring they run sequentially
   private currentOperation: Promise<void> = Promise.resolve()
-
-  constructor() {}
 
   /**
    * Plays an audio file from a given URL.
@@ -35,6 +34,14 @@ class AudioService {
           }
           console.log("🔊 AudioService: Using URL:", fullUrl)
 
+          // For iOS, ensure audio session is properly activated before playing
+          if (Platform.OS === "ios") {
+            await Audio.setAudioModeAsync({
+              playsInSilentModeIOS: true,
+              staysActiveInBackground: false,
+            })
+          }
+
           const { sound } = await Audio.Sound.createAsync({ uri: fullUrl }, { shouldPlay: true })
           this.sound = sound
           this.isPlaying = true
@@ -57,7 +64,7 @@ class AudioService {
 
           console.log("✅ AudioService: Sound loaded and playing successfully")
           const status = await sound.getStatusAsync()
-          if (status.isLoaded) {
+          if (status.isLoaded && status.durationMillis) {
             console.log("ℹ️ AudioService: Sound duration:", status.durationMillis / 1000, "seconds")
           }
         } catch (error) {

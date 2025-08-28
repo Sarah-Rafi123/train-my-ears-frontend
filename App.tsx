@@ -27,6 +27,7 @@ import { View, Text, ActivityIndicator, Platform } from "react-native"
 import Purchases from "react-native-purchases"
 import RevenueCatScreen from "./src/screens/revenuecatScreen/revenuecatScreen"
 import AsyncStorage from "@react-native-async-storage/async-storage" // Import AsyncStorage
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av"
 
 Purchases.setLogLevel(Purchases.LOG_LEVEL.VERBOSE)
 // Prevent splash screen from auto-hiding
@@ -86,13 +87,48 @@ export default function RootLayout() {
   }, [])
 
   useEffect(() => {
+    // Configure RevenueCat
     if (Platform.OS === "ios") {
       Purchases.configure({ apiKey: "appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi" })
     } else if (Platform.OS === "android") {
       // Replace with your Google Play API key from RevenueCat dashboard
-      Purchases.configure({ apiKey: "goog_YOUR_GOOGLE_PLAY_API_KEY" })
+      Purchases.configure({ apiKey: "goog_zmsWciJZLfxQLjjHAkEaJalaKtx" })
     }
     Purchases.getOfferings().then(console.log)
+
+    // Configure Audio Session for iOS
+    const configureAudio = async () => {
+      try {
+        if (Platform.OS === "ios") {
+          await Audio.requestPermissionsAsync()
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: false,
+            interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+            playsInSilentModeIOS: true,
+            shouldDuckAndroid: true,
+            interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+            playThroughEarpieceAndroid: false,
+            staysActiveInBackground: false,
+          })
+          console.log("✅ iOS Audio session configured successfully")
+        } else if (Platform.OS === "android") {
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: false,
+            interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+            playsInSilentModeIOS: true,
+            shouldDuckAndroid: true,
+            interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+            playThroughEarpieceAndroid: false,
+            staysActiveInBackground: false,
+          })
+          console.log("✅ Android Audio session configured successfully")
+        }
+      } catch (error) {
+        console.error("❌ Error configuring audio session:", error)
+      }
+    }
+    
+    configureAudio()
   }, [])
 
   useEffect(() => {
@@ -131,7 +167,7 @@ export default function RootLayout() {
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
           <Provider store={store}>
             <AuthProvider>
-              {/* <RevenueCatScreen /> */}
+               {/* <RevenueCatScreen />  */}
               <NavigationContainer>
                 <Stack.Navigator
                   initialRouteName={hasToken ? "SelectInstrument" : "Home"} // Conditional initial route

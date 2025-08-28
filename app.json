@@ -22,7 +22,8 @@
       "infoPlist": {
         "CFBundleDisplayName": "Train My Ear",
         "CFBundleName": "Train My Ear",
-        "CFBundleShortVersionString": "4.0.0"
+        "CFBundleShortVersionString": "4.0.0",
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
@@ -60,7 +61,8 @@
     },
     "plugins": [
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-av"
     ],
     "experiments": {
       "typedRoutes": true
