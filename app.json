@@ -2,7 +2,7 @@
   "expo": {
     "name": "Train My Ear",
     "slug": "frontend_trainmyears",
-    "version": "4.0.0",
+    "version": "6.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
@@ -11,7 +11,10 @@
       "backgroundColor": "#ffffff"
     },
     "scheme": "frontendtrainmyears",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -23,7 +26,9 @@
         "CFBundleDisplayName": "Train My Ear",
         "CFBundleName": "Train My Ear",
         "CFBundleShortVersionString": "4.0.0",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -49,14 +54,18 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro"
     },
     "extra": {
       "eas": {
-        "projectId": "6a7ba359-637b-4c8f-a89e-e5c56f873354"
+        "projectId": "8463aea5-6e8e-44f7-b6cc-5291aa787d4d"
       }
     },
     "plugins": [
@@ -67,6 +76,6 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "brianandrews"
+    "owner": "bobeveleth"
   }
 }

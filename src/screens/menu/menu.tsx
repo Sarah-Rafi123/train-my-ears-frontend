@@ -40,7 +40,10 @@ export default function MenuScreen({
   const handleAdvanceMode = () => {
     console.log("Advance Mode pressed")
     onAdvanceMode?.()
-    navigation.navigate("Advance" as never)
+    // Navigate to appropriate screen based on authentication status
+    const advanceScreenName = user ? 'Advance' : 'AdvanceGuest'
+    navigation.navigate(advanceScreenName as never)
+    console.log(`🎮 Navigating to ${advanceScreenName}`, { userId: !!user, isGuest: !user })
   }
 
   const handleViewStats = () => {

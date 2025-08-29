@@ -122,18 +122,23 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
         }
       }
     }
+    // Navigate to appropriate screen based on authentication status
+    const gameScreenName = userId ? 'Game' : 'GameGuest'
+    
     if (instrument === 'guitar') {
-      navigation.navigate('Game' as never, {
+      navigation.navigate(gameScreenName as never, {
         instrument: 'guitar',
         instrumentId: selectedInstrumentId || undefined,
         userId: userId || undefined,
       });
+      console.log(`🎮 Navigating to ${gameScreenName} for guitar`, { userId: !!userId, isGuest: !userId });
     } else if (instrument === 'piano') {
-      navigation.navigate('Game' as never, {
+      navigation.navigate(gameScreenName as never, {
         instrument: 'piano',
         instrumentId: selectedInstrumentId || undefined,
         userId: userId || undefined,
       });
+      console.log(`🎮 Navigating to ${gameScreenName} for piano`, { userId: !!userId, isGuest: !userId });
     }
   };
 

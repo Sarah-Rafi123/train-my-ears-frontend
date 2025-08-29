@@ -13,7 +13,6 @@
 		79D24B09AAFAA4F4C2D3B03B /* libPods-frontendtrainmyears.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A88DFEF9505A15405349480 /* libPods-frontendtrainmyears.a */; };
 		83ED294126B10FDA32A1F383 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D74BBE75B8F7E0417A413D4F /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		CEC961862E5F38EB00C72049 /* StoreKitTestCertificate.cer in Resources */ = {isa = PBXBuildFile; fileRef = CEC961852E5F38EB00C72049 /* StoreKitTestCertificate.cer */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
@@ -27,7 +26,6 @@
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = frontendtrainmyears/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		CEC961842E5F387500C72049 /* configurationTest.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = configurationTest.storekit; sourceTree = "<group>"; };
-		CEC961852E5F38EB00C72049 /* StoreKitTestCertificate.cer */ = {isa = PBXFileReference; lastKnownFileType = file; name = StoreKitTestCertificate.cer; path = ../StoreKitTestCertificate.cer; sourceTree = "<group>"; };
 		CF81B3C7928852FF5F8CDA78 /* Pods-frontendtrainmyears.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-frontendtrainmyears.release.xcconfig"; path = "Target Support Files/Pods-frontendtrainmyears/Pods-frontendtrainmyears.release.xcconfig"; sourceTree = "<group>"; };
 		D74BBE75B8F7E0417A413D4F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = frontendtrainmyears/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -98,7 +96,6 @@
 			isa = PBXGroup;
 			children = (
 				CEC961842E5F387500C72049 /* configurationTest.storekit */,
-				CEC961852E5F38EB00C72049 /* StoreKitTestCertificate.cer */,
 				13B07FAE1A68108700A75B9A /* frontendtrainmyears */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -197,7 +194,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CEC961862E5F38EB00C72049 /* StoreKitTestCertificate.cer in Resources */,
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,

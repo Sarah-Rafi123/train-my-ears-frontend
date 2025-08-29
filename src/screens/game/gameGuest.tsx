@@ -7,7 +7,6 @@ import { useAuth } from "@/src/context/AuthContext"
 
 import { startGame, submitAnswer, clearError, clearGameResult, clearGameRound, setCurrentLevel, resetGame } from "@/src/store/slices/gameSlice"
 import { audioService } from "@/src/services/audioService"
-import { LevelStatsService, type LevelStats } from "@/src/services/levelStatsService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import StatCard from "@/src/components/widgets/StatsCard"
 import PlayAgainButton from "@/src/components/ui/buttons/PlayAgainButton"
@@ -17,8 +16,9 @@ import { SubscriptionModal } from "@/src/components/ui/modal/subscription-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
+import { GuestStatsService, type GuestStats } from "@/src/services/guestStatsService"
 
-interface GameScreenProps {
+interface GameGuestScreenProps {
   navigation: any
   route: any
   onBack?: () => void
@@ -26,11 +26,11 @@ interface GameScreenProps {
   onSaveProgress?: () => void
 }
 
-const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMoreDetails, onSaveProgress }) => {
+const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, onBack, onMoreDetails, onSaveProgress }) => {
   const dispatch = useAppDispatch()
   // Get auth data
-  const { userId, guitarId, pianoId } = useAuth()
-// Get current token
+  const { guitarId, pianoId } = useAuth()
+
   // Get game state from Redux
   const {
     currentGameRound,
@@ -41,7 +41,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     errorCode,
     currentLevel,
     responseStartTime,
-    currentStats,
   } = useAppSelector((state) => state.game)
 
   const [selectedChordId, setSelectedChordId] = useState<string | null>(null)
@@ -51,23 +50,26 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
   // Add state to track if chords should be visible
   const [showChords, setShowChords] = useState(true)
-  
-  // Level-specific stats state for authenticated users
-  const [levelStats, setLevelStats] = useState<LevelStats | null>(null)
+
+  // Guest mode stats state
+  const [guestStats, setGuestStats] = useState<GuestStats>({
+    accuracy: 0,
+    streak: 0,
+    totalAttempts: 0,
+    correctAnswers: 0,
+    lastPlayedDate: "",
+    wins: 0,
+  })
 
   // Use a ref to track the ID of the round whose audio was last played
   const lastPlayedRoundIdRef = useRef<string | null>(null)
   // Use a ref to track the previous game round ID to detect actual changes
   const prevGameRoundIdRef = useRef<string | null>(null)
 
-  // NEW STATE: To signal when UI is ready for a specific game round
-  const [uiReadyForRoundId, setUiReadyForRoundId] = useState<string | null>(null)
-
   // Get route params
   const routeParams = route.params as any
   const instrumentFromRoute = routeParams?.instrument
   const instrumentIdFromRoute = routeParams?.instrumentId
-  const userIdFromRoute = routeParams?.userId
 
   // Determine instrument ID based on route params or context
   let finalInstrumentId = instrumentIdFromRoute
@@ -79,77 +81,70 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     }
   }
 
-  // Use IDs from route params or context (userId can be null for guest mode)
-  const finalUserId = userIdFromRoute || userId || null
-
-  // Load level-specific stats for authenticated users
+  // Load guest stats on component mount
   useEffect(() => {
-    if (finalUserId) {
-      const loadLevelStats = async () => {
-        const stats = await LevelStatsService.loadUserLevelStats(finalUserId, "regularGame", currentLevel)
-        setLevelStats(stats)
-        console.log("📊 GameScreen: Loaded level stats:", stats)
-      }
-      loadLevelStats()
+    const loadGuestStats = async () => {
+      const stats = await GuestStatsService.getGameModeStats("regularGame")
+      setGuestStats(stats)
+      console.log("📊 GameGuestScreen: Loaded guest stats:", stats)
     }
-  }, [finalUserId, currentLevel])
+    loadGuestStats()
+  }, [])
 
-  // Initialize game when component mounts or user changes
+  // Initialize game when component mounts
   useEffect(() => {
-    // Clear any previous game state and stop audio when entering game screen fresh or user changes
+    // Clear any previous game state and stop audio when entering game screen fresh
     dispatch(clearGameRound())
-    dispatch(resetGame()) // Clear all game data including stats when user changes
+    dispatch(resetGame()) // Clear all game data for fresh start
     audioService.stopAudio()
     
     // Reset audio tracking refs to ensure fresh start
     lastPlayedRoundIdRef.current = null
     prevGameRoundIdRef.current = null
-    setUiReadyForRoundId(null)
     
-    // Check if user is in guest mode (no token and no userId) and trying to access level 3 or 4
-    if ( !finalUserId && currentLevel >= 3) {
+    // Check if trying to access level 3 or 4 (subscription required)
+    if (currentLevel >= 3) {
       setShowSubscriptionModal(true)
       return
     }
 
-    console.log("🎮 GameScreen: Initializing game with:", {
-      userId: finalUserId,
+    console.log("🎮 GameGuestScreen: Initializing game with:", {
       instrumentId: finalInstrumentId,
       instrument: instrumentFromRoute,
       level: currentLevel,
-      isGuestMode: !finalUserId,
+      isGuestMode: true,
     })
+    
     if (finalInstrumentId) {
       dispatch(
         startGame({
-          userId: finalUserId, // Can be null for guest mode
+          userId: null, // Guest mode - no userId
           instrumentId: finalInstrumentId,
           level: currentLevel,
         }),
       )
     } else {
-      console.error("❌ GameScreen: Missing required instrumentId:", {
-        userId: finalUserId,
+      console.error("❌ GameGuestScreen: Missing required instrumentId:", {
         instrumentId: finalInstrumentId,
       })
       setShowGameErrorModal(true)
     }
+    
     return () => {
-      audioService.stopAudio(); // Ensure the audio stops
-    };
-  }, [dispatch, finalUserId, finalInstrumentId, currentLevel, userId]) // Added userId to detect user changes
-
-  // Component unmount cleanup effect - separated to avoid infinite loops
-  useEffect(() => {
-    // This cleanup function runs only when the component is unmounted
-    return () => {
-      console.log("🧹 GameScreen: Component unmounting - clearing session")
-      dispatch(clearGameRound()) // Use clearGameRound instead of resetGame to avoid infinite loops
       audioService.stopAudio()
     }
-  }, []) // Empty dependency array ensures this only runs on mount/unmount
+  }, [dispatch, finalInstrumentId, currentLevel])
 
-  // Effect to reset UI states and signal UI readiness for a new round
+  // Component unmount cleanup effect
+  useEffect(() => {
+    return () => {
+      console.log("🧹 GameGuestScreen: Component unmounting - clearing session")
+      dispatch(clearGameRound())
+      audioService.stopAudio()
+    }
+  }, [])
+
+  // Effect to reset UI states for a new round
   useEffect(() => {
     const currentRoundId = currentGameRound?.gameRoundId || null
 
@@ -158,124 +153,67 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       setShowChords(true)
       setShowResult(false)
       setSelectedChordId(null)
-      // Signal that UI is ready for this specific round
-      setUiReadyForRoundId(currentRoundId)
-    } else {
-      // If currentGameRound becomes null (e.g., during loading or error), reset UI readiness
-      setUiReadyForRoundId(null)
     }
 
     // Always update prevGameRoundIdRef to the current round ID for the next render cycle
     prevGameRoundIdRef.current = currentRoundId
     return () => {
-      audioService.stopAudio(); // Ensure the audio stops
-    };
-  }, [currentGameRound]) // Only depend on currentGameRound
-
-  // Play audio when game round loads AND UI is ready, ensuring it plays only once per round
-  useEffect(() => {
-    const currentRoundId = currentGameRound?.gameRoundId || null
-
-    // Only play audio if:
-    // 1. currentGameRound is defined and has an audio URL
-    // 2. The current round ID matches the UI ready ID
-    // 3. The current round ID has not been played yet (prevents re-playing same ID)
-    if (
-      currentGameRound?.targetChord?.audioFileUrl &&
-      currentRoundId &&
-      currentRoundId === uiReadyForRoundId && // Ensure UI is ready for this round
-      currentRoundId !== lastPlayedRoundIdRef.current // Ensure this specific round's audio hasn't been played
-    ) {
-      playAudioSafely(currentGameRound.targetChord.audioFileUrl)
-      lastPlayedRoundIdRef.current = currentRoundId // Mark this round's audio as played
+      audioService.stopAudio()
     }
-    return () => {
-      audioService.stopAudio(); // Ensure the audio stops
-    };
-  }, [currentGameRound, uiReadyForRoundId]) // Depend on both currentGameRound and uiReadyForRoundId
+  }, [currentGameRound])
 
-  // Handle game result and update level-specific stats
+  // Handle game result and update guest stats
   useEffect(() => {
     if (gameResult) {
       setShowResult(true)
-      // Hide chords after submitting answer
-      setShowChords(false)
+      setShowChords(false) // Hide chords after submitting answer
       
-      // Update level-specific stats for authenticated users
-      if (finalUserId) {
-        const updateLevelStats = async () => {
-          const isCorrect = gameResult.isCorrect
-          const isWin = gameResult.isCorrect // In regular game, correct answer = win
-          
-          const updatedStats = await LevelStatsService.updateUserGameStats(finalUserId, "regularGame", currentLevel, isCorrect, isWin)
-          setLevelStats(updatedStats)
-          
-          console.log("🎯 Game result with updated level stats:", {
-            isCorrect,
-            isWin,
-            level: currentLevel,
-            updatedStats,
-            isGuestMode: false,
-          })
-        }
-        updateLevelStats()
-      } else {
-        // Log for guest mode (handled by guest screens)
-        console.log("🎯 Game result received (guest mode):", {
-          isCorrect: gameResult.isCorrect,
-          streak: gameResult.stats.streak,
-          accuracy: gameResult.stats.accuracy,
-          totalAttempts: gameResult.stats.totalAttempts,
-          correctAnswers: gameResult.stats.correctAnswers,
-          isGuestMode: true,
+      // Update guest stats
+      const updateStats = async () => {
+        const isCorrect = gameResult.isCorrect
+        const isWin = gameResult.isCorrect // In regular game, correct answer = win
+        
+        const updatedStats = await GuestStatsService.updateGameStats("regularGame", isCorrect, isWin)
+        setGuestStats(updatedStats)
+        
+        console.log("🎯 GameGuestScreen: Game result with updated guest stats:", {
+          isCorrect,
+          isWin,
+          updatedStats,
         })
       }
+      
+      updateStats()
     }
     return () => {
-      audioService.stopAudio(); // Ensure the audio stops
-    };
-  }, [gameResult, finalUserId, currentLevel])
-
-  // In your GameScreen, add this useEffect to debug:
-  useEffect(() => {
-    console.log("🔍 Current stats in GameScreen:", {
-      streak: currentStats.streak,
-      accuracy: currentStats.accuracy,
-      totalAttempts: currentStats.totalAttempts,
-      correctAnswers: currentStats.correctAnswers,
-      isGuestMode: !finalUserId,
-    })
-    return () => {
-      audioService.stopAudio(); // Ensure the audio stops
-    };
-  }, [currentStats])
+      audioService.stopAudio()
+    }
+  }, [gameResult])
 
   // Handle errors with appropriate modals
   useEffect(() => {
     if (error && errorCode) {
-      console.log("🔴 GameScreen: Handling error:", { error, errorCode })
+      console.log("🔴 GameGuestScreen: Handling error:", { error, errorCode })
       if (errorCode === "SUBSCRIPTION_REQUIRED") {
         setShowSubscriptionModal(true)
       } else {
         setShowGameErrorModal(true)
       }
     } else if (error && !errorCode) {
-      // Generic error without code
       setShowGameErrorModal(true)
     }
     return () => {
-      audioService.stopAudio(); // Ensure the audio stops
-    };
+      audioService.stopAudio()
+    }
   }, [error, errorCode])
 
   const playAudioSafely = async (audioUrl: string) => {
     try {
       setAudioError(null)
-      // The audioService.playAudio now handles stopping previous sounds internally
       await audioService.playAudio(audioUrl)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown audio error"
-      console.error("❌ GameScreen: Audio playback failed:", errorMessage)
+      console.error("❌ GameGuestScreen: Audio playback failed:", errorMessage)
       setAudioError(errorMessage)
     }
   }
@@ -283,19 +221,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   const handlePlayAgain = async () => {
     if (showChords && currentGameRound?.targetChord?.audioFileUrl) {
       // If chords are visible, just replay the audio
-      console.log("🔄 GameScreen: Replaying audio for current round")
+      console.log("🔄 GameGuestScreen: Replaying audio for current round")
       await playAudioSafely(currentGameRound.targetChord.audioFileUrl)
     } else if (!showChords && finalInstrumentId) {
       // If chords are hidden (after submitting answer), start a new game round
-      console.log("🔄 GameScreen: Starting new game round", {
-        isGuestMode: !finalUserId,
-      })
+      console.log("🔄 GameGuestScreen: Starting new game round (guest mode)")
       dispatch(clearGameResult())
-      // No need to manually reset UI states here, the useEffect for currentGameRound will handle it
-      // No need to manually reset uiReadyForRoundId, it will be set by the useEffect
       dispatch(
         startGame({
-          userId: finalUserId, // Can be null for guest mode
+          userId: null, // Guest mode
           instrumentId: finalInstrumentId,
           level: currentLevel,
         }),
@@ -308,16 +242,16 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     setSelectedChordId(chordId)
     // Calculate response time
     const responseTime = responseStartTime ? Date.now() - responseStartTime : 0
-    console.log("🎯 GameScreen: Submitting answer:", {
+    console.log("🎯 GameGuestScreen: Submitting answer:", {
       chordId,
       responseTime,
       gameRoundId: currentGameRound.gameRoundId,
-      isGuestMode: !finalUserId,
+      isGuestMode: true,
     })
-    // Submit answer (works for both authenticated users and guests)
+    // Submit answer for guest mode
     dispatch(
       submitAnswer({
-        userId: finalUserId, // Can be null for guest mode
+        userId: null, // Guest mode
         gameRoundId: currentGameRound.gameRoundId,
         selectedChordId: chordId,
         responseTimeMs: responseTime,
@@ -325,30 +259,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     )
   }
 
-  const handleLevelDown = async () => {
+  const handleLevelDown = () => {
     if (currentLevel > 1 && finalInstrumentId) {
       const newLevel = currentLevel - 1
-      
-      // Store current level stats before changing levels (for authenticated users)
-      if (finalUserId && levelStats && currentStats) {
-        await LevelStatsService.storeUserLevelStats(finalUserId, "regularGame", currentLevel, {
-          accuracy: currentStats.accuracy,
-          streak: currentStats.streak,
-          totalAttempts: currentStats.totalAttempts,
-          correctAnswers: currentStats.correctAnswers,
-          wins: levelStats.wins,
-        })
-        console.log("📊 GameScreen: Stored current level stats before level down")
-      }
-      
-      console.log("📉 GameScreen: Level down to:", newLevel, {
-        isGuestMode: !finalUserId,
-      })
+      console.log("📉 GameGuestScreen: Level down to:", newLevel)
       dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
       dispatch(
         startGame({
-          userId: finalUserId, // Can be null for guest mode
+          userId: null, // Guest mode
           instrumentId: finalInstrumentId,
           level: newLevel,
         }),
@@ -356,36 +275,21 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     }
   }
 
-  const handleLevelUp = async () => {
-    // Check if user is in guest mode (no token and no userId) and trying to access level 3 or 4
-    if ( !finalUserId && currentLevel >= 2) {
+  const handleLevelUp = () => {
+    // Check if trying to access level 3 or 4 (subscription required)
+    if (currentLevel >= 2) {
       setShowSubscriptionModal(true)
       return
     }
 
     if (currentLevel < 4 && finalInstrumentId) {
       const newLevel = currentLevel + 1
-      
-      // Store current level stats before changing levels (for authenticated users)
-      if (finalUserId && levelStats && currentStats) {
-        await LevelStatsService.storeUserLevelStats(finalUserId, "regularGame", currentLevel, {
-          accuracy: currentStats.accuracy,
-          streak: currentStats.streak,
-          totalAttempts: currentStats.totalAttempts,
-          correctAnswers: currentStats.correctAnswers,
-          wins: levelStats.wins,
-        })
-        console.log("📊 GameScreen: Stored current level stats before level up")
-      }
-      
-      console.log("📈 GameScreen: Level up to:", newLevel, {
-        isGuestMode: !finalUserId,
-      })
+      console.log("📈 GameGuestScreen: Level up to:", newLevel)
       dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
       dispatch(
         startGame({
-          userId: finalUserId, // Can be null for guest mode
+          userId: null, // Guest mode
           instrumentId: finalInstrumentId,
           level: newLevel,
         }),
@@ -394,22 +298,20 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   }
 
   const handleMoreDetails = () => {
-    console.log("🔍 GameScreen: More Details pressed", {
-      isGuestMode: !finalUserId,
-    })
+    console.log("🔍 GameGuestScreen: More Details pressed (guest mode)")
     onMoreDetails?.()
     navigation.navigate("Menu" as never, {
-      accuracy: currentStats.accuracy.toFixed(1) + "%",
+      accuracy: guestStats.accuracy.toFixed(1) + "%",
       level: currentLevel,
-      streaks: currentStats.streak,
+      streaks: guestStats.streak,
       selectedNote: selectedChordId,
       gameResult: gameResult?.isCorrect ? "correct" : "incorrect",
-      isGuestMode: !finalUserId,
+      isGuestMode: true,
     })
   }
 
   const handleSaveProgress = () => {
-    console.log("💾 GameScreen: Save Progress pressed")
+    console.log("💾 GameGuestScreen: Save Progress pressed")
     onSaveProgress?.()
     navigation.navigate("Register" as never)
   }
@@ -417,7 +319,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   const handleSubscriptionUpgrade = () => {
     setShowSubscriptionModal(false)
     dispatch(clearError())
-    console.log("💳 GameScreen: Navigating to subscription screen")
+    console.log("💳 GameGuestScreen: Navigating to subscription screen")
     navigation.navigate("Subscription" as never)
   }
 
@@ -427,7 +329,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     if (currentLevel > 1) {
       const previousLevel = currentLevel - 1
       dispatch(setCurrentLevel(previousLevel))
-      console.log("📉 GameScreen: Returning to level:", previousLevel)
+      console.log("📉 GameGuestScreen: Returning to level:", previousLevel)
     }
   }
 
@@ -442,7 +344,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     if (finalInstrumentId) {
       dispatch(
         startGame({
-          userId: finalUserId, // Can be null for guest mode
+          userId: null, // Guest mode
           instrumentId: finalInstrumentId,
           level: currentLevel,
         }),
@@ -494,26 +396,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
           </View>
         )}
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
-          {/* Stats Row - Using level-specific stats for authenticated users */}
+          {/* Stats Row - Using guest mode stats */}
           <View className="flex-row justify-center mb-6 gap-x-2">
-            <StatCard 
-              value={Math.round(levelStats?.accuracy || currentStats.accuracy) + "%"} 
-              label="Accuracy" 
-              size="large" 
-            />
+            <StatCard value={Math.round(guestStats.accuracy) + "%"} label="Accuracy" size="large" />
             <StatCard value={currentLevel.toString()} label="Level" size="large" valueColor="dark" />
-            <StatCard 
-              value={levelStats?.streak?.toString() || currentStats.streak.toString()} 
-              label="Streaks" 
-              size="large" 
-            />
+            <StatCard value={guestStats.streak.toString()} label="Streaks" size="large" />
             <StatCard
               value="" // Not used when showFraction is true
-              label="Wins / Attempts"
+              label="Wins / Games"
               size="large"
               showFraction={true}
-              numerator={levelStats?.wins || currentStats.correctAnswers || 0}
-              denominator={levelStats?.totalAttempts || currentStats.totalAttempts || 0}
+              numerator={guestStats.wins || 0}
+              denominator={guestStats.totalAttempts || 0}
             />
           </View>
           {/* Play Again Button */}
@@ -546,7 +440,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             disabled={isSubmittingAnswer}
             showResult={showResult}
             correctChordId={gameResult?.correctChord?.id || undefined}
-            selectedChordStyle={{ borderColor: 'black', borderWidth: 2 }} // Added this prop
+            selectedChordStyle={{ borderColor: 'black', borderWidth: 2 }}
           />
         )}
         {/* Level Control Buttons */}
@@ -572,21 +466,17 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       {/* Fixed More Details Button at bottom */}
       <View className="px-6 pb-8 pt-4 justify-center items-center">
         <MoreDetailsButton onPress={handleMoreDetails} />
-        {/* Only show Save Progress for logged-in users */}
-        {!finalUserId && (
-          <View className="pt-4">
-            <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
-              Save your progress
-            </Text>
-          </View>
-        )}
+        {/* Save Progress Button for guest users */}
+        <View className="pt-4">
+          <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
+            Save your progress
+          </Text>
+        </View>
       </View>
       {/* Subscription Required Modal */}
       <SubscriptionModal
         visible={showSubscriptionModal}
-        message={
-          error || "Level 3 and above require an account. Sign up or subscribe to unlock all levels and features!"
-        }
+        message="Level 3 and above require an account. Sign up or subscribe to unlock all levels and features!"
         onUpgrade={handleSubscriptionUpgrade}
         onCancel={handleSubscriptionCancel}
       />
@@ -604,6 +494,4 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   )
 }
 
-// Removed unused styles
-
-export default GameScreen
+export default GameGuestScreen

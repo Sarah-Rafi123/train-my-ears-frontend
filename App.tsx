@@ -1,8 +1,8 @@
 "use client"
-
 import { Provider } from "react-redux"
 import { store } from "@/src/store/store"
 import GameScreen from "@/src/screens/game/game"
+import GameGuestScreen from "@/src/screens/game/gameGuest"
 import HomeScreen from "@/src/screens/home/home"
 import LeaderboardScreen from "@/src/screens/leaderboard/leaderboard"
 import LoginScreen from "@/src/screens/login/login"
@@ -16,6 +16,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import "./global.css"
 import { tokenCache } from '@clerk/clerk-expo/token-cache'
 import AdvanceGameScreen from "./src/screens/advanceGame/advanceGame"
+import AdvanceGameGuestScreen from "./src/screens/advanceGame/advanceGameGuest"
 import UserStatsScreen from "./src/screens/userStats/userStats"
 import ViewFeedbackScreen from "./src/screens/viewFeedback/viewFeedback"
 import AuthProvider from "./src/context/AuthContext"
@@ -167,7 +168,7 @@ export default function RootLayout() {
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
           <Provider store={store}>
             <AuthProvider>
-               {/* <RevenueCatScreen />  */}
+                {/* <RevenueCatScreen />   */}
               <NavigationContainer>
                 <Stack.Navigator
                   initialRouteName={hasToken ? "SelectInstrument" : "Home"} // Conditional initial route
@@ -182,10 +183,12 @@ export default function RootLayout() {
                   <Stack.Screen name="Home" component={HomeScreen} />
                   <Stack.Screen name="SelectInstrument" component={SelectInstrumentScreen} />
                   <Stack.Screen name="Game" component={GameScreen} />
+                  <Stack.Screen name="GameGuest" component={GameGuestScreen} />
                   <Stack.Screen name="Menu" component={MenuScreen} />
                   <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
                   <Stack.Screen name="Stats" component={UserStatsScreen} />
                   <Stack.Screen name="Advance" component={AdvanceGameScreen} />
+                  <Stack.Screen name="AdvanceGuest" component={AdvanceGameGuestScreen} />
                   <Stack.Screen name="Sample" component={SampleScreen} />
                 </Stack.Navigator>
               </NavigationContainer>
