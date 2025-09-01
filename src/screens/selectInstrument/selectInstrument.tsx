@@ -9,6 +9,8 @@ import { instrumentsApi, type Instrument } from '@/src/services/instrumentApi';
 import musicbg from '@/src/assets/images/musicbg.png';
 import { useClerk } from '@clerk/clerk-expo';
 import LogoutSvg from '@/src/assets/svgs/Logout'; // Import LogoutSvg
+import { useDispatch } from 'react-redux';
+import { setSelectedInstrument } from '@/src/store/slices/instrumentSlice';
 
 interface SelectInstrumentScreenProps {
   onBack?: () => void;
@@ -17,6 +19,7 @@ interface SelectInstrumentScreenProps {
 
 export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: SelectInstrumentScreenProps) {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const { guitarId, pianoId, userId, token, setGuitarId, setPianoId } = useAuth();
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +124,12 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
           await setPianoId('cmbyuwdi00002qlhguosiz78c');
         }
       }
+    }
+
+    // Set the selected instrument in Redux store
+    if (selectedInstrumentId) {
+      dispatch(setSelectedInstrument(selectedInstrumentId));
+      console.log(`🎼 Updated Redux with selected instrument ID: ${selectedInstrumentId}`);
     }
     // Navigate to appropriate screen based on authentication status
     const gameScreenName = userId ? 'Game' : 'GameGuest'

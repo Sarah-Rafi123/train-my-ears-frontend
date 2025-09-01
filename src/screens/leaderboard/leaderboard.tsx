@@ -164,10 +164,10 @@ export default function LeaderboardScreen({ navigation, onBack }: LeaderboardScr
           <View className="mx-6 bg-white rounded-2xl overflow-hidden shadow-sm">
             {/* Table Header */}
             <View className="bg-gray-100 flex-row py-4 px-6">
-              <Text className="text-[#003049] font-semibold w-12">Place</Text>
+              <Text className="text-[#003049] font-semibold w-14">Place</Text>
               <Text className="text-[#003049] font-semibold flex-1 ml-2 mr-2">Name</Text>
               <Text className="text-[#003049] font-semibold ml-4 text-center">Streak</Text>
-              <Text className="text-[#003049] font-semibold w-20 ml-2 text-center">Accuracy</Text>
+              <Text className="text-[#003049] font-semibold w-24 ml-2 text-center">Accuracy</Text>
             </View>
             
             {leaderboardRows.map((player, index) => (

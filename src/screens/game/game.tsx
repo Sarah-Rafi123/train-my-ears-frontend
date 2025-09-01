@@ -509,7 +509,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             />
             <StatCard
               value="" // Not used when showFraction is true
-              label="Wins / Attempts"
+              label="Corrects/Total"
               size="large"
               showFraction={true}
               numerator={levelStats?.wins || currentStats.correctAnswers || 0}
@@ -535,6 +535,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
                 ? "Correct!"
                 : `Sorry, that was ${gameResult.correctChord?.displayName}. Try Again!`}
             </Text>
+          </View>
+        )}
+        {/* Answer Submission Loader */}
+        {isSubmittingAnswer && (
+          <View className="px-6 mb-6">
+            <View className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex-row items-center justify-center">
+              <ActivityIndicator size="small" color="#003049" />
+              <Text className="text-[#003049] text-lg font-semibold ml-3">Submitting answer...</Text>
+            </View>
           </View>
         )}
         {/* Note Grid with chord options - Only show when showChords is true */}

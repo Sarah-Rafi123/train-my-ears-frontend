@@ -403,7 +403,7 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
             <StatCard value={guestStats.streak.toString()} label="Streaks" size="large" />
             <StatCard
               value="" // Not used when showFraction is true
-              label="Wins / Games"
+              label="Corrects/Total"
               size="large"
               showFraction={true}
               numerator={guestStats.wins || 0}

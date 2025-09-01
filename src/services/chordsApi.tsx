@@ -1,3 +1,5 @@
+import { getLocalAudioPath } from '../assets/audio/audioMap'
+
 // Types for the API responses
 export interface Chord {
   id: string
@@ -49,6 +51,20 @@ export interface ApiErrorResponse {
     message: string
     code?: string
   }
+}
+
+// Helper function to process chords and add local audio paths
+const processChordsWithLocalAudio = (chords: Chord[], instrumentId: string, levelId: number): Chord[] => {
+  return chords.map(chord => {
+    // Try to get local audio path first
+    const localAudioPath = getLocalAudioPath(instrumentId, levelId, chord.name)
+    
+    return {
+      ...chord,
+      // Use local audio if available, fallback to original audioFileUrl
+      audioFileUrl: localAudioPath || chord.audioFileUrl
+    }
+  })
 }
 
 export const chordApi = {
@@ -104,6 +120,12 @@ export const chordApi = {
         }
       }
 
+      // Process chords to use local audio files
+      if (data.data?.chords) {
+        data.data.chords = processChordsWithLocalAudio(data.data.chords, instrumentId, levelId)
+        console.log(`🎵 Processed ${data.data.chords.length} chords with local audio paths`)
+      }
+
       return data
     } catch (error) {
       console.error("💥 Get chords network error:", error)
@@ -142,6 +164,12 @@ export const chordApi = {
       if (!data.success) {
         const errorMessage = data.error?.message || "Failed to get chords for specific level"
         throw new Error(errorMessage)
+      }
+
+      // Process chords to use local audio files
+      if (data.data?.chords) {
+        data.data.chords = processChordsWithLocalAudio(data.data.chords, instrumentId, levelId)
+        console.log(`🎵 Processed ${data.data.chords.length} chords with local audio paths for level ${levelId}`)
       }
 
       return data

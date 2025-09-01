@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { chordApi, type Chord, type ChordMetadata } from "../services/chordsApi"
 import { useAuth } from "../context/AuthContext"
+import { useSelector } from "react-redux"
+import type { RootState } from "../store/store"
 
 interface UseChordsReturn {
   chords: Chord[]
@@ -15,14 +17,29 @@ interface UseChordsReturn {
 
 export const useChords = (level = 1): UseChordsReturn => {
   const { guitarId, pianoId } = useAuth()
+  const selectedInstrumentId = useSelector((state: RootState) => state.instruments.selectedInstrumentId)
+  const instruments = useSelector((state: RootState) => state.instruments.instruments)
   const [chords, setChords] = useState<Chord[]>([])
   const [metadata, setMetadata] = useState<ChordMetadata | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // For now, default to guitar. You can make this configurable
-  const instrumentId = guitarId || pianoId
-  const instrumentName = guitarId ? "Guitar" : "Piano"
+  // Use the selected instrument from Redux, fallback to guitarId or pianoId
+  const instrumentId = selectedInstrumentId || guitarId || pianoId
+  
+  // Determine instrument name based on the selected instrument
+  const getInstrumentName = () => {
+    if (selectedInstrumentId) {
+      const selectedInstrument = instruments.find(inst => inst.id === selectedInstrumentId)
+      if (selectedInstrument) {
+        return selectedInstrument.name
+      }
+    }
+    // Fallback to the previous logic
+    return guitarId ? "Guitar" : "Piano"
+  }
+  
+  const instrumentName = getInstrumentName()
 
   const getExpectedChordCount = useCallback((level: number): number => {
     switch (level) {
@@ -66,7 +83,7 @@ export const useChords = (level = 1): UseChordsReturn => {
     } finally {
       setIsLoading(false)
     }
-  }, [instrumentId, level, instrumentName])
+  }, [instrumentId, level, instrumentName, selectedInstrumentId])
 
   useEffect(() => {
     fetchChords()

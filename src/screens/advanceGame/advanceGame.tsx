@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/src/store/store"
 import {
   startAdvancedGame,
   submitSequence,
@@ -43,8 +45,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   // Get screen dimensions for responsive layout
   const screenWidth = Dimensions.get("window").width
 
-  // Get auth data
+  // Get auth data and selected instrument from Redux
   const { userId, guitarId, pianoId } = useAuth()
+  const selectedInstrumentId = useSelector((state: RootState) => state.instruments.selectedInstrumentId)
+  const instruments = useSelector((state: RootState) => state.instruments.instruments)
   // Get advanced game state from Redux
   const {
     currentGameRound,
@@ -88,8 +92,9 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const instrumentIdFromRoute = routeParams?.instrumentId
   const userIdFromRoute = routeParams?.userId
 
-  // Determine instrument ID based on route params or context
-  let finalInstrumentId = instrumentIdFromRoute
+  // Determine instrument ID - prioritize Redux store selection
+  let finalInstrumentId = selectedInstrumentId || instrumentIdFromRoute
+  
   if (!finalInstrumentId && instrumentFromRoute) {
     if (instrumentFromRoute === "guitar") {
       finalInstrumentId = guitarId
@@ -103,7 +108,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   // If still no instrument ID, try to get it from the stored instrument IDs
   if (!finalInstrumentId) {
     console.log("🔍 AdvancedGameScreen: No instrument ID found, checking stored IDs...")
-    // Use guitar as default if no specific instrument is specified
     if (guitarId) {
       finalInstrumentId = guitarId
       console.log("🎸 AdvancedGameScreen: Using default guitar ID:", guitarId)
@@ -113,6 +117,15 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }
 
+  // Determine instrument name for logging
+  const getSelectedInstrumentName = () => {
+    if (selectedInstrumentId && instruments.length > 0) {
+      const instrument = instruments.find(inst => inst.id === selectedInstrumentId)
+      return instrument?.name || 'Unknown'
+    }
+    return instrumentFromRoute || 'Unknown'
+  }
+
   // Use IDs from route params or context (userId can be null for guest mode)
   const finalUserId = userIdFromRoute || userId || null
 
@@ -120,6 +133,8 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   console.log("🎮 AdvancedGameScreen: Final IDs determined:", {
     userId: finalUserId,
     instrumentId: finalInstrumentId,
+    selectedFromRedux: selectedInstrumentId,
+    instrumentName: getSelectedInstrumentName(),
     instrument: instrumentFromRoute,
     guitarIdFromContext: guitarId,
     pianoIdFromContext: pianoId,
@@ -825,7 +840,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
               showFraction={true}
               numerator={levelStats?.wins || currentStats.correctAnswers}
               denominator={levelStats?.totalAttempts || currentStats.totalAttempts}
-              label="Wins / Attempts"
+              label="Corrects/Total"
               size="large"
               value="" // Not used when showFraction is true
             />

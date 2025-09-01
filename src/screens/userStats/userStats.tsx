@@ -226,7 +226,7 @@ export default function UserStatsScreen({ navigation, route, onBack }: StatsScre
                       showFraction={true}
                       numerator={todayProgressValues.correctAnswers}
                       denominator={todayProgressValues.totalAttempts}
-                      label="Wins / Attempts" 
+                      label="Corrects/Total" 
                       size="large" 
                       value="" // Not used when showFraction is true
                     />
@@ -243,7 +243,7 @@ export default function UserStatsScreen({ navigation, route, onBack }: StatsScre
                   <View className="bg-gray-100 flex-row py-4 px-6">
                     <Text className="flex-1 text-[#003049] text-lg font-semibold">Date</Text>
                     <Text className="w-20 text-center text-[#003049] text-lg font-semibold">Streak</Text>
-                    <Text className="w-24 text-right text-[#003049] text-lg font-semibold">Accuracy</Text>
+                    <Text className="w-28 text-right text-[#003049] text-lg font-semibold">Accuracy</Text>
                   </View>
 
                   {/* Scrollable Data Rows */}

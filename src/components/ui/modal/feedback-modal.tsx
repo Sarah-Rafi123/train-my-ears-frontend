@@ -109,9 +109,9 @@ export default function FeedbackModal({ visible, onClose, userEmail }: FeedbackM
           <ScrollView className="flex-1 px-6 py-4">
             {/* Instructions */}
             <View className="mb-4">
-              <Text className="text-lg font-semibold text-gray-900 mb-2">We'd love to hear from you!</Text>
+              <Text className="text-lg font-semibold text-gray-900 mb-2">We Would Love Your Feedback</Text>
               <Text className="text-gray-600 mb-4">
-                Share your thoughts, suggestions, or report any issues you've encountered with the app.
+               Got ideas, suggestions or issues? We’re listening.
               </Text>
             </View>
 
@@ -143,7 +143,7 @@ export default function FeedbackModal({ visible, onClose, userEmail }: FeedbackM
               <TextInput
                 value={feedback}
                 onChangeText={setFeedback}
-                placeholder="Tell us what you think about the app, what features you'd like to see, or any issues you've encountered..."
+                placeholder="We would love to hear your thoughts, feature requests or bug reports."
                 multiline
                 numberOfLines={8}
                 textAlignVertical="top"

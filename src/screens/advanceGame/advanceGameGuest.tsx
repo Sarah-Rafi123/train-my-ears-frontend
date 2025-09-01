@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/src/store/store"
 import {
   startAdvancedGame,
   submitSequence,
@@ -40,8 +42,10 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
   const dispatch = useAppDispatch()
   const screenWidth = Dimensions.get("window").width
 
-  // Get auth data
+  // Get auth data and selected instrument from Redux
   const { guitarId, pianoId } = useAuth()
+  const selectedInstrumentId = useSelector((state: RootState) => state.instruments.selectedInstrumentId)
+  const instruments = useSelector((state: RootState) => state.instruments.instruments)
   
   // Get advanced game state from Redux
   const {
@@ -87,8 +91,9 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
   const instrumentFromRoute = routeParams?.instrument
   const instrumentIdFromRoute = routeParams?.instrumentId
 
-  // Determine instrument ID based on route params or context
-  let finalInstrumentId = instrumentIdFromRoute
+  // Determine instrument ID - prioritize Redux store selection
+  let finalInstrumentId = selectedInstrumentId || instrumentIdFromRoute
+  
   if (!finalInstrumentId && instrumentFromRoute) {
     if (instrumentFromRoute === "guitar") {
       finalInstrumentId = guitarId
@@ -111,9 +116,20 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
     }
   }
 
+  // Determine instrument name for logging
+  const getSelectedInstrumentName = () => {
+    if (selectedInstrumentId && instruments.length > 0) {
+      const instrument = instruments.find(inst => inst.id === selectedInstrumentId)
+      return instrument?.name || 'Unknown'
+    }
+    return instrumentFromRoute || 'Unknown'
+  }
+
   // Log the final IDs being used
   console.log("🎮 AdvancedGameGuestScreen: Final IDs determined:", {
     instrumentId: finalInstrumentId,
+    selectedFromRedux: selectedInstrumentId,
+    instrumentName: getSelectedInstrumentName(),
     instrument: instrumentFromRoute,
     guitarIdFromContext: guitarId,
     pianoIdFromContext: pianoId,
@@ -696,7 +712,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
               showFraction={true}
               numerator={guestStats.wins}
               denominator={guestStats.totalAttempts || 1}
-              label="Wins / Attempts"
+              label="Corrects/Total"
               size="large"
               value=""
             />
