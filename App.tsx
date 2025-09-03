@@ -25,7 +25,8 @@ import { useFonts } from "expo-font"
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect, useCallback, useState } from "react"
 import { View, Text, ActivityIndicator, Platform } from "react-native"
-import Purchases from "react-native-purchases"
+import Purchases, {LOG_LEVEL} from "react-native-purchases"
+import { revenueCatService } from "./src/services/revenueCatService"
 import RevenueCatScreen from "./src/screens/revenuecatScreen/revenuecatScreen"
 import AsyncStorage from "@react-native-async-storage/async-storage" // Import AsyncStorage
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av"
@@ -88,14 +89,10 @@ export default function RootLayout() {
   }, [])
 
   useEffect(() => {
-    // Configure RevenueCat
-    if (Platform.OS === "ios") {
-      Purchases.configure({ apiKey: "appl_HMvsrsUNrKZzXXlfuIyAAFUPRAi" })
-    } else if (Platform.OS === "android") {
-      // Replace with your Google Play API key from RevenueCat dashboard
-      Purchases.configure({ apiKey: "goog_zmsWciJZLfxQLjjHAkEaJalaKtx" })
+    // Initialize RevenueCat for anonymous users first
+    const initializeRevenueCat = async () => {
+      await revenueCatService.setupAnonymousRevenueCat()
     }
-    Purchases.getOfferings().then(console.log)
 
     // Configure Audio Session for iOS
     const configureAudio = async () => {
@@ -129,9 +126,26 @@ export default function RootLayout() {
       }
     }
     
+    initializeRevenueCat()
     configureAudio()
   }, [])
 
+  // Setup RevenueCat user when authentication state changes
+  useEffect(() => {
+    console.log('🔄 [App.tsx] Authentication state changed:', { hasToken });
+    
+    const setupUserRevenueCat = async () => {
+      if (hasToken) {
+        console.log('🎯 [App.tsx] User is authenticated, setting up RevenueCat...');
+        // User is logged in, setup RevenueCat with their user ID
+        await revenueCatService.setupRevenueCatUser()
+      } else {
+        console.log('🔍 [App.tsx] User not authenticated, skipping RevenueCat user setup');
+      }
+    }
+
+    setupUserRevenueCat()
+  }, [hasToken]) // Trigger when authentication state changes
   useEffect(() => {
     async function prepare() {
       try {
@@ -168,7 +182,6 @@ export default function RootLayout() {
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
           <Provider store={store}>
             <AuthProvider>
-                {/* <RevenueCatScreen />   */}
               <NavigationContainer>
                 <Stack.Navigator
                   initialRouteName={hasToken ? "SelectInstrument" : "Home"} // Conditional initial route
@@ -190,6 +203,7 @@ export default function RootLayout() {
                   <Stack.Screen name="Advance" component={AdvanceGameScreen} />
                   <Stack.Screen name="AdvanceGuest" component={AdvanceGameGuestScreen} />
                   <Stack.Screen name="Sample" component={SampleScreen} />
+                  <Stack.Screen name="RevenueCatScreen" component={RevenueCatScreen} />
                 </Stack.Navigator>
               </NavigationContainer>
             </AuthProvider>

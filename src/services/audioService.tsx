@@ -1,5 +1,6 @@
 import { Audio } from "expo-av"
 import { Platform } from "react-native"
+import { BASE_URL } from '../constants/urls.constant'
 
 class AudioService {
   private sound: Audio.Sound | null = null
@@ -29,7 +30,7 @@ class AudioService {
           const isRemoteUrl = audioUrl.startsWith("http://") || audioUrl.startsWith("https://")
           let fullUrl = audioUrl
           if (!isRemoteUrl) {
-            const baseUrl = "https://trainmyears.softaims.com"
+            const baseUrl = BASE_URL.replace(/\/$/, '') // Remove trailing slash
             fullUrl = `${baseUrl}${audioUrl.startsWith("/") ? audioUrl : "/" + audioUrl}`
           }
           console.log("🔊 AudioService: Using URL:", fullUrl)

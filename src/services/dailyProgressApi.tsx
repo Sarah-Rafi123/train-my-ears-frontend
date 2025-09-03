@@ -1,3 +1,5 @@
+import { BASE_URL } from '../constants/urls.constant';
+
 // Types for the daily progress API responses
 export interface LevelProgress {
   levelId: number
@@ -68,7 +70,7 @@ export const dailyProgressApi = {
       if (date) params.append('date', date)
       if (level) params.append('level', level.toString())
 console
-      const url = `https://trainmyears.softaims.com/api/stats/users/${userId}/daily-progress?${params.toString()}`
+      const url = `${BASE_URL}api/stats/users/${userId}/daily-progress?${params.toString()}`
       console.log("🔗 Daily Progress API URL:", url)
 
       const response = await fetch(url, {

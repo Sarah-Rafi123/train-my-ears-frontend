@@ -1,3 +1,5 @@
+import { BASE_URL } from '../constants/urls.constant';
+
 // Types for the advanced game API responses
 export interface ChordPoolItem {
   id: string
@@ -97,7 +99,7 @@ export const advancedGameApi = {
         requestBody.userId = userId
       }
 
-      const response = await fetch(`https://trainmyears.softaims.com/api/advanced-game/start`, {
+      const response = await fetch(`${BASE_URL}api/advanced-game/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -170,7 +172,7 @@ export const advancedGameApi = {
           requestBody.userId = userId
         }
 
-        const response = await fetch(`https://trainmyears.softaims.com/api/advanced-game/submit-sequence`, {
+        const response = await fetch(`${BASE_URL}api/advanced-game/submit-sequence`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -269,7 +271,7 @@ export const advancedGameApi = {
   getUserProgress: async (userId: string): Promise<any> => {
     try {
       console.log("📊 Getting user progress:", { userId })
-      const response = await fetch(`https://trainmyears.softaims.com/api/users/${userId}/progress`, {
+      const response = await fetch(`${BASE_URL}api/users/${userId}/progress`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -296,7 +298,7 @@ export const advancedGameApi = {
   getInstruments: async (): Promise<any> => {
     try {
       console.log("🎸 Getting available instruments")
-      const response = await fetch(`https://trainmyears.softaims.com/api/instruments`, {
+      const response = await fetch(`${BASE_URL}api/instruments`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -323,7 +325,7 @@ export const advancedGameApi = {
   getLevels: async (): Promise<any> => {
     try {
       console.log("🏆 Getting available levels")
-      const response = await fetch(`https://trainmyears.softaims.com/api/levels`, {
+      const response = await fetch(`${BASE_URL}api/levels`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -350,7 +352,7 @@ export const advancedGameApi = {
   getGameHistory: async (userId: string, limit = 10): Promise<any> => {
     try {
       console.log("📜 Getting game history:", { userId, limit })
-      const response = await fetch(`https://trainmyears.softaims.com/api/users/${userId}/history?limit=${limit}`, {
+      const response = await fetch(`${BASE_URL}api/users/${userId}/history?limit=${limit}`, {
         method: "GET",
         headers: {
           Accept: "application/json",

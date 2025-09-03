@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
+import { BASE_URL } from '../../constants/urls.constant'
 
 interface User {
   id: string
@@ -150,13 +151,13 @@ export const registerUser = createAsyncThunk<AuthResponse, RegisterData, { rejec
   async (userData, { rejectWithValue }) => {
     try {
       console.log("🚀 Starting registration process...")
-      console.log("📡 Making registration API call to:", `https://trainmyears.softaims.com/api/auth/register`)
+      console.log("📡 Making registration API call to:", `${BASE_URL}api/auth/register`)
       console.log("📤 Request data:", {
         name: userData.name,
         email: userData.email,
         password: "[HIDDEN]", // Don't log password
       })
-      const response = await fetch(`https://trainmyears.softaims.com/api/auth/register`, {
+      const response = await fetch(`${BASE_URL}api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -207,12 +208,12 @@ export const loginUser = createAsyncThunk<AuthResponse, LoginData, { rejectValue
   async (loginData, { rejectWithValue }) => {
     try {
       console.log("🚀 Starting login process...")
-      console.log("📡 Making login API call to:", `https://trainmyears.softaims.com/api/auth/login`)
+      console.log("📡 Making login API call to:", `${BASE_URL}api/auth/login`)
       console.log("📤 Request data:", {
         email: loginData.email,
         password: "[HIDDEN]", // Don't log password
       })
-      const response = await fetch(`https://trainmyears.softaims.com/api/auth/login`, {
+      const response = await fetch(`${BASE_URL}api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -267,10 +268,10 @@ export const socialLoginUser = createAsyncThunk<AuthResponse, SocialLoginData, {
     try {
       console.log("🚀 Starting social login process...")
       // UPDATED URL: Changed from /api/users/social-login to /api/auth/social-login
-      console.log("📡 Making social login API call to:", `https://trainmyears.softaims.com/api/auth/social-login`)
+      console.log("📡 Making social login API call to:", `${BASE_URL}api/auth/social-login`)
       console.log("📤 Request data:", socialData)
 
-      const response = await fetch(`https://trainmyears.softaims.com/api/auth/social-login`, {
+      const response = await fetch(`${BASE_URL}api/auth/social-login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -355,10 +356,10 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
         return
       }
 
-      console.log("📡 Making logout API call to:", `https://trainmyears.softaims.com/api/auth/logout`)
+      console.log("📡 Making logout API call to:", `${BASE_URL}api/auth/logout`)
       console.log(`📤 Request data: { ${payloadKey}: [HIDDEN] }`)
 
-      const response = await fetch(`https://trainmyears.softaims.com/api/auth/logout`, {
+      const response = await fetch(`${BASE_URL}api/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

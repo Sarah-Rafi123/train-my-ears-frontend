@@ -1,3 +1,5 @@
+import { BASE_URL } from '../constants/urls.constant';
+
 // Types for the API responses
 export interface ChordOption {
   id: string
@@ -77,7 +79,7 @@ export const gameApi = {
         requestBody.userId = userId
       }
 
-      const response = await fetch(`https://trainmyears.softaims.com/api/simple-game/start`, {
+      const response = await fetch(`${BASE_URL}api/simple-game/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -133,7 +135,7 @@ export const gameApi = {
         requestBody.userId = userId
       }
 
-      const response = await fetch(`https://trainmyears.softaims.com/api/simple-game/submit-answer`, {
+      const response = await fetch(`${BASE_URL}api/simple-game/submit-answer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

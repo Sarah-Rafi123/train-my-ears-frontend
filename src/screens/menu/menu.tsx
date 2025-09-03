@@ -2,12 +2,13 @@
 import { View, ScrollView, Text } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import MenuOption from "@/src/components/widgets/MenuOption"
 import FeedbackModal from "@/src/components/ui/modal/feedback-modal"
 import { LoginRequiredModal } from "@/src/components/ui/modal/login-required-modal" // Import the new modal
 import { useAuth } from "@/src/context/AuthContext"
+import { revenueCatService } from "@/src/services/revenueCatService"
 
 interface MenuScreenProps {
   onBack?: () => void
@@ -30,6 +31,43 @@ export default function MenuScreen({
   const { user } = useAuth()
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false)
   const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false) // New state for login modal
+  const [canCancelSubscription, setCanCancelSubscription] = useState(false)
+  const [hasSubscription, setHasSubscription] = useState(false)
+  const [subscriptionInfo, setSubscriptionInfo] = useState<{
+    isYearlySubscription?: boolean;
+    canDowngradeFromYearly?: boolean;
+    daysSincePurchase?: number;
+  }>({})
+
+  // Check subscription status when component mounts or user changes
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      if (user) {
+        try {
+          const subInfo = await revenueCatService.getActiveSubscriptionInfo()
+          setHasSubscription(subInfo.hasSubscription)
+          setCanCancelSubscription(subInfo.canCancel)
+          setSubscriptionInfo({
+            isYearlySubscription: subInfo.isYearlySubscription,
+            canDowngradeFromYearly: subInfo.canDowngradeFromYearly,
+            daysSincePurchase: subInfo.daysSincePurchase
+          })
+          
+          console.log('🔍 [MenuScreen] Subscription status:', {
+            hasSubscription: subInfo.hasSubscription,
+            canCancel: subInfo.canCancel,
+            daysSincePurchase: subInfo.daysSincePurchase,
+            isYearly: subInfo.isYearlySubscription,
+            canDowngradeFromYearly: subInfo.canDowngradeFromYearly
+          })
+        } catch (error) {
+          console.error('❌ [MenuScreen] Error checking subscription status:', error)
+        }
+      }
+    }
+
+    checkSubscriptionStatus()
+  }, [user])
 
   const handleViewSample = () => {
     console.log("View Sample pressed")
@@ -81,6 +119,11 @@ export default function MenuScreen({
     navigation.navigate("ViewFeedback" as never)
   }
 
+  const handleSubscription = () => {
+    console.log("Subscription pressed")
+    navigation.navigate("RevenueCatScreen" as never)
+  }
+
   const handleBack = () => {
     console.log("Back pressed")
     onBack?.()
@@ -90,6 +133,20 @@ export default function MenuScreen({
   const handleLoginFromModal = () => {
     setShowLoginRequiredModal(false)
     navigation.navigate("Register" as never) // Navigate to your registration/login screen
+  }
+
+  const handleCancelSubscription = async () => {
+    console.log("Cancel Subscription pressed")
+    try {
+      const success = await revenueCatService.cancelSubscription()
+      if (success) {
+        console.log('✅ [MenuScreen] Successfully redirected to subscription management')
+      } else {
+        console.error('❌ [MenuScreen] Failed to open subscription management')
+      }
+    } catch (error) {
+      console.error('❌ [MenuScreen] Error cancelling subscription:', error)
+    }
   }
 
   return (
@@ -105,6 +162,8 @@ export default function MenuScreen({
           <MenuOption title="Advanced Play" onPress={handleAdvanceMode} />
           <MenuOption title="Sample Chords" onPress={handleViewSample} />
           <MenuOption title="Leader Board" onPress={handleLeaderboard} />
+          {user && <MenuOption title="Subscription" onPress={handleSubscription} />}
+          {user && canCancelSubscription && <MenuOption title="Cancel Subscription" onPress={handleCancelSubscription} />}
           <MenuOption title="Share" onPress={handleShare} />
           <MenuOption title="Share Feedback" onPress={handleShareFeedback} />
           {/* Small text for View Feedback */}

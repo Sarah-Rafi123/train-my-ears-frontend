@@ -21,7 +21,7 @@ import CircularIndicator from "@/src/components/widgets/CircularIndicator"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
 import SaveProgressButton from "@/src/components/ui/buttons/SaveProgressButton"
-import { SubscriptionModal } from "@/src/components/ui/modal/subscription-modal"
+import { LoginPromptModal } from "@/src/components/ui/modal/login-prompt-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { TouchableOpacity } from "react-native"
@@ -62,7 +62,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
 
   const [showResult, setShowResult] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+  const [showLoginPromptModal, setShowLoginPromptModal] = useState(false)
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
   const [isPlayingSequence, setIsPlayingSequence] = useState(false)
 
@@ -372,7 +372,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
     if (error && errorCode) {
       console.log("🔴 AdvancedGameGuestScreen: Handling error:", { error, errorCode })
       if (errorCode === "SUBSCRIPTION_REQUIRED") {
-        setShowSubscriptionModal(true)
+        setShowLoginPromptModal(true)
       } else {
         setShowGameErrorModal(true)
       }
@@ -496,10 +496,10 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
       const newLevel = currentLevel + 1
       console.log("📈 AdvancedGameGuestScreen: Attempting level up to:", newLevel)
       
-      // Show subscription modal for level 3+ for guests
+      // Show login prompt for level 3+ for guests
       if (newLevel >= 3) {
-        console.log("🚫 AdvancedGameGuestScreen: Subscription required for level 3+")
-        setShowSubscriptionModal(true)
+        console.log("🚫 AdvancedGameGuestScreen: Login required for level 3+")
+        setShowLoginPromptModal(true)
         return
       }
       setHasInitialized(false)
@@ -528,16 +528,16 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
     nav.navigate("Register")
   }
 
-  const handleSubscriptionUpgrade = () => {
-    setShowSubscriptionModal(false)
+  const handleLoginPrompt = () => {
+    setShowLoginPromptModal(false)
     dispatch(clearError())
-    console.log("💳 AdvancedGameGuestScreen: Navigating to subscription screen")
+    console.log("🔐 AdvancedGameGuestScreen: Navigating to login screen")
     const nav = navigation as any
-    nav.navigate("Subscription")
+    nav.navigate("Login")
   }
 
-  const handleSubscriptionCancel = () => {
-    setShowSubscriptionModal(false)
+  const handleLoginPromptCancel = () => {
+    setShowLoginPromptModal(false)
     dispatch(clearError())
   }
 
@@ -873,12 +873,12 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
         <MoreDetailsButton onPress={handleMoreDetails} />
         <SaveProgressButton onPress={handleSaveProgress} />
       </View>
-      {/* Subscription Required Modal */}
-      <SubscriptionModal
-        visible={showSubscriptionModal}
-        message="Subscription required for Level 3 and above. Upgrade to Premium to unlock all levels and features!"
-        onUpgrade={handleSubscriptionUpgrade}
-        onCancel={handleSubscriptionCancel}
+      {/* Login Required Modal */}
+      <LoginPromptModal
+        visible={showLoginPromptModal}
+        message="Level 3 and above require an account. Please login or register to unlock all levels and features!"
+        onLogin={handleLoginPrompt}
+        onCancel={handleLoginPromptCancel}
       />
       {/* Game Error Modal */}
       <GameErrorModal

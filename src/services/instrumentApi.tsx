@@ -1,3 +1,5 @@
+import { BASE_URL } from '../constants/urls.constant';
+
 // Types for instruments
 export interface Instrument {
   id: string
@@ -17,9 +19,9 @@ export const instrumentsApi = {
   // Fetch all instruments
   getInstruments: async (): Promise<InstrumentsResponse> => {
     try {
-      console.log("🎵 Fetching instruments from:", `https://trainmyears.softaims.com/api/instruments`)
+      console.log("🎵 Fetching instruments from:", `${BASE_URL}api/instruments`)
 
-      const response = await fetch(`https://trainmyears.softaims.com/api/instruments`, {
+      const response = await fetch(`${BASE_URL}api/instruments`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

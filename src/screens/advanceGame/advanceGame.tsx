@@ -634,7 +634,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     dispatch(clearError())
     console.log("💳 AdvancedGameScreen: Navigating to subscription screen")
     const nav = navigation as any
-    nav.navigate("Subscription")
+    nav.navigate("RevenueCatScreen")
   }
 
   const handleSubscriptionCancel = () => {

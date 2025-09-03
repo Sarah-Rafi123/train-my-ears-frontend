@@ -1,4 +1,5 @@
 import { getLocalAudioPath } from '../assets/audio/audioMap'
+import { BASE_URL } from '../constants/urls.constant'
 
 // Types for the API responses
 export interface Chord {
@@ -81,7 +82,7 @@ export const chordApi = {
       if (instrumentName) {
         params.append("instrumentName", instrumentName)
       }
-      const url = `https://trainmyears.softaims.com/api/chords?${params.toString()}`
+      const url = `${BASE_URL}api/chords?${params.toString()}`
       console.log("🔗 Chords API URL:", url)
 
       const response = await fetch(url, {
@@ -142,7 +143,7 @@ export const chordApi = {
         levelId: levelId.toString(),
       })
 
-      const url = `https://trainmyears.softaims.com/api/chords/level-specific?${params.toString()}`
+      const url = `${BASE_URL}api/chords/level-specific?${params.toString()}`
       console.log("🔗 Specific level chords API URL:", url)
 
       const response = await fetch(url, {

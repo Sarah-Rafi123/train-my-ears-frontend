@@ -1,3 +1,5 @@
+import { BASE_URL } from '../constants/urls.constant';
+
 interface FeedbackRequest {
   message: string
   email?: string
@@ -45,13 +47,13 @@ class FeedbackService {
   async submitFeedback(feedbackData: FeedbackRequest): Promise<FeedbackResponse> {
     try {
       console.log("🚀 Submitting feedback...")
-      console.log("📡 API URL:", `https://trainmyears.softaims.com/api/users/feedback`)
+      console.log("📡 API URL:", `${BASE_URL}api/users/feedback`)
       console.log("📤 Request data:", {
         message: feedbackData.message,
         email: feedbackData.email || "No email provided",
       })
 
-      const response = await fetch(`https://trainmyears.softaims.com/api/users/feedback`, {
+      const response = await fetch(`${BASE_URL}api/users/feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -101,9 +103,9 @@ class FeedbackService {
   async getFeedback(page = 1, limit = 10): Promise<GetFeedbackResponse> {
     try {
       console.log("🚀 Fetching feedback...")
-      console.log("📡 API URL:", `https://trainmyears.softaims.com/api/users/feedback?page=${page}&limit=${limit}`)
+      console.log("📡 API URL:", `${BASE_URL}api/users/feedback?page=${page}&limit=${limit}`)
 
-      const response = await fetch(`https://trainmyears.softaims.com/api/users/feedback?page=${page}&limit=${limit}`, {
+      const response = await fetch(`${BASE_URL}api/users/feedback?page=${page}&limit=${limit}`, {
         method: "GET",
         headers: {
           Accept: "application/json",

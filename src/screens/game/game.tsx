@@ -418,7 +418,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     setShowSubscriptionModal(false)
     dispatch(clearError())
     console.log("💳 GameScreen: Navigating to subscription screen")
-    navigation.navigate("Subscription" as never)
+    navigation.navigate("RevenueCatScreen" as never)
   }
 
   const handleSubscriptionCancel = () => {

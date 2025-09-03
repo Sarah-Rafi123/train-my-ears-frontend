@@ -1,3 +1,5 @@
+import { BASE_URL } from '../constants/urls.constant';
+
 // Types for the leaderboard API responses
 export interface LeaderboardUser {
   rank: number
@@ -49,7 +51,7 @@ export const leaderboardApi = {
       const params = new URLSearchParams({
         sortBy,
       })
-      const url = `https://trainmyears.softaims.com/api/stats/leaderboard/level/${levelId}?${params.toString()}`
+      const url = `${BASE_URL}api/stats/leaderboard/level/${levelId}?${params.toString()}`
       console.log("🔗 Leaderboard API URL:", url)
 
       const response = await fetch(url, {
@@ -106,7 +108,7 @@ export const leaderboardApi = {
         sortBy,
       })
 
-      const url = `https://trainmyears.softaims.com/api/stats/leaderboard/level/${levelId}?${params.toString()}`
+      const url = `${BASE_URL}api/stats/leaderboard/level/${levelId}?${params.toString()}`
       console.log("🔗 Sorted leaderboard API URL:", url)
 
       const response = await fetch(url, {

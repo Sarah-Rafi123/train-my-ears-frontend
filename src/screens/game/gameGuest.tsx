@@ -12,7 +12,7 @@ import StatCard from "@/src/components/widgets/StatsCard"
 import PlayAgainButton from "@/src/components/ui/buttons/PlayAgainButton"
 import NoteGrid from "@/src/components/widgets/NoteGrid"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
-import { SubscriptionModal } from "@/src/components/ui/modal/subscription-modal"
+import { LoginPromptModal } from "@/src/components/ui/modal/login-prompt-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
@@ -46,7 +46,7 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
   const [selectedChordId, setSelectedChordId] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+  const [showLoginPromptModal, setShowLoginPromptModal] = useState(false)
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
   // Add state to track if chords should be visible
   const [showChords, setShowChords] = useState(true)
@@ -102,9 +102,9 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     lastPlayedRoundIdRef.current = null
     prevGameRoundIdRef.current = null
     
-    // Check if trying to access level 3 or 4 (subscription required)
+    // Check if trying to access level 3 or 4 (login required)
     if (currentLevel >= 3) {
-      setShowSubscriptionModal(true)
+      setShowLoginPromptModal(true)
       return
     }
 
@@ -195,7 +195,7 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     if (error && errorCode) {
       console.log("🔴 GameGuestScreen: Handling error:", { error, errorCode })
       if (errorCode === "SUBSCRIPTION_REQUIRED") {
-        setShowSubscriptionModal(true)
+        setShowLoginPromptModal(true)
       } else {
         setShowGameErrorModal(true)
       }
@@ -276,9 +276,9 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
   }
 
   const handleLevelUp = () => {
-    // Check if trying to access level 3 or 4 (subscription required)
+    // Check if trying to access level 3 or 4 (login required)
     if (currentLevel >= 2) {
-      setShowSubscriptionModal(true)
+      setShowLoginPromptModal(true)
       return
     }
 
@@ -316,15 +316,15 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     navigation.navigate("Register" as never)
   }
 
-  const handleSubscriptionUpgrade = () => {
-    setShowSubscriptionModal(false)
+  const handleLoginPrompt = () => {
+    setShowLoginPromptModal(false)
     dispatch(clearError())
-    console.log("💳 GameGuestScreen: Navigating to subscription screen")
-    navigation.navigate("Subscription" as never)
+    console.log("🔐 GameGuestScreen: Navigating to login screen")
+    navigation.navigate("Login" as never)
   }
 
-  const handleSubscriptionCancel = () => {
-    setShowSubscriptionModal(false)
+  const handleLoginPromptCancel = () => {
+    setShowLoginPromptModal(false)
     dispatch(clearError())
     if (currentLevel > 1) {
       const previousLevel = currentLevel - 1
@@ -473,12 +473,12 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
           </Text>
         </View>
       </View>
-      {/* Subscription Required Modal */}
-      <SubscriptionModal
-        visible={showSubscriptionModal}
-        message="Level 3 and above require an account. Sign up or subscribe to unlock all levels and features!"
-        onUpgrade={handleSubscriptionUpgrade}
-        onCancel={handleSubscriptionCancel}
+      {/* Login Required Modal */}
+      <LoginPromptModal
+        visible={showLoginPromptModal}
+        message="Level 3 and above require an account. Please login or register to unlock all levels and features!"
+        onLogin={handleLoginPrompt}
+        onCancel={handleLoginPromptCancel}
       />
       {/* Game Error Modal */}
       <GameErrorModal

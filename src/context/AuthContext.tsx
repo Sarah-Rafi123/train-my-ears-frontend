@@ -4,6 +4,7 @@ import { createContext, type ReactNode, useContext, useEffect, useState } from "
 import { loadStoredAuth, logoutUser } from "../store/slices/authSlice"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useClerk } from "@clerk/clerk-expo" // Import useClerk
+import { revenueCatService } from "../services/revenueCatService"
 
 interface AuthContextType {
   user: any
@@ -296,6 +297,15 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       } catch (clerkError) {
         console.error("❌ AuthProvider: Error signing out from Clerk:", clerkError)
         // Decide if you want to re-throw or just log. For now, we log and continue.
+      }
+
+      // Logout from RevenueCat
+      try {
+        console.log("🎁 AuthProvider: Logging out from RevenueCat...")
+        await revenueCatService.logoutRevenueCatUser()
+        console.log("✅ AuthProvider: RevenueCat logout successful")
+      } catch (revenueCatError) {
+        console.error("❌ AuthProvider: Error logging out from RevenueCat:", revenueCatError)
       }
 
       // Clear instrument IDs as well since user is logging out

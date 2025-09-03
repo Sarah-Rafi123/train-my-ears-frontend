@@ -2,7 +2,7 @@
   "expo": {
     "name": "Train My Ear",
     "slug": "frontend_trainmyears",
-    "version": "7.0.0",
+    "version": "9.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
@@ -64,7 +64,7 @@
       "bundler": "metro"
     },
     "extra": {
-      "eas": {
+    "eas": {
         "projectId": "8463aea5-6e8e-44f7-b6cc-5291aa787d4d"
       }
     },
@@ -75,7 +75,6 @@
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "owner": "bobeveleth"
+    }
   }
 }
