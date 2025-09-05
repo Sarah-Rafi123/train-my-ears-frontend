@@ -7,6 +7,7 @@ import { useState } from "react"
 import { Dimensions, Image, Platform, Text, View, StyleSheet } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useClerk } from "@clerk/clerk-expo"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 interface TrainMyEarScreenProps {
   onGetStarted?: () => void
@@ -65,12 +66,22 @@ const { signOut } = useClerk()
       console.log("ℹ️ No authenticated user, proceeding directly as guest")
     }
 
-    console.log("🎵 Navigating to SelectInstrument as guest")
-    navigation.navigate("SelectInstrument" as never)
+    // Set guest mode in AsyncStorage instead of navigating
+    console.log("🎭 Setting guest mode in AsyncStorage")
+    await AsyncStorage.setItem("guestMode", "true")
+    console.log("✅ Guest mode enabled - App will automatically switch to GuestStack")
+    
+    // The NavigationWrapper in App.tsx will detect this change and switch to GuestStack
+    // which will automatically show SelectInstrument as its initial screen
   } catch (error) {
-    console.error("❌ Error during guest logout process:", error)
-    console.log("⚠️ Proceeding to SelectInstrument despite logout error")
-    navigation.navigate("SelectInstrument" as never)
+    console.error("❌ Error during guest setup process:", error)
+    // Even if there's an error, try to set guest mode
+    try {
+      await AsyncStorage.setItem("guestMode", "true")
+      console.log("⚠️ Set guest mode despite error")
+    } catch (storageError) {
+      console.error("❌ Failed to set guest mode:", storageError)
+    }
   } finally {
     setIsLoggingOut(false)
   }

@@ -7,10 +7,10 @@ import BackButton from '@/src/components/ui/buttons/BackButton';
 import InstrumentCard from '@/src/components/widgets/InstrumentCard';
 import { instrumentsApi, type Instrument } from '@/src/services/instrumentApi';
 import musicbg from '@/src/assets/images/musicbg.png';
-import { useClerk } from '@clerk/clerk-expo';
 import LogoutSvg from '@/src/assets/svgs/Logout'; // Import LogoutSvg
 import { useDispatch } from 'react-redux';
 import { setSelectedInstrument } from '@/src/store/slices/instrumentSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SelectInstrumentScreenProps {
   onBack?: () => void;
@@ -20,12 +20,11 @@ interface SelectInstrumentScreenProps {
 export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: SelectInstrumentScreenProps) {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { guitarId, pianoId, userId, token, setGuitarId, setPianoId } = useAuth();
+  const { guitarId, pianoId, userId, token, setGuitarId, setPianoId, logout } = useAuth();
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const { signOut } = useClerk();
+  const [isGuestMode, setIsGuestMode] = useState(false);
 
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
@@ -62,7 +61,19 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
 
   useEffect(() => {
     fetchInstruments();
+    checkGuestMode();
   }, []);
+
+  const checkGuestMode = async () => {
+    try {
+      const guestMode = await AsyncStorage.getItem("guestMode");
+      const isGuest = guestMode === "true";
+      setIsGuestMode(isGuest);
+      console.log('🔍 [SelectInstrument] Guest mode status:', isGuest);
+    } catch (error) {
+      console.error('❌ [SelectInstrument] Error checking guest mode:', error);
+    }
+  };
 
   const fetchInstruments = async () => {
     try {
@@ -106,23 +117,32 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
     console.log(`🎯 SelectInstrumentScreen: Selected instrument: ${instrument}`);
     onInstrumentSelect?.(instrument);
     let selectedInstrumentId: string | null = null;
-    if (instrument === 'guitar') {
-      selectedInstrumentId = guitarId;
-      console.log('🎸 Selected Guitar ID:', 'cmbyuwdi00002qlhguosiz78c');
-    } else if (instrument === 'piano') {
-      selectedInstrumentId = pianoId;
-      console.log('🎹 Selected Piano ID:', 'cmbyuwdi20003qlhg0w2epml0');
-    }
-    if (!selectedInstrumentId && instruments.length > 0) {
+    
+    // Always get the correct instrument ID from the loaded instruments
+    if (instruments.length > 0) {
       const foundInstrument = instruments.find((inst) => inst.name.toLowerCase() === instrument);
       if (foundInstrument) {
         selectedInstrumentId = foundInstrument.id;
         console.log(`🎼 Found ${instrument} ID from loaded instruments:`, selectedInstrumentId);
+        // Update the auth context with the correct ID
         if (instrument === 'guitar') {
-          await setGuitarId('cmbyuwdi00002qlhguosiz78c');
+          await setGuitarId(foundInstrument.id);
+          console.log('🎸 Updated Guitar ID:', selectedInstrumentId);
         } else if (instrument === 'piano') {
-          await setPianoId('cmbyuwdi00002qlhguosiz78c');
+          await setPianoId(foundInstrument.id);
+          console.log('🎹 Updated Piano ID:', selectedInstrumentId);
         }
+      }
+    }
+    
+    // Fallback to auth context values if instruments not loaded
+    if (!selectedInstrumentId) {
+      if (instrument === 'guitar') {
+        selectedInstrumentId = guitarId;
+        console.log('🎸 Fallback Guitar ID:', selectedInstrumentId);
+      } else if (instrument === 'piano') {
+        selectedInstrumentId = pianoId;
+        console.log('🎹 Fallback Piano ID:', selectedInstrumentId);
       }
     }
 
@@ -155,12 +175,9 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
     try {
       console.log('🔓 Logging out user...');
 
-      // Call both logout functions
-      await signOut(); // Clerk logout
-      console.log('✅ Successfully logged out from Clerk.');
-
-      // Optionally, also clear local authentication state (if needed)
-      // await yourCustomLogout()
+      // Use the AuthContext logout function which handles everything
+      await logout();
+      console.log('✅ Successfully logged out.');
 
       // Show success popup
       Alert.alert(
@@ -171,8 +188,9 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
             text: 'OK',
             style: 'default',
             onPress: () => {
-              // Navigate to the Home screen after the user presses OK
-              navigation.navigate('Home');
+              // No need to navigate - the App.tsx will automatically switch to AuthStack
+              // when the authentication state changes
+              console.log('🏠 Logout complete - App will automatically show AuthStack');
             },
           },
         ],
@@ -180,6 +198,35 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       );
     } catch (error) {
       console.error('❌ Error during logout:', error);
+      // Even if there's an error, show a message
+      Alert.alert(
+        'Logout Error',
+        'There was an issue logging out, but your session has been cleared.',
+        [{ text: 'OK', style: 'default' }]
+      );
+    }
+  };
+
+  const handleBack = async () => {
+    console.log('🔙 [SelectInstrument] Back button pressed');
+    
+    if (isGuestMode) {
+      console.log('🎭 [SelectInstrument] In guest mode, clearing guest mode to return to Home');
+      try {
+        await AsyncStorage.removeItem("guestMode");
+        console.log('✅ [SelectInstrument] Guest mode cleared - App will switch to AuthStack');
+        // The NavigationWrapper will detect this change and switch to AuthStack automatically
+      } catch (error) {
+        console.error('❌ [SelectInstrument] Error clearing guest mode:', error);
+      }
+    } else {
+      // If not in guest mode, use the provided onBack callback or default navigation
+      console.log('👤 [SelectInstrument] Not in guest mode, using default back behavior');
+      if (onBack) {
+        onBack();
+      } else {
+        navigation.goBack();
+      }
     }
   };
 
@@ -191,7 +238,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
          
         }}
       >
-        {!token && <BackButton onPress={onBack} />} {/* Show BackButton only when there is no token */}
+        {!token && <BackButton onPress={handleBack} />} {/* Show BackButton with custom back logic */}
 
         <View className="flex-1">
           <Text

@@ -6,7 +6,7 @@ import { useNavigation } from "@react-navigation/native"
 import * as WebBrowser from "expo-web-browser"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import SocialButton from "@/src/components/ui/buttons/SocialButton"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useClerk } from "@clerk/clerk-expo"
 
 export const useWarmUpBrowser = () => {
@@ -25,6 +25,11 @@ WebBrowser.maybeCompleteAuthSession()
 export default function SocialRegisterScreen() {
   const navigation = useNavigation()
   const { signOut, user } = useClerk()
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
+
+  const handleLoadingChange = (provider: string) => (loading: boolean) => {
+    setLoadingProvider(loading ? provider : null)
+  }
 
   // Define platform-specific style for the title
   const titleStyle = {
@@ -58,29 +63,45 @@ export default function SocialRegisterScreen() {
             >
               CREATE YOUR ACCOUNT
             </Text>
-            <SocialButton strategy="apple" title="Sign up with Apple" className="bg-black" textClassName="text-white" />
+            <SocialButton 
+              strategy="apple" 
+              title="Sign up with Apple" 
+              className="bg-black" 
+              textClassName="text-white"
+              disabled={loadingProvider !== null && loadingProvider !== "apple"}
+              onLoadingChange={handleLoadingChange("apple")}
+            />
             <SocialButton
               strategy="google"
               title="Sign up with Google"
               className="bg-white border border-black mt-4"
               textClassName="text-black"
+              disabled={loadingProvider !== null && loadingProvider !== "google"}
+              onLoadingChange={handleLoadingChange("google")}
             />
             <SocialButton
               strategy="facebook"
               title="Sign up with Facebook"
               className="bg-[#1877F2] mt-4"
               textClassName="text-white"
+              disabled={loadingProvider !== null && loadingProvider !== "facebook"}
+              onLoadingChange={handleLoadingChange("facebook")}
             />
             <TouchableOpacity
-              className="w-full bg-white border border-black rounded-2xl py-4 px-4 mt-4 flex-row items-center justify-center"
+              className={`w-full bg-white border border-black rounded-2xl py-4 px-4 mt-4 flex-row items-center justify-center ${loadingProvider ? 'opacity-50' : ''}`}
               onPress={() => navigation.navigate("Register" as never)}
+              disabled={loadingProvider !== null}
             >
               <Text className="text-black font-sans text-2xl" style={{ paddingTop: Platform.OS === 'ios' ? 14 : 0 }}>Continue with email</Text>
             </TouchableOpacity>
              {/* <Button title="Logout" onPress={() => signOut()} />   */}
             <View className="mt-10 items-center">
               <Text className="text-[#003049] text-lg text-center">Already have an account?</Text>
-              <TouchableOpacity className="mt-1" onPress={() => navigation.navigate("Login" as never)}>
+              <TouchableOpacity 
+                className={`mt-1 ${loadingProvider ? 'opacity-50' : ''}`}
+                onPress={() => navigation.navigate("Login" as never)}
+                disabled={loadingProvider !== null}
+              >
                 <Text className="text-blue-500 text-2xl font-semibold">Sign In</Text>
               </TouchableOpacity>
             </View>

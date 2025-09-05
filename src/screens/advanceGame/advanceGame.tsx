@@ -31,6 +31,7 @@ import StatCard from "@/src/components/widgets/StatsCard"
 // Import the debounce function at the top of the file
 import { debounce } from "@/src/lib/utils"
 import { LevelStatsService, type LevelStats } from "@/src/services/levelStatsService"
+import { BASE_URL } from "@/src/constants/urls.constant"
 
 interface AdvancedGameScreenProps {
   onBack?: () => void
@@ -203,6 +204,17 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         console.log("🎮 AdvancedGameScreen: Initializing game for level:", currentLevel, {
           isGuestMode: !finalUserId,
         })
+        
+        // Check subscription status for authenticated users at level 3+
+        if (finalUserId && currentLevel >= 3) {
+          const hasActiveSubscription = await checkSubscriptionStatus(finalUserId)
+          if (!hasActiveSubscription) {
+            console.log("🚫 AdvancedGameScreen: Subscription required for level 3+ during initialization")
+            setShowSubscriptionModal(true)
+            return
+          }
+        }
+        
         setIsInitializing(true)
         setHasInitialized(true)
         setIsApiCallInProgress(true)
@@ -266,6 +278,17 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     console.log("🎮 Starting new game at level:", levelToUse, {
       isGuestMode: !finalUserId,
     })
+    
+    // Check subscription status for authenticated users at level 3+
+    if (finalUserId && levelToUse >= 3) {
+      const hasActiveSubscription = await checkSubscriptionStatus(finalUserId)
+      if (!hasActiveSubscription) {
+        console.log("🚫 AdvancedGameScreen: Subscription required for level 3+ in new game")
+        setShowSubscriptionModal(true)
+        return
+      }
+    }
+    
     setIsInitializing(true)
     setIsApiCallInProgress(true)
     setShowResult(false)
@@ -453,37 +476,45 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
   // Removed playAudioSafely function as it's not used in advanced game
 
-  // Updated the playSequenceAudio function in the AdvancedGameScreen component
+  // Updated the playSequenceAudio function to use local assets like game.tsx
   const playSequenceAudio = async () => {
-    if (!currentGameRound?.sequenceAudioUrls || isPlayingSequence) return
+    if (!currentGameRound?.targetSequence || isPlayingSequence) return
     try {
       setIsPlayingSequence(true)
       setAudioError(null)
-      console.log("🎵 AdvancedGameScreen: Playing sequence audio...")
-      console.log("🎵 AdvancedGameScreen: Audio URLs to play:", currentGameRound.sequenceAudioUrls)
-      for (let i = 0; i < currentGameRound.sequenceAudioUrls.length; i++) {
-        const audioUrl = currentGameRound.sequenceAudioUrls[i]
-        console.log(`🎵 Playing audio ${i + 1}/${currentGameRound.sequenceAudioUrls.length}:`, audioUrl)
-        // Extract file name for clearer logging
-        const fileName = audioUrl.split("/").pop() || audioUrl
-        console.log(`🎵 File name: ${fileName}`)
+      console.log("🎵 AdvancedGameScreen: Playing sequence audio using local assets...")
+      
+      // Sort the target sequence by position to play chords in the right order
+      const sortedSequence = [...currentGameRound.targetSequence].sort((a, b) => a.position - b.position)
+      console.log("🎵 AdvancedGameScreen: Chords to play:", sortedSequence.map(chord => chord.name))
+      
+      // Get instrument name from current game round
+      const instrumentName = currentGameRound.instrument?.name
+      if (!instrumentName) {
+        throw new Error("No instrument name found in current game round")
+      }
+      
+      for (let i = 0; i < sortedSequence.length; i++) {
+        const chord = sortedSequence[i]
+        console.log(`🎵 Playing chord ${i + 1}/${sortedSequence.length}:`, chord.name, "on", instrumentName)
+        
         try {
-          await audioService.playAudio(audioUrl)
+          await audioService.playChordAudio(chord.name, instrumentName)
         } catch (audioError) {
-          console.error(`❌ Error playing audio ${i + 1}:`, audioError)
-          // Try to continue with next audio file instead of stopping the whole sequence
-          if (i < currentGameRound.sequenceAudioUrls.length - 1) {
-            setAudioError(`Error playing chord ${i + 1}. Continuing with next chord.`)
+          console.error(`❌ Error playing chord ${i + 1} (${chord.name}):`, audioError)
+          // Try to continue with next chord instead of stopping the whole sequence
+          if (i < sortedSequence.length - 1) {
+            setAudioError(`Error playing chord ${i + 1} (${chord.name}). Continuing with next chord.`)
           } else {
-            setAudioError(`Error playing chord ${i + 1}.`)
+            setAudioError(`Error playing chord ${i + 1} (${chord.name}).`)
           }
         }
         // Wait a bit between audio files
-        if (i < currentGameRound.sequenceAudioUrls.length - 1) {
+        if (i < sortedSequence.length - 1) {
           await new Promise((resolve) => setTimeout(resolve, 1000))
         }
       }
-      console.log("✅ AdvancedGameScreen: Sequence audio playback completed")
+      console.log("✅ AdvancedGameScreen: Sequence audio playback completed using local assets")
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown audio error"
       console.error("❌ AdvancedGameScreen: Audio playback failed:", errorMessage)
@@ -573,7 +604,28 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }
 
-  // Updated handleLevelUp to store stats and show subscription modal for level 3+
+  // Check user's subscription status via API
+  const checkSubscriptionStatus = async (userId: string): Promise<boolean> => {
+    try {
+      console.log("🔍 AdvancedGameScreen: Checking subscription status for user:", userId)
+      const response = await fetch(`${BASE_URL}api/subscription/status/${userId}`)
+      const result = await response.json()
+      
+      if (!response.ok) {
+        console.error("❌ AdvancedGameScreen: Subscription API error:", result)
+        return false
+      }
+      
+      const hasActiveSubscription = result.data?.hasActiveSubscription || false
+      console.log("💳 AdvancedGameScreen: Subscription status:", hasActiveSubscription ? "Active" : "Inactive")
+      return hasActiveSubscription
+    } catch (error) {
+      console.error("❌ AdvancedGameScreen: Error checking subscription status:", error)
+      return false
+    }
+  }
+
+  // Updated handleLevelUp to properly check subscription status
   const handleLevelUp = async () => {
     if (currentLevel < 4 && finalInstrumentId) {
       const newLevel = currentLevel + 1
@@ -581,11 +633,21 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         isGuestMode: !finalUserId,
       })
       
-      // If the new level is 3 or above, show subscription modal for ALL users
-      if (newLevel >= 3) {
-        console.log("🚫 AdvancedGameScreen: Subscription required for level 3+")
+      // For guest users, show subscription modal for level 3+ (same as game.tsx)
+      if (!finalUserId && newLevel >= 3) {
+        console.log("🚫 AdvancedGameScreen: Subscription required for guest users at level 3+")
         setShowSubscriptionModal(true)
-        return // Prevent starting the game
+        return
+      }
+      
+      // For authenticated users, check actual subscription status for level 3+
+      if (finalUserId && newLevel >= 3) {
+        const hasActiveSubscription = await checkSubscriptionStatus(finalUserId)
+        if (!hasActiveSubscription) {
+          console.log("🚫 AdvancedGameScreen: Active subscription required for level 3+")
+          setShowSubscriptionModal(true)
+          return
+        }
       }
       
       // Store current level stats before changing levels (for authenticated users)
@@ -723,6 +785,21 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     return indicators
   }
 
+  // Organize sequence indicators into rows (max 4 per row)
+  const organizeIndicatorRows = (indicators: Array<{
+    type: "success" | "error" | "empty" | "filled"
+    chordText?: string
+    showIcon?: boolean
+  }>) => {
+    const rows = []
+    const indicatorsPerRow = 4
+    
+    for (let i = 0; i < indicators.length; i += indicatorsPerRow) {
+      rows.push(indicators.slice(i, i + indicatorsPerRow))
+    }
+    return rows
+  }
+
   // Function to organize chords into rows with exactly 3 buttons per row
   const organizeChordRows = (chords: any[]) => {
     const rows = []
@@ -840,7 +917,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
               showFraction={true}
               numerator={levelStats?.wins || currentStats.correctAnswers}
               denominator={levelStats?.totalAttempts || currentStats.totalAttempts}
-              label="Corrects/Total"
+              label="Correct/Total"
               size="large"
               value="" // Not used when showFraction is true
             />
@@ -875,20 +952,27 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         )}
         {/* Sequence Indicators - Now showing chord names with full-circle tick/cross icons */}
         {currentGameRound && (
-          <View className="flex-row justify-center gap-x-4 mb-8">
-            {getSequenceIndicators().map((indicator, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => handleSequenceItemRemove(index)}
-                disabled={showResult || !indicator.chordText}
-              >
-                <CircularIndicator
-                  type={indicator.type}
-                  size={50}
-                  chordText={indicator.chordText}
-                  showIcon={indicator.showIcon}
-                />
-              </TouchableOpacity>
+          <View className="mb-8">
+            {organizeIndicatorRows(getSequenceIndicators()).map((row, rowIndex) => (
+              <View key={rowIndex} className="flex-row justify-center gap-x-4 mb-2">
+                {row.map((indicator, index) => {
+                  const globalIndex = rowIndex * 4 + index
+                  return (
+                    <TouchableOpacity
+                      key={globalIndex}
+                      onPress={() => handleSequenceItemRemove(globalIndex)}
+                      disabled={showResult || !indicator.chordText}
+                    >
+                      <CircularIndicator
+                        type={indicator.type}
+                        size={50}
+                        chordText={indicator.chordText}
+                        showIcon={indicator.showIcon}
+                      />
+                    </TouchableOpacity>
+                  )
+                })}
+              </View>
             ))}
           </View>
         )}

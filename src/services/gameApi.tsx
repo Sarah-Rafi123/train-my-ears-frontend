@@ -18,6 +18,21 @@ export interface GameRound {
     audioFileUrl: string
   }
   chordOptions: ChordOption[]
+  instrument: {
+    id: string
+    name: string
+    displayName: string
+  }
+  totalChordsAvailable?: number
+  levelInfo?: {
+    currentLevel: number
+    description: string
+    chordsFromLevel1: number
+    chordsFromLevel2: number
+    chordsFromLevel3: number
+    chordsFromLevel4: number
+  }
+  isGuestMode?: boolean
 }
 
 export interface GameResult {
@@ -67,7 +82,6 @@ export interface ApiErrorResponse {
 export const gameApi = {
   startGame: async (userId: string | null, instrumentId: string, level: number): Promise<StartGameResponse> => {
     try {
-      console.log("🎮 Starting game API call:", { userId, instrumentId, level, isGuestMode: !userId })
 
       const requestBody: any = {
         instrumentId,
@@ -87,10 +101,8 @@ export const gameApi = {
         },
         body: JSON.stringify(requestBody),
       })
-
-      console.log("📊 Start game response status:", response.status)
+      
       const data = await response.json()
-      console.log("📥 Start game response data:", JSON.stringify(data, null, 2))
 
       if (!response.ok) {
         console.error("❌ Start game failed with status:", response.status)
@@ -122,7 +134,6 @@ export const gameApi = {
     responseTimeMs: number,
   ): Promise<SubmitAnswerResponse> => {
     try {
-      console.log("🎯 Submitting answer API call:", { userId, gameRoundId, selectedChordId, responseTimeMs, isGuestMode: !userId })
 
       const requestBody: any = {
         gameRoundId,
@@ -143,10 +154,8 @@ export const gameApi = {
         },
         body: JSON.stringify(requestBody),
       })
-
-      console.log("📊 Submit answer response status:", response.status)
+      
       const data = await response.json()
-      console.log("📥 Submit answer response data:", JSON.stringify(data, null, 2))
 
       if (!response.ok) {
         console.error("❌ Submit answer failed with status:", response.status)
@@ -163,16 +172,6 @@ export const gameApi = {
         throw new Error(errorMessage)
       }
 
-      // Log the stats for debugging
-      if (data.data?.result?.stats) {
-        console.log("📊 Updated stats from API:", {
-          streak: data.data.result.stats.streak,
-          accuracy: data.data.result.stats.accuracy,
-          totalAttempts: data.data.result.stats.totalAttempts,
-          correctAnswers: data.data.result.stats.correctAnswers,
-          isGuestMode: !userId,
-        })
-      }
 
       return data
     } catch (error) {

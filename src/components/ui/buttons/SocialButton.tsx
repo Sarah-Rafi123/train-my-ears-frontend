@@ -18,6 +18,8 @@ interface SocialButtonProps {
   onPress?: () => void
   className?: string
   textClassName?: string
+  disabled?: boolean
+  onLoadingChange?: (loading: boolean) => void
 }
 
 export default function SocialButton({
@@ -25,8 +27,16 @@ export default function SocialButton({
   title,
   className = "",
   textClassName = "",
+  disabled = false,
+  onLoadingChange,
 }: SocialButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Notify parent component when loading state changes
+  const setLoadingWithCallback = useCallback((loading: boolean) => {
+    setIsLoading(loading)
+    onLoadingChange?.(loading)
+  }, [onLoadingChange])
 
   const { setActive, signOut } = useClerk()
   const { user, isLoaded } = useUser()
@@ -104,7 +114,7 @@ export default function SocialButton({
 
   const onPress = useCallback(async () => {
     try {
-      setIsLoading(true)
+      setLoadingWithCallback(true)
       
       console.log("🔁 Starting OAuth flow for:", strategy)
       
@@ -139,9 +149,9 @@ export default function SocialButton({
 
     } catch (error: any) {
       console.error("❌ OAuth error:", error)
-      setIsLoading(false)
+      setLoadingWithCallback(false)
     }
-  }, [sessionId, signOut, strategy])
+  }, [sessionId, signOut, strategy, setLoadingWithCallback])
 
   // Handle successful authentication
   useEffect(() => {
@@ -192,17 +202,19 @@ export default function SocialButton({
         } catch (error) {
           console.error("❌ User processing error:", error)
         } finally {
-          setIsLoading(false)
+          setLoadingWithCallback(false)
         }
       })()
     }
   }, [isLoaded, user, sessionId, isLoading, dispatch, strategy, navigation])
 
+  const isButtonDisabled = isLoading || disabled
+  
   return (
     <TouchableOpacity
-      className={`w-full rounded-2xl py-3 px-4 border-black flex-row items-center justify-center ${className}`}
+      className={`w-full rounded-2xl py-3 px-4 border-black flex-row items-center justify-center ${isButtonDisabled ? 'opacity-50' : ''} ${className}`}
       onPress={onPress}
-      disabled={isLoading}
+      disabled={isButtonDisabled}
     >
       {isLoading ? (
        <View className="mr-2">{getIcon()}</View>

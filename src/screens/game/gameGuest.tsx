@@ -75,9 +75,9 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
   let finalInstrumentId = instrumentIdFromRoute
   if (!finalInstrumentId && instrumentFromRoute) {
     if (instrumentFromRoute === "guitar") {
-      finalInstrumentId = guitarId
+      finalInstrumentId = guitarId || 'cmdh5ji090002ta0boucdg1dd' // Fallback guitar ID
     } else if (instrumentFromRoute === "piano") {
-      finalInstrumentId = pianoId
+      finalInstrumentId = pianoId || 'cmdh5jjpq0003ta0bpxoplgsi' // Fallback piano ID
     }
   }
 
@@ -91,8 +91,9 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     loadGuestStats()
   }, [])
 
-  // Initialize game when component mounts
+  // Initialize game only once when component mounts
   useEffect(() => {
+    console.log("🎮 GameGuestScreen: Component mounted, initializing...")
     // Clear any previous game state and stop audio when entering game screen fresh
     dispatch(clearGameRound())
     dispatch(resetGame()) // Clear all game data for fresh start
@@ -102,38 +103,43 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     lastPlayedRoundIdRef.current = null
     prevGameRoundIdRef.current = null
     
+    return () => {
+      audioService.stopAudio()
+    }
+  }, [dispatch]) // Only run once on mount
+
+  // Separate effect to start game when instrumentId or level changes
+  useEffect(() => {
+    // Don't start game if no instrumentId
+    if (!finalInstrumentId) {
+      console.error("❌ GameGuestScreen: Missing required instrumentId:", {
+        instrumentId: finalInstrumentId,
+      })
+      setShowGameErrorModal(true)
+      return
+    }
+
     // Check if trying to access level 3 or 4 (login required)
     if (currentLevel >= 3) {
       setShowLoginPromptModal(true)
       return
     }
 
-    console.log("🎮 GameGuestScreen: Initializing game with:", {
+    console.log("🎮 GameGuestScreen: Starting game with:", {
       instrumentId: finalInstrumentId,
       instrument: instrumentFromRoute,
       level: currentLevel,
       isGuestMode: true,
     })
     
-    if (finalInstrumentId) {
-      dispatch(
-        startGame({
-          userId: null, // Guest mode - no userId
-          instrumentId: finalInstrumentId,
-          level: currentLevel,
-        }),
-      )
-    } else {
-      console.error("❌ GameGuestScreen: Missing required instrumentId:", {
+    dispatch(
+      startGame({
+        userId: null, // Guest mode - no userId
         instrumentId: finalInstrumentId,
-      })
-      setShowGameErrorModal(true)
-    }
-    
-    return () => {
-      audioService.stopAudio()
-    }
-  }, [dispatch, finalInstrumentId, currentLevel])
+        level: currentLevel,
+      }),
+    )
+  }, [dispatch, finalInstrumentId, currentLevel, instrumentFromRoute])
 
   // Component unmount cleanup effect
   useEffect(() => {
@@ -144,15 +150,23 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     }
   }, [])
 
-  // Effect to reset UI states for a new round
+  // Effect to reset UI states for a new round and play audio
   useEffect(() => {
     const currentRoundId = currentGameRound?.gameRoundId || null
+    const prevRoundId = prevGameRoundIdRef.current
 
     if (currentGameRound) {
       // Reset UI states for a new round
       setShowChords(true)
       setShowResult(false)
       setSelectedChordId(null)
+      
+      // Auto-play audio for new rounds (but not on initial render with same round)
+      if (currentRoundId && currentRoundId !== prevRoundId && currentGameRound.targetChord?.name && currentGameRound.instrument?.name) {
+        console.log("🎵 GameGuestScreen: Auto-playing chord audio for new round:", currentRoundId)
+        console.log("🎵 GameGuestScreen: Playing chord:", currentGameRound.targetChord.name, "instrument:", currentGameRound.instrument.name)
+        playChordAudioSafely(currentGameRound.targetChord.name, currentGameRound.instrument.name)
+      }
     }
 
     // Always update prevGameRoundIdRef to the current round ID for the next render cycle
@@ -207,22 +221,23 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     }
   }, [error, errorCode])
 
-  const playAudioSafely = async (audioUrl: string) => {
+  const playChordAudioSafely = async (chordName: string, instrumentName: string) => {
     try {
       setAudioError(null)
-      await audioService.playAudio(audioUrl)
+      await audioService.playChordAudio(chordName, instrumentName)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown audio error"
-      console.error("❌ GameGuestScreen: Audio playback failed:", errorMessage)
+      console.error("❌ GameGuestScreen: Chord audio playback failed:", errorMessage)
       setAudioError(errorMessage)
     }
   }
 
   const handlePlayAgain = async () => {
-    if (showChords && currentGameRound?.targetChord?.audioFileUrl) {
-      // If chords are visible, just replay the audio
-      console.log("🔄 GameGuestScreen: Replaying audio for current round")
-      await playAudioSafely(currentGameRound.targetChord.audioFileUrl)
+    if (showChords && currentGameRound?.targetChord?.name && currentGameRound.instrument?.name) {
+      // If chords are visible, just replay the chord audio
+      console.log("🔄 GameGuestScreen: Replaying chord audio for current round")
+      console.log("🔄 GameGuestScreen: Playing chord:", currentGameRound.targetChord.name, "instrument:", currentGameRound.instrument.name)
+      await playChordAudioSafely(currentGameRound.targetChord.name, currentGameRound.instrument.name)
     } else if (!showChords && finalInstrumentId) {
       // If chords are hidden (after submitting answer), start a new game round
       console.log("🔄 GameGuestScreen: Starting new game round (guest mode)")
@@ -403,7 +418,7 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
             <StatCard value={guestStats.streak.toString()} label="Streaks" size="large" />
             <StatCard
               value="" // Not used when showFraction is true
-              label="Corrects/Total"
+              label="Correct/Total"
               size="large"
               showFraction={true}
               numerator={guestStats.wins || 0}

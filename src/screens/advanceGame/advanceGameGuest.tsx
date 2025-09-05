@@ -393,35 +393,46 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
     prevGameRoundIdRef.current = currentRoundId
   }, [currentGameRound])
 
-  // Audio playback function (no automatic playback)
+  // Audio playback function using local assets (no automatic playback)
   const playSequenceAudio = async () => {
-    if (!currentGameRound?.sequenceAudioUrls || isPlayingSequence) return
+    if (!currentGameRound?.targetSequence || isPlayingSequence) return
     try {
       setIsPlayingSequence(true)
       setAudioError(null)
-      console.log("🎵 AdvancedGameGuestScreen: Playing sequence audio...")
+      console.log("🎵 AdvancedGameGuestScreen: Playing sequence audio using local assets...")
       
-      for (let i = 0; i < currentGameRound.sequenceAudioUrls.length; i++) {
-        const audioUrl = currentGameRound.sequenceAudioUrls[i]
-        console.log(`🎵 Playing audio ${i + 1}/${currentGameRound.sequenceAudioUrls.length}:`, audioUrl)
+      // Sort the target sequence by position to play chords in the right order
+      const sortedSequence = [...currentGameRound.targetSequence].sort((a, b) => a.position - b.position)
+      console.log("🎵 AdvancedGameGuestScreen: Chords to play:", sortedSequence.map(chord => chord.name))
+      
+      // Get instrument name from current game round
+      const instrumentName = currentGameRound.instrument?.name
+      if (!instrumentName) {
+        throw new Error("No instrument name found in current game round")
+      }
+      
+      for (let i = 0; i < sortedSequence.length; i++) {
+        const chord = sortedSequence[i]
+        console.log(`🎵 Playing chord ${i + 1}/${sortedSequence.length}:`, chord.name, "on", instrumentName)
         
         try {
-          await audioService.playAudio(audioUrl)
+          await audioService.playChordAudio(chord.name, instrumentName)
         } catch (audioError) {
-          console.error(`❌ Error playing audio ${i + 1}:`, audioError)
-          if (i < currentGameRound.sequenceAudioUrls.length - 1) {
-            setAudioError(`Error playing chord ${i + 1}. Continuing with next chord.`)
+          console.error(`❌ Error playing chord ${i + 1} (${chord.name}):`, audioError)
+          // Try to continue with next chord instead of stopping the whole sequence
+          if (i < sortedSequence.length - 1) {
+            setAudioError(`Error playing chord ${i + 1} (${chord.name}). Continuing with next chord.`)
           } else {
-            setAudioError(`Error playing chord ${i + 1}.`)
+            setAudioError(`Error playing chord ${i + 1} (${chord.name}).`)
           }
         }
         
         // Wait between audio files
-        if (i < currentGameRound.sequenceAudioUrls.length - 1) {
+        if (i < sortedSequence.length - 1) {
           await new Promise((resolve) => setTimeout(resolve, 1000))
         }
       }
-      console.log("✅ AdvancedGameGuestScreen: Sequence audio playback completed")
+      console.log("✅ AdvancedGameGuestScreen: Sequence audio playback completed using local assets")
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown audio error"
       console.error("❌ AdvancedGameGuestScreen: Audio playback failed:", errorMessage)
@@ -712,7 +723,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
               showFraction={true}
               numerator={guestStats.wins}
               denominator={guestStats.totalAttempts || 1}
-              label="Corrects/Total"
+              label="Correct/Total"
               size="large"
               value=""
             />

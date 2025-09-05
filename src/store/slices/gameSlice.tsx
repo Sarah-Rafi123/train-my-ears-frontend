@@ -74,15 +74,12 @@ export const startGame = createAsyncThunk<
   { rejectValue: { message: string; code?: string } }
 >("game/startGame", async ({ userId, instrumentId, level }, { rejectWithValue }) => {
   try {
-    console.log("🎮 Starting game with:", { userId, instrumentId, level, isGuestMode: !userId })
     const response = await gameApi.startGame(userId, instrumentId, level)
-    console.log("✅ Start game successful:", response)
     return response
   } catch (error) {
     console.error("❌ Start game error:", error)
     if (error instanceof Error) {
       const errorDetails = extractErrorDetails(error.message)
-      console.log("📋 Extracted error details:", errorDetails)
       return rejectWithValue(errorDetails)
     }
     return rejectWithValue({ message: "Failed to start game" })
@@ -96,9 +93,7 @@ export const submitAnswer = createAsyncThunk<
   { rejectValue: { message: string; code?: string } }
 >("game/submitAnswer", async ({ userId, gameRoundId, selectedChordId, responseTimeMs }, { rejectWithValue }) => {
   try {
-    console.log("🎯 Submitting answer:", { userId, gameRoundId, selectedChordId, responseTimeMs, isGuestMode: !userId })
     const response = await gameApi.submitAnswer(userId, gameRoundId, selectedChordId, responseTimeMs)
-    console.log("✅ Submit answer successful:", response)
     return response
   } catch (error) {
     console.error("❌ Submit answer error:", error)
@@ -175,7 +170,6 @@ const gameSlice = createSlice({
         state.isLoading = false
         state.error = action.payload?.message || "Failed to start game"
         state.errorCode = action.payload?.code || null
-        console.log("🔴 Game start rejected:", { error: state.error, code: state.errorCode })
       })
       // Submit answer
       .addCase(submitAnswer.pending, (state) => {
@@ -191,7 +185,6 @@ const gameSlice = createSlice({
         // Update current stats from the API response
         if (action.payload.data.result.stats) {
           state.currentStats = action.payload.data.result.stats
-          console.log("📊 Stats updated in Redux:", state.currentStats)
         }
       })
       .addCase(submitAnswer.rejected, (state, action) => {

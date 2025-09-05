@@ -7,11 +7,13 @@ interface ActionButtonProps {
   variant?: "outline" | "filled"
   icon?: "dots" | "arrow-down" | "arrow-up"
   onPress?: () => void
+  disabled?: boolean
 }
 
-export default function ActionButton({ title, variant = "outline", icon, onPress }: ActionButtonProps) {
+export default function ActionButton({ title, variant = "outline", icon, onPress, disabled = false }: ActionButtonProps) {
   const buttonClass = variant === "filled" ? "bg-[#003049]" : "bg-white border border-gray-200"
   const textClass = variant === "filled" ? "text-white" : "text-[#003049]"
+  const disabledClass = disabled ? "opacity-50" : ""
 
   const renderIcon = () => {
     const iconColor = variant === "filled" ? "white" : "#003049"
@@ -31,7 +33,8 @@ export default function ActionButton({ title, variant = "outline", icon, onPress
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`${buttonClass} rounded-xl w-48 py-4 px-8 flex-row justify-center items-center shadow-sm`}
+      disabled={disabled}
+      className={`${buttonClass} ${disabledClass} rounded-xl w-48 py-4 px-8 flex-row justify-center items-center shadow-sm`}
       accessibilityRole="button"
       accessibilityLabel={title}
     >

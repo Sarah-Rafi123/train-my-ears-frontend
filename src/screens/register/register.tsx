@@ -64,6 +64,8 @@ export default function RegisterScreen() {
   const [registrationAttempted, setRegistrationAttempted] = useState(false)
   // NEW: Separate loading state for email/password registration
   const [isEmailRegisterLoading, setIsEmailRegisterLoading] = useState(false)
+  // NEW: Shared loading state for social logins
+  const [loadingSocialProvider, setLoadingSocialProvider] = useState<string | null>(null)
 
   // Define platform-specific style for the title
   const titleStyle = {
@@ -191,6 +193,11 @@ export default function RegisterScreen() {
     dispatch(clearError())
   }
 
+  // Handle social loading state changes
+  const handleSocialLoadingChange = (provider: string) => (loading: boolean) => {
+    setLoadingSocialProvider(loading ? provider : null)
+  }
+
   const inputTheme = {
     colors: {
       primary: "#003049",
@@ -291,23 +298,30 @@ export default function RegisterScreen() {
             onPress={handleRegister}
             loading={isEmailRegisterLoading} // Use separate loading state
             className="mt-6"
-            disabled={isEmailRegisterLoading}
+            disabled={isEmailRegisterLoading || loadingSocialProvider !== null}
           />
           <View className="my-8 mt-16">
             <Text className="text-center text-black mb-4">Sign up with</Text>
-            <SocialButtons />
+            <SocialButtons 
+              loadingSocialProvider={loadingSocialProvider}
+              onLoadingChange={handleSocialLoadingChange}
+            />
           </View>
           <View className="flex-row justify-center mt-auto mb-4">
             <Text className="text-black text-lg">Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Login" as never)}>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate("Login" as never)}
+              disabled={loadingSocialProvider !== null}
+              className={loadingSocialProvider ? 'opacity-50' : ''}
+            >
               <Text className="text-[#006AE6] text-lg font-semibold">Sign In</Text>
             </TouchableOpacity>
           </View>
         </View>
         <SuccessModal
           visible={showSuccessModal}
-          title="Account Created Successfully"
-          message="Your account has been created successfully! Welcome aboard."
+          title="You’re In!"
+          message="Your account is ready. Time to train your ear."
           buttonText="Get Started"
           onClose={handleContinue}
         />

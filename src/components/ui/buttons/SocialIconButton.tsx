@@ -12,10 +12,18 @@ import GoogleSvg from "../../../assets/svgs/Google"
 interface SocialIconButtonProps {
   provider: "apple" | "facebook" | "google"
   onPress?: () => void
+  disabled?: boolean
+  onLoadingChange?: (loading: boolean) => void
 }
 
-export default function SocialIconButton({ provider, onPress }: SocialIconButtonProps) {
+export default function SocialIconButton({ provider, onPress, disabled = false, onLoadingChange }: SocialIconButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
+
+  // Notify parent component when loading state changes
+  const setLoadingWithCallback = useCallback((loading: boolean) => {
+    setIsLoading(loading)
+    onLoadingChange?.(loading)
+  }, [onLoadingChange])
 
   const { setActive, signOut } = useClerk()
   const { user, isLoaded } = useUser()
@@ -90,7 +98,7 @@ export default function SocialIconButton({ provider, onPress }: SocialIconButton
 
     // Otherwise, handle OAuth flow
     try {
-      setIsLoading(true)
+      setLoadingWithCallback(true)
       
       console.log(`🔁 Starting OAuth flow for: ${provider}`)
       
@@ -134,9 +142,9 @@ export default function SocialIconButton({ provider, onPress }: SocialIconButton
         console.log(`ℹ️ User cancelled ${provider} authentication`)
       }
       
-      setIsLoading(false)
+      setLoadingWithCallback(false)
     }
-  }, [onPress, sessionId, signOut, provider])
+  }, [onPress, sessionId, signOut, provider, setLoadingWithCallback])
 
   // Handle successful authentication
   useEffect(() => {
@@ -186,17 +194,19 @@ export default function SocialIconButton({ provider, onPress }: SocialIconButton
         } catch (error) {
           console.error(`❌ ${provider} user processing error:`, error)
         } finally {
-          setIsLoading(false)
+          setLoadingWithCallback(false)
         }
       })()
     }
-  }, [isLoaded, user, sessionId, isLoading, dispatch, provider, navigation])
+  }, [isLoaded, user, sessionId, isLoading, dispatch, provider, navigation, setLoadingWithCallback])
+
+  const isButtonDisabled = isLoading || disabled
 
   return (
     <TouchableOpacity
-      className="w-12 h-12 rounded-full justify-center items-center"
+      className={`w-12 h-12 rounded-full justify-center items-center ${isButtonDisabled ? 'opacity-50' : ''}`}
       onPress={handlePress}
-      disabled={isLoading}
+      disabled={isButtonDisabled}
     >
       {renderIcon()}
     </TouchableOpacity>

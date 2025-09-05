@@ -1,6 +1,7 @@
 import { Audio } from "expo-av"
 import { Platform } from "react-native"
 import { BASE_URL } from '../constants/urls.constant'
+import { mapAudioUrlToLocalAsset, hasLocalAudioAsset, getAudioAssetForChord } from '../utils/audioMapping'
 
 class AudioService {
   private sound: Audio.Sound | null = null
@@ -27,13 +28,28 @@ class AudioService {
           // This internal call is now part of the sequential chain
           await this.stopAudioInternal()
 
-          const isRemoteUrl = audioUrl.startsWith("http://") || audioUrl.startsWith("https://")
-          let fullUrl = audioUrl
-          if (!isRemoteUrl) {
-            const baseUrl = BASE_URL.replace(/\/$/, '') // Remove trailing slash
-            fullUrl = `${baseUrl}${audioUrl.startsWith("/") ? audioUrl : "/" + audioUrl}`
+          // First, check if we have a local asset for this audio file
+          let audioSource: any = null
+          let sourceType = 'remote'
+          
+          if (hasLocalAudioAsset(audioUrl)) {
+            audioSource = mapAudioUrlToLocalAsset(audioUrl)
+            sourceType = 'local'
+            console.log("🎵 AudioService: Using local audio asset for:", fileName)
+          } else {
+            // Fallback to remote URL
+            const isRemoteUrl = audioUrl.startsWith("http://") || audioUrl.startsWith("https://")
+            let fullUrl = audioUrl
+            if (!isRemoteUrl) {
+              const baseUrl = BASE_URL.replace(/\/$/, '') // Remove trailing slash
+              fullUrl = `${baseUrl}${audioUrl.startsWith("/") ? audioUrl : "/" + audioUrl}`
+            }
+            audioSource = { uri: fullUrl }
+            sourceType = 'remote'
+            console.log("🔊 AudioService: Using remote URL:", fullUrl)
           }
-          console.log("🔊 AudioService: Using URL:", fullUrl)
+          
+          console.log("🎵 AudioService: Audio source type:", sourceType)
 
           // For iOS, ensure audio session is properly activated before playing
           if (Platform.OS === "ios") {
@@ -43,7 +59,7 @@ class AudioService {
             })
           }
 
-          const { sound } = await Audio.Sound.createAsync({ uri: fullUrl }, { shouldPlay: true })
+          const { sound } = await Audio.Sound.createAsync(audioSource, { shouldPlay: true })
           this.sound = sound
           this.isPlaying = true
 
@@ -81,6 +97,81 @@ class AudioService {
       .catch((error) => {
         // Catch errors from the previous operation in the chain
         console.error("AudioService: Previous operation in playAudio chain failed:", error)
+        // Do not re-throw here, let the next operation try to proceed
+      })
+
+    return this.currentOperation // Return the promise for the current operation
+  }
+
+  /**
+   * Plays an audio file based on chord name and instrument from local assets.
+   * This operation will be queued and executed after any previous audio operations complete.
+   * @param chordName The name of the chord (e.g., "g major", "c minor")
+   * @param instrumentName The instrument name (e.g., "guitar", "piano")
+   */
+  async playChordAudio(chordName: string, instrumentName: string): Promise<void> {
+    // Chain the new play operation after the previous one completes
+    this.currentOperation = this.currentOperation
+      .then(async () => {
+        try {
+          console.log("🎵 AudioService: Attempting to play chord audio:", chordName, instrumentName)
+
+          // Ensure previous sound is stopped and unloaded before proceeding
+          await this.stopAudioInternal()
+
+          // Get local audio asset based on chord and instrument
+          const audioSource = getAudioAssetForChord(chordName, instrumentName)
+          
+          if (!audioSource) {
+            throw new Error(`No local audio asset found for chord "${chordName}" with instrument "${instrumentName}"`)
+          }
+
+          console.log("🎵 AudioService: Using local audio asset for:", chordName, instrumentName)
+
+          // For iOS, ensure audio session is properly activated before playing
+          if (Platform.OS === "ios") {
+            await Audio.setAudioModeAsync({
+              playsInSilentModeIOS: true,
+              staysActiveInBackground: false,
+            })
+          }
+
+          const { sound } = await Audio.Sound.createAsync(audioSource, { shouldPlay: true })
+          this.sound = sound
+          this.isPlaying = true
+
+          sound.setOnPlaybackStatusUpdate((status) => {
+            if (!status.isLoaded) {
+              if (status.error) {
+                console.error("❌ AudioService: Chord audio playback error:", status.error)
+                this.stopAudioInternal()
+              }
+              return
+            }
+            if (status.didJustFinish) {
+              console.log("🎶 AudioService: Chord audio finished playing successfully")
+              this.stopAudioInternal()
+            }
+          })
+
+          console.log("✅ AudioService: Chord audio loaded and playing successfully")
+          const status = await sound.getStatusAsync()
+          if (status.isLoaded && status.durationMillis) {
+            console.log("ℹ️ AudioService: Chord audio duration:", status.durationMillis / 1000, "seconds")
+          }
+        } catch (error) {
+          console.error("❌ AudioService: Error in playChordAudio method:", error)
+          if (error instanceof Error) {
+            console.error("❌ AudioService: Error message:", error.message)
+          }
+          // Ensure cleanup on error
+          await this.stopAudioInternal()
+          throw error // Re-throw to propagate the error to the component
+        }
+      })
+      .catch((error) => {
+        // Catch errors from the previous operation in the chain
+        console.error("AudioService: Previous operation in playChordAudio chain failed:", error)
         // Do not re-throw here, let the next operation try to proceed
       })
 

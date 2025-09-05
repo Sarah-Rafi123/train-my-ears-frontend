@@ -109,7 +109,26 @@ export const advancedGameApi = {
       })
 
       console.log("📊 Start advanced game response status:", response.status)
-      const data = await response.json()
+      console.log("📊 Start advanced game response headers:", response.headers.get('content-type'))
+      
+      // Check if the response is actually JSON
+      const contentType = response.headers.get('content-type')
+      let data
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json()
+        } else {
+          // If not JSON, get text response for better error reporting
+          const textResponse = await response.text()
+          console.error("❌ Start advanced game received non-JSON response:", textResponse)
+          throw new Error(`Server returned non-JSON response: ${textResponse.substring(0, 200)}...`)
+        }
+      } catch (jsonError) {
+        // If JSON parsing fails, get the text response for debugging
+        const textResponse = await response.text()
+        console.error("❌ Start advanced game JSON parse error. Response text:", textResponse)
+        throw new Error(`Failed to parse JSON response. Server returned: ${textResponse.substring(0, 200)}...`)
+      }
       console.log("📥 Start advanced game response data:", JSON.stringify(data, null, 2))
 
       if (!response.ok) {
@@ -182,6 +201,7 @@ export const advancedGameApi = {
         })
 
         console.log("📊 Submit sequence response status:", response.status)
+        console.log("📊 Submit sequence response headers:", response.headers.get('content-type'))
 
         // If we hit a rate limit, wait and retry
         if (response.status === 429) {
@@ -194,7 +214,24 @@ export const advancedGameApi = {
           }
         }
 
-        const data = await response.json()
+        // Check if the response is actually JSON
+        const contentType = response.headers.get('content-type')
+        let data
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            data = await response.json()
+          } else {
+            // If not JSON, get text response for better error reporting
+            const textResponse = await response.text()
+            console.error("❌ Submit sequence received non-JSON response:", textResponse)
+            throw new Error(`Server returned non-JSON response: ${textResponse.substring(0, 200)}...`)
+          }
+        } catch (jsonError) {
+          // If JSON parsing fails, get the text response for debugging
+          const textResponse = await response.text()
+          console.error("❌ Submit sequence JSON parse error. Response text:", textResponse)
+          throw new Error(`Failed to parse JSON response. Server returned: ${textResponse.substring(0, 200)}...`)
+        }
         console.log("📥 Submit sequence response data:", JSON.stringify(data, null, 2))
 
         if (!response.ok) {

@@ -64,6 +64,8 @@ export default function LoginScreen() {
   const [loginAttempted, setLoginAttempted] = useState(false)
   // NEW: Separate loading state for email/password login
   const [isEmailLoginLoading, setIsEmailLoginLoading] = useState(false)
+  // NEW: Shared loading state for social logins
+  const [loadingSocialProvider, setLoadingSocialProvider] = useState<string | null>(null)
 
   // Define platform-specific style for the title
   const titleStyle = {
@@ -85,20 +87,37 @@ export default function LoginScreen() {
   // Handle successful login - only show modal after API success
   useEffect(() => {
     if (loginAttempted && isAuthenticated && !isLoading && !error) {
+      console.log("✅ Login successful - showing success modal")
       setShowSuccessModal(true)
       setLoginAttempted(false)
       setIsEmailLoginLoading(false) // Reset email login loading
     }
   }, [loginAttempted, isAuthenticated, isLoading, error])
 
-  // Show error modal instead of Alert
+  // Show error modal when login fails
   useEffect(() => {
-    if (error && loginAttempted) {
+    if (loginAttempted && error && !isLoading) {
+      console.log("❌ Login failed - showing error modal:", error)
       setShowErrorModal(true)
       setLoginAttempted(false)
       setIsEmailLoginLoading(false) // Reset email login loading on error
     }
-  }, [error, loginAttempted])
+  }, [loginAttempted, error, isLoading])
+
+  // Failsafe: Clear loading state if there's an error, regardless of other conditions
+  useEffect(() => {
+    if (error) {
+      setIsEmailLoginLoading(false)
+    }
+  }, [error])
+
+  // Reset error modal when error is cleared
+  useEffect(() => {
+    if (!error && showErrorModal) {
+      console.log("🧹 Error cleared - hiding error modal")
+      setShowErrorModal(false)
+    }
+  }, [error, showErrorModal])
 
   // Log stored data after successful login for verification
   useEffect(() => {
@@ -149,6 +168,11 @@ export default function LoginScreen() {
   }
 
   const handleLogin = async () => {
+    // Clear any previous errors and modals
+    dispatch(clearError())
+    setShowErrorModal(false)
+    setShowSuccessModal(false)
+    
     setTouched({ email: true, password: true })
     const errors = validateLoginForm(email, password)
     setValidationErrors(errors)
@@ -176,13 +200,23 @@ export default function LoginScreen() {
 
   const handleContinue = () => {
     setShowSuccessModal(false)
-    console.log("➡️ LoginScreen: Navigating to SelectInstrument screen")
-    navigation.navigate("SelectInstrument" as never)
+    // Only navigate if we're truly authenticated and there's no error
+    if (isAuthenticated && !error) {
+      console.log("➡️ LoginScreen: Navigating to SelectInstrument screen")
+      navigation.navigate("SelectInstrument" as never)
+    } else {
+      console.log("⚠️ LoginScreen: Not navigating - authentication state invalid")
+    }
   }
 
   const handleErrorClose = () => {
     setShowErrorModal(false)
     dispatch(clearError())
+  }
+
+  // Handle social loading state changes
+  const handleSocialLoadingChange = (provider: string) => (loading: boolean) => {
+    setLoadingSocialProvider(loading ? provider : null)
   }
 
   const inputTheme = {
@@ -264,15 +298,22 @@ export default function LoginScreen() {
             onPress={handleLogin}
             loading={isEmailLoginLoading} // Use separate loading state
             className="mt-6"
-            disabled={isEmailLoginLoading}
+            disabled={isEmailLoginLoading || loadingSocialProvider !== null}
           />
           <View className="my-8 mt-20">
             <Text className="text-center text-lg text-black mb-4">Sign in with</Text>
-            <SocialButtons />
+            <SocialButtons 
+              loadingSocialProvider={loadingSocialProvider}
+              onLoadingChange={handleSocialLoadingChange}
+            />
           </View>
           <View className="flex-row justify-center mt-auto mb-4">
             <Text className="text-gray-600 text-lg">Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Register" as never)}>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate("Register" as never)}
+              disabled={loadingSocialProvider !== null}
+              className={loadingSocialProvider ? 'opacity-50' : ''}
+            >
               <Text className="text-[#006AE6] text-lg font-semibold">Sign Up</Text>
             </TouchableOpacity>
           </View>

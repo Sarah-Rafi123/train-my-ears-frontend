@@ -11,7 +11,7 @@ export interface AudioMapping {
 
 export const audioMap: AudioMapping = {
   // Guitar chord mappings - matching your backend fileNameMap
-  'cmbyuwdi00002qlhguosiz78c': { // Guitar ID from your app
+  'cmdh5ji090002ta0boucdg1dd': { // Guitar ID from your app
     '1': {
       'c major': require('./guitar/c_major_guitar_1748849870992.mp3'),
       'd major': require('./guitar/d_major_guitar_1748849912389.mp3'),
@@ -49,10 +49,12 @@ export const audioMap: AudioMapping = {
       'e major': require('./guitar/e_major_guitar_1748850467190.mp3'),
       'b major': require('./guitar/b_major_guitar.mp3'),
       'f minor': require('./guitar/f_minor_guitar.mp3'),
+      'c minor': require('./guitar/c_minor_guitar_1748851715190.mp3'),
+      'g minor': require('./guitar/g_minor_guitar_1748851742689.mp3'),
     }
   },
   // Piano chord mappings - matching your backend fileNameMap
-  'cmbyuwdi20003qlhg0w2epml0': { // Piano ID from your app
+  'cmdh5jjpq0003ta0bpxoplgsi': { // Piano ID from your app
     '1': {
       'c major': require('./piano/c_major_piano_1748851928355.mp3'),
       'd major': require('./piano/d_major_piano_1748852230412.mp3'),
@@ -68,7 +70,7 @@ export const audioMap: AudioMapping = {
     },
     '3': {
       'd minor': require('./piano/d_minor_piano_1748852191635.mp3'),
-      'f major': require('./piano/f_major_piano_1748852033438.mp3'),
+      'f major': require('./piano/f_major_piano_1748852033438.mp3'), // Original file - testing if still corrupted
       'a major': require('./piano/a_major_piano_1748852260801.mp3'),
       'c major': require('./piano/c_major_piano_1748851928355.mp3'),
       'd major': require('./piano/d_major_piano_1748852230412.mp3'),
@@ -79,7 +81,7 @@ export const audioMap: AudioMapping = {
     },
     '4': {
       'd minor': require('./piano/d_minor_piano_1748852191635.mp3'),
-      'f major': require('./piano/f_major_piano_1748852033438.mp3'),
+      'f major': require('./piano/f_major_piano_1748852033438.mp3'), // Original file - testing if still corrupted
       'a major': require('./piano/a_major_piano_1748852260801.mp3'),
       'c major': require('./piano/c_major_piano_1748851928355.mp3'),
       'd major': require('./piano/d_major_piano_1748852230412.mp3'),
@@ -90,6 +92,7 @@ export const audioMap: AudioMapping = {
       'e major': require('./piano/e_major_piano.mp3'),
       'b major': require('./piano/b_major_piano_1748852396745.mp3'),
       'f minor': require('./piano/f_minor_piano_1748852367097.mp3'),
+      'c minor': require('./piano/c_minor_piano_1748852294041.mp3'),
     }
   }
 }

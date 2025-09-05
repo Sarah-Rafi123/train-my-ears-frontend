@@ -1,7 +1,7 @@
 "use client"
 
 import { View, Text, ScrollView, SafeAreaView, Alert, Image } from "react-native"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import NoteButton from "@/src/components/ui/buttons/NoteButton"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
@@ -21,8 +21,9 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
   const { user, guitarId, pianoId } = useAuth()
   const [currentLevel, setCurrentLevel] = useState(1)
   const [selectedChord, setSelectedChord] = useState<string | null>(null)
-  const [playingChord, setPlayingChord] = useState<string | null>(null)
+  const [isOnCooldown, setIsOnCooldown] = useState(false)
   const [isGifAnimating, setIsGifAnimating] = useState(false)
+  const cooldownTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const { chords, metadata, isLoading, error, refetch, getExpectedChordCount } = useChords(currentLevel)
 
@@ -38,58 +39,98 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
   const chordRows = getChordRows(chords)
 
   const handleLevelUp = useCallback(() => {
+    if (isOnCooldown) {
+      console.log("🚫 Level Up on cooldown, ignoring press")
+      return
+    }
     if (currentLevel < 4) {
       const newLevel = currentLevel + 1
       setCurrentLevel(newLevel)
       setSelectedChord(null)
       console.log("Level Up pressed, new level:", newLevel)
     }
-  }, [currentLevel])
+  }, [currentLevel, isOnCooldown])
 
   const handleLevelDown = useCallback(() => {
+    if (isOnCooldown) {
+      console.log("🚫 Level Down on cooldown, ignoring press")
+      return
+    }
     if (currentLevel > 1) {
       const newLevel = currentLevel - 1
       setCurrentLevel(newLevel)
       setSelectedChord(null)
       console.log("Level Down pressed, new level:", newLevel)
     }
-  }, [currentLevel])
+  }, [currentLevel, isOnCooldown])
 
   const handleChordPress = useCallback(async (chord: Chord, rowIndex: number, chordIndex: number) => {
+    // If on cooldown, ignore all button presses
+    if (isOnCooldown) {
+      console.log("🚫 Button on cooldown, ignoring press")
+      return
+    }
+
     const chordId = `${chord.id}-${rowIndex}-${chordIndex}`
     setSelectedChord(chordId)
 
-    console.log(`Chord pressed: ${chord.displayName} (${chord.name})`)
+    console.log(`🎵 Chord pressed: ${chord.displayName} (${chord.name})`)
 
-    // Play audio if available
-    if (chord.audioFileUrl) {
+    // Play chord audio using local assets
+    if (chord.name && chord.instrument?.name) {
       try {
-        setPlayingChord(chord.id)
+        // Set cooldown immediately
+        setIsOnCooldown(true)
         setIsGifAnimating(true) // Start GIF animation
 
-        await audioService.playAudio(chord.audioFileUrl)
-        console.log(`🎵 Playing audio for chord: ${chord.displayName}`)
+        // Clear any existing timeout
+        if (cooldownTimeoutRef.current) {
+          clearTimeout(cooldownTimeoutRef.current)
+        }
 
-        // Stop GIF animation after a delay (adjust timing as needed)
-        setTimeout(() => {
+        // Play the audio
+        await audioService.playChordAudio(chord.name, chord.instrument.name)
+        console.log(`🎵 Playing chord audio: ${chord.displayName} (${chord.instrument.name})`)
+
+        // Set cooldown for exactly 2 seconds
+        cooldownTimeoutRef.current = setTimeout(() => {
+          console.log("✅ Cooldown ended, buttons enabled")
+          setIsOnCooldown(false)
           setIsGifAnimating(false)
-        }, 2000) // 2 seconds - adjust based on your audio length
+          cooldownTimeoutRef.current = null
+        }, 2000) // Exactly 2 second cooldown
+
       } catch (error) {
         console.error("❌ Error playing chord audio:", error)
         Alert.alert("Audio Error", "Failed to play chord audio")
-        setIsGifAnimating(false) // Stop animation on error
-      } finally {
-        setPlayingChord(null)
+        // Immediately clear cooldown on error
+        setIsOnCooldown(false)
+        setIsGifAnimating(false)
+        if (cooldownTimeoutRef.current) {
+          clearTimeout(cooldownTimeoutRef.current)
+          cooldownTimeoutRef.current = null
+        }
       }
     } else {
       console.warn("⚠️ No audio file available for chord:", chord.displayName)
       Alert.alert("No Audio", `No audio file available for ${chord.displayName}`)
     }
-  }, [])
+  }, [isOnCooldown])
 
   const handleRetry = useCallback(() => {
     refetch()
   }, [refetch])
+
+  // Cleanup timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownTimeoutRef.current) {
+        clearTimeout(cooldownTimeoutRef.current)
+      }
+      // Also stop any playing audio
+      audioService.stopAudio()
+    }
+  }, [])
 
   // Get instrument name for display
   const getInstrumentName = () => {
@@ -200,8 +241,8 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
                       note={chord.displayName}
                       isSelected={selectedChord === `${chord.id}-${rowIndex}-${chordIndex}`}
                       onPress={() => handleChordPress(chord, rowIndex, chordIndex)}
-                      disabled={playingChord === chord.id}
-                      state={playingChord === chord.id ? "selected" : "default"}
+                      disabled={isOnCooldown}
+                      state={selectedChord === `${chord.id}-${rowIndex}-${chordIndex}` ? "selected" : "default"}
                     />
                   </View>
                 ))}
@@ -218,8 +259,22 @@ export default function ChordGameScreen({ onBack, onUpgrade }: ChordGameScreenPr
           )}
         </View>
         <View className="px-6 mb-4 items-center gap-y-3">
-          {currentLevel < 4 && <ActionButton title={`Level Up`} icon="arrow-up" onPress={handleLevelUp} />}
-          {currentLevel > 1 && <ActionButton title={`Level Down`} icon="arrow-down" onPress={handleLevelDown} />}
+          {currentLevel < 4 && (
+            <ActionButton 
+              title={`Level Up`} 
+              icon="arrow-up" 
+              onPress={handleLevelUp}
+              disabled={isOnCooldown}
+            />
+          )}
+          {currentLevel > 1 && (
+            <ActionButton 
+              title={`Level Down`} 
+              icon="arrow-down" 
+              onPress={handleLevelDown}
+              disabled={isOnCooldown}
+            />
+          )}
         </View>
         <View className="h-20" />
       </ScrollView>

@@ -1,25 +1,14 @@
 "use client"
 import { Provider } from "react-redux"
 import { store } from "@/src/store/store"
-import GameScreen from "@/src/screens/game/game"
-import GameGuestScreen from "@/src/screens/game/gameGuest"
-import HomeScreen from "@/src/screens/home/home"
-import LeaderboardScreen from "@/src/screens/leaderboard/leaderboard"
-import LoginScreen from "@/src/screens/login/login"
-import MenuScreen from "@/src/screens/menu/menu"
-import RegisterScreen from "@/src/screens/register/register"
-import SampleScreen from "@/src/screens/sample/sample"
-import SelectInstrumentScreen from "@/src/screens/selectInstrument/selectInstrument"
-import SocialRegisterScreen from "@/src/screens/socialRegister/socialRegister"
+import { useAppSelector } from "@/src/hooks/redux"
 import { NavigationContainer } from "@react-navigation/native"
-import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import "./global.css"
 import { tokenCache } from '@clerk/clerk-expo/token-cache'
-import AdvanceGameScreen from "./src/screens/advanceGame/advanceGame"
-import AdvanceGameGuestScreen from "./src/screens/advanceGame/advanceGameGuest"
-import UserStatsScreen from "./src/screens/userStats/userStats"
-import ViewFeedbackScreen from "./src/screens/viewFeedback/viewFeedback"
-import AuthProvider from "./src/context/AuthContext"
+import AuthProvider, { useAuth } from "./src/context/AuthContext"
+import AuthStack from "./src/navigation/AuthStack"
+import UserStack from "./src/navigation/UserStack"
+import GuestStack from "./src/navigation/GuestStack"
 import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo'
 import { useFonts } from "expo-font"
 import * as SplashScreen from "expo-splash-screen"
@@ -27,7 +16,6 @@ import { useEffect, useCallback, useState } from "react"
 import { View, Text, ActivityIndicator, Platform } from "react-native"
 import Purchases, {LOG_LEVEL} from "react-native-purchases"
 import { revenueCatService } from "./src/services/revenueCatService"
-import RevenueCatScreen from "./src/screens/revenuecatScreen/revenuecatScreen"
 import AsyncStorage from "@react-native-async-storage/async-storage" // Import AsyncStorage
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av"
 
@@ -35,9 +23,98 @@ Purchases.setLogLevel(Purchases.LOG_LEVEL.VERBOSE)
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync()
 
-const Stack = createNativeStackNavigator()
+// Navigation wrapper component that uses AuthContext
+const NavigationWrapper = ({ 
+  isGuestMode, 
+  setIsGuestMode, 
+  isAppInitializing 
+}: { 
+  isGuestMode: boolean, 
+  setIsGuestMode: (value: boolean) => void,
+  isAppInitializing: boolean 
+}) => {
+  const { isAuthenticated, token } = useAuth();
+  // Get error state from Redux to prevent navigation during login errors
+  const authError = useAppSelector((state) => state.auth.error);
+  const authIsLoading = useAppSelector((state) => state.auth.isLoading);
+  
+  useEffect(() => {
+    // Setup RevenueCat user when authentication state changes
+    const setupUserRevenueCat = async () => {
+      if (isAuthenticated && token) {
+        console.log('🎯 [NavigationWrapper] User is authenticated, setting up RevenueCat...');
+        await revenueCatService.setupRevenueCatUser();
+        
+        // Clear guest mode if user becomes authenticated
+        if (isGuestMode) {
+          console.log('🔄 [NavigationWrapper] Clearing guest mode - user is now authenticated');
+          await AsyncStorage.removeItem("guestMode");
+          setIsGuestMode(false);
+        }
+      } else {
+        console.log('🔍 [NavigationWrapper] User not authenticated, skipping RevenueCat user setup');
+      }
+    };
 
-// Loading component with better font handling
+    setupUserRevenueCat();
+  }, [isAuthenticated, token, isGuestMode, setIsGuestMode]);
+
+  useEffect(() => {
+    // Listen for guest mode changes in AsyncStorage
+    const checkGuestMode = async () => {
+      try {
+        const guestMode = await AsyncStorage.getItem("guestMode");
+        const newGuestMode = guestMode === "true";
+        if (newGuestMode !== isGuestMode) {
+          console.log('🎭 [NavigationWrapper] Guest mode changed:', newGuestMode);
+          setIsGuestMode(newGuestMode);
+        }
+      } catch (error) {
+        console.error('❌ [NavigationWrapper] Error checking guest mode:', error);
+      }
+    };
+
+    // Check guest mode periodically (every 500ms) to detect changes
+    const interval = setInterval(checkGuestMode, 500);
+    
+    // Also check immediately
+    checkGuestMode();
+
+    return () => clearInterval(interval);
+  }, [isGuestMode, setIsGuestMode]);
+
+  console.log('🧭 [NavigationWrapper] Navigation state:', {
+    isAuthenticated,
+    hasToken: !!token,
+    isGuestMode,
+    isAppInitializing,
+    authError: !!authError,
+    authIsLoading
+  });
+
+  // Only show loading screen for initial app loading, NOT for auth operations
+  if (isAppInitializing) {
+    return <LoadingScreen />;
+  }
+
+  // If there's an auth error, stay in AuthStack to show the error
+  // Don't navigate away from login screen when there are credential errors
+  if (authError) {
+    console.log('⚠️ [NavigationWrapper] Auth error present, staying in AuthStack:', authError);
+    return <AuthStack />;
+  }
+
+  // Only navigate to UserStack if authentication is successful AND there's no error AND not currently loading
+  if (isAuthenticated && token && !authError && !authIsLoading) {
+    return <UserStack />;
+  } else if (isGuestMode) {
+    return <GuestStack />;
+  } else {
+    return <AuthStack />;
+  }
+};
+
+// Loading component for app initialization
 const LoadingScreen = () => (
   <View
     style={{
@@ -57,7 +134,7 @@ const LoadingScreen = () => (
         textAlign: "center",
       }}
     >
-      Loading fonts...
+      Loading...
     </Text>
   </View>
 )
@@ -75,17 +152,14 @@ export default function RootLayout() {
     // "NATS-Bold": require("./src/assets/fonts/NATS-Bold.ttf"),
   })
 
-  // Check for stored token in AsyncStorage
-  const [hasToken, setHasToken] = useState(false)
+  const [isGuestMode, setIsGuestMode] = useState(false)
 
   useEffect(() => {
-    async function checkToken() {
-      const token = await AsyncStorage.getItem("token") // Retrieve token from AsyncStorage
-      if (token) {
-        setHasToken(true) // If token exists, user is authenticated
-      }
+    async function checkGuestMode() {
+      const guestMode = await AsyncStorage.getItem("guestMode") // Check if user is in guest mode
+      setIsGuestMode(guestMode === "true")
     }
-    checkToken()
+    checkGuestMode()
   }, [])
 
   useEffect(() => {
@@ -130,22 +204,6 @@ export default function RootLayout() {
     configureAudio()
   }, [])
 
-  // Setup RevenueCat user when authentication state changes
-  useEffect(() => {
-    console.log('🔄 [App.tsx] Authentication state changed:', { hasToken });
-    
-    const setupUserRevenueCat = async () => {
-      if (hasToken) {
-        console.log('🎯 [App.tsx] User is authenticated, setting up RevenueCat...');
-        // User is logged in, setup RevenueCat with their user ID
-        await revenueCatService.setupRevenueCatUser()
-      } else {
-        console.log('🔍 [App.tsx] User not authenticated, skipping RevenueCat user setup');
-      }
-    }
-
-    setupUserRevenueCat()
-  }, [hasToken]) // Trigger when authentication state changes
   useEffect(() => {
     async function prepare() {
       try {
@@ -183,28 +241,11 @@ export default function RootLayout() {
           <Provider store={store}>
             <AuthProvider>
               <NavigationContainer>
-                <Stack.Navigator
-                  initialRouteName={hasToken ? "SelectInstrument" : "Home"} // Conditional initial route
-                  screenOptions={{
-                    headerShown: false,
-                  }}
-                >
-                  <Stack.Screen name="ViewFeedback" component={ViewFeedbackScreen} />
-                  <Stack.Screen name="SocialRegister" component={SocialRegisterScreen} />
-                  <Stack.Screen name="Register" component={RegisterScreen} />
-                  <Stack.Screen name="Login" component={LoginScreen} />
-                  <Stack.Screen name="Home" component={HomeScreen} />
-                  <Stack.Screen name="SelectInstrument" component={SelectInstrumentScreen} />
-                  <Stack.Screen name="Game" component={GameScreen} />
-                  <Stack.Screen name="GameGuest" component={GameGuestScreen} />
-                  <Stack.Screen name="Menu" component={MenuScreen} />
-                  <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
-                  <Stack.Screen name="Stats" component={UserStatsScreen} />
-                  <Stack.Screen name="Advance" component={AdvanceGameScreen} />
-                  <Stack.Screen name="AdvanceGuest" component={AdvanceGameGuestScreen} />
-                  <Stack.Screen name="Sample" component={SampleScreen} />
-                  <Stack.Screen name="RevenueCatScreen" component={RevenueCatScreen} />
-                </Stack.Navigator>
+                <NavigationWrapper 
+                  isGuestMode={isGuestMode} 
+                  setIsGuestMode={setIsGuestMode}
+                  isAppInitializing={!appIsReady}
+                />
               </NavigationContainer>
             </AuthProvider>
           </Provider>

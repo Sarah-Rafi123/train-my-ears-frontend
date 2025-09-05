@@ -50,7 +50,6 @@ export class LevelStatsService {
   static async saveAllLevelStats(stats: AllUsersLevelStats): Promise<void> {
     try {
       await AsyncStorage.setItem(LEVEL_STATS_KEY, JSON.stringify(stats))
-      console.log("✅ LevelStatsService: Stats saved successfully")
     } catch (error) {
       console.error("❌ LevelStatsService: Error saving level stats:", error)
     }
@@ -132,7 +131,6 @@ export class LevelStatsService {
       
       await this.saveAllLevelStats(allStats)
       
-      console.log(`📊 LevelStatsService: Stored stats for user ${userId}, ${gameMode}, level ${level}:`, updatedStats)
     } catch (error) {
       console.error("❌ LevelStatsService: Error storing user level stats:", error)
     }
@@ -145,16 +143,14 @@ export class LevelStatsService {
     level: number
   ): Promise<LevelStats> {
     try {
-      const stats = await this.getUserLevelStats(userId, gameMode, level)
-      console.log(`📊 LevelStatsService: Loaded stats for user ${userId}, ${gameMode}, level ${level}:`, stats)
-      return stats
+      return await this.getUserLevelStats(userId, gameMode, level)
     } catch (error) {
       console.error("❌ LevelStatsService: Error loading user level stats:", error)
       return createDefaultLevelStats(level)
     }
   }
 
-  // Update stats for current gameplay (similar to guest stats but with level awareness)
+  // Update stats for current gameplay (optimized with single AsyncStorage read/write)
   static async updateUserGameStats(
     userId: string,
     gameMode: "regularGame" | "advancedGame",
@@ -163,46 +159,44 @@ export class LevelStatsService {
     isWin: boolean = false
   ): Promise<LevelStats> {
     try {
-      const currentStats = await this.getUserLevelStats(userId, gameMode, level)
+      // Single AsyncStorage read operation
+      const allStats = await this.getAllLevelStats()
       
-      // Update attempts
+      // Initialize user stats if doesn't exist
+      if (!allStats[userId]) {
+        allStats[userId] = {
+          regularGame: {},
+          advancedGame: {}
+        }
+      }
+      
+      // Initialize game mode stats if doesn't exist
+      if (!allStats[userId][gameMode]) {
+        allStats[userId][gameMode] = {}
+      }
+      
+      // Get current stats or create default
+      const currentStats = allStats[userId][gameMode][level] || createDefaultLevelStats(level)
+      
+      // Update attempts and correct answers
       const newTotalAttempts = currentStats.totalAttempts + 1
-      
-      // Update correct answers
       const newCorrectAnswers = currentStats.correctAnswers + (isCorrect ? 1 : 0)
-      
-      // Update wins
       const newWins = currentStats.wins + (isWin ? 1 : 0)
       
       // Calculate new accuracy
-      const newAccuracy = newTotalAttempts > 0 ? Math.round((newCorrectAnswers / newTotalAttempts) * 100) : 0
+      const newAccuracy = Math.round((newCorrectAnswers / newTotalAttempts) * 100)
       
-      // Handle streak logic
+      // Handle streak logic (simplified for performance)
       const today = new Date().toISOString().split("T")[0]
-      const lastPlayedDate = currentStats.lastPlayedDate
       let newStreak = currentStats.streak
       
-      if (lastPlayedDate) {
-        const lastPlayed = new Date(lastPlayedDate)
-        const todayDate = new Date(today)
-        const daysDifference = Math.floor((todayDate.getTime() - lastPlayed.getTime()) / (1000 * 60 * 60 * 24))
-        
-        if (daysDifference === 0) {
-          // Same day, keep streak
-          newStreak = currentStats.streak
-        } else if (daysDifference === 1 && isWin) {
-          // Next day and won, increment streak
-          newStreak = currentStats.streak + 1
-        } else if (daysDifference > 1 || !isWin) {
-          // Skipped days or lost, reset streak
-          newStreak = isWin ? 1 : 0
-        }
-      } else {
-        // First time playing this level
-        newStreak = isWin ? 1 : 0
+      if (currentStats.lastPlayedDate !== today) {
+        // Different day
+        newStreak = isWin ? (currentStats.lastPlayedDate ? currentStats.streak + 1 : 1) : 0
       }
+      // Same day, keep current streak
       
-      // Create updated stats
+      // Create and store updated stats in single operation
       const updatedStats: LevelStats = {
         accuracy: newAccuracy,
         streak: newStreak,
@@ -213,16 +207,13 @@ export class LevelStatsService {
         level: level,
       }
       
-      // Store the updated stats
-      await this.storeUserLevelStats(userId, gameMode, level, {
-        accuracy: newAccuracy,
-        streak: newStreak,
-        totalAttempts: newTotalAttempts,
-        correctAnswers: newCorrectAnswers,
-        wins: newWins,
-      })
+      allStats[userId][gameMode][level] = updatedStats
       
-      console.log(`📊 LevelStatsService: Updated ${gameMode} level ${level} stats:`, updatedStats)
+      // Single AsyncStorage write operation (fire and forget for better performance)
+      this.saveAllLevelStats(allStats).catch(error => 
+        console.error("Failed to save level stats:", error)
+      )
+      
       return updatedStats
     } catch (error) {
       console.error("❌ LevelStatsService: Error updating game stats:", error)

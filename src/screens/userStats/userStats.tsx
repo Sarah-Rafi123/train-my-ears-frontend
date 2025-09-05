@@ -226,7 +226,7 @@ export default function UserStatsScreen({ navigation, route, onBack }: StatsScre
                       showFraction={true}
                       numerator={todayProgressValues.correctAnswers}
                       denominator={todayProgressValues.totalAttempts}
-                      label="Corrects/Total" 
+                      label="Correct/Total" 
                       size="large" 
                       value="" // Not used when showFraction is true
                     />
