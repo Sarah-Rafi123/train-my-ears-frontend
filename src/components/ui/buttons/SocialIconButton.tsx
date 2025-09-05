@@ -1,7 +1,6 @@
-import React from "react"
+import React, { useCallback, useState, useEffect } from "react"
 import { TouchableOpacity, ActivityIndicator, Alert } from "react-native"
 import { useOAuth, useUser, useClerk, useAuth } from "@clerk/clerk-expo"
-import { useCallback, useState, useEffect } from "react"
 import { useAppDispatch } from "@/src/hooks/redux"
 import { socialLoginUser } from "@/src/store/slices/authSlice"
 import { useNavigation } from "@react-navigation/native"

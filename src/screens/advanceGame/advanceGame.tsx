@@ -1,5 +1,5 @@
 "use client"
-import { View, Text, ScrollView, ActivityIndicator, Dimensions } from "react-native"
+import { View, Text, ScrollView, ActivityIndicator, Dimensions , TouchableOpacity } from "react-native"
 import { useState, useEffect, useRef } from "react"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
@@ -25,7 +25,6 @@ import SaveProgressButton from "@/src/components/ui/buttons/SaveProgressButton"
 import { SubscriptionModal } from "@/src/components/ui/modal/subscription-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { TouchableOpacity } from "react-native"
 import { Feather } from "@expo/vector-icons"
 import StatCard from "@/src/components/widgets/StatsCard"
 // Import the debounce function at the top of the file
@@ -72,7 +71,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   // Remove unused variables for advanced game since they're not used
 
   // Use simpler state tracking instead of complex refs
-  const [isInitializing, setIsInitializing] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true) // Start as true to prevent "Unable to load" message
   const [hasInitialized, setHasInitialized] = useState(false)
   // Add API call prevention state
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false)
@@ -154,6 +153,18 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }, [finalUserId, currentLevel])
 
+  // Component mount effect to reset state
+  useEffect(() => {
+    console.log("🎮 AdvancedGameScreen: Component mounted, resetting state...")
+    // Clear any previous game state
+    dispatch(clearRoundData())
+    audioService.stopAudio()
+    
+    return () => {
+      audioService.stopAudio()
+    }
+  }, [dispatch])
+
   // Function to format chord name for display in indicators
   const formatChordForDisplay = (chordName: string): string => {
     // Convert "a major" to "A", "a minor" to "A m", etc.
@@ -199,10 +210,19 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   // Updated initialization logic to work without userId requirement and handle user changes
   useEffect(() => {
     const initializeGame = async () => {
-      // Only require instrumentId, userId is optional for guest mode
-      if (finalInstrumentId && !hasInitialized && !isInitializing && !currentGameRound && !isApiCallInProgress) {
+      // Check if we have the required instrumentId
+      if (!finalInstrumentId) {
+        console.error("❌ Missing required instrumentId for game initialization")
+        setIsInitializing(false) // Stop loading since we can't proceed
+        setShowGameErrorModal(true)
+        return
+      }
+
+      // Only initialize if we haven't already initialized and aren't in the middle of an API call
+      if (!hasInitialized && !isApiCallInProgress && !currentGameRound) {
         console.log("🎮 AdvancedGameScreen: Initializing game for level:", currentLevel, {
           isGuestMode: !finalUserId,
+          userId: finalUserId,
         })
         
         // Check subscription status for authenticated users at level 3+
@@ -210,12 +230,12 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           const hasActiveSubscription = await checkSubscriptionStatus(finalUserId)
           if (!hasActiveSubscription) {
             console.log("🚫 AdvancedGameScreen: Subscription required for level 3+ during initialization")
+            setIsInitializing(false)
             setShowSubscriptionModal(true)
             return
           }
         }
         
-        setIsInitializing(true)
         setHasInitialized(true)
         setIsApiCallInProgress(true)
         try {
@@ -234,9 +254,9 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           setIsInitializing(false)
           setIsApiCallInProgress(false)
         }
-      } else if (!finalInstrumentId) {
-        console.error("❌ Missing required instrumentId for game initialization")
-        setShowGameErrorModal(true)
+      } else if (currentGameRound) {
+        // If we already have a game round, stop initializing
+        setIsInitializing(false)
       }
     }
     
@@ -246,18 +266,21 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     finalInstrumentId,
     currentLevel,
     dispatch,
+    hasInitialized,
+    isApiCallInProgress,
+    currentGameRound,
   ])
 
-  // Separate effect to handle user changes - this prevents infinite loops
+  // Simple effect to reset initialization when user changes (no circular deps)
+  const prevUserIdRef = useRef(finalUserId)
   useEffect(() => {
-    if (hasInitialized) {
-      console.log("🔄 AdvancedGameScreen: User changed, resetting game state")
-      dispatch(resetGame()) // Clear all game data when user changes
+    if (prevUserIdRef.current !== finalUserId && hasInitialized) {
+      console.log("🔄 AdvancedGameScreen: User changed, resetting initialization state")
       setHasInitialized(false)
-      setIsInitializing(false)
-      setIsApiCallInProgress(false)
+      dispatch(clearRoundData()) // Clear any existing game data
     }
-  }, [userId, dispatch, hasInitialized])
+    prevUserIdRef.current = finalUserId
+  }, [finalUserId, hasInitialized, dispatch])
 
   // Component unmount cleanup effect - separated to avoid infinite loops
   useEffect(() => {
@@ -720,17 +743,17 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   }
 
   // Get sequence indicators based on current selection and result
-  const getSequenceIndicators = (): Array<{
+  const getSequenceIndicators = (): {
     type: "success" | "error" | "empty" | "filled"
     chordText?: string
     showIcon?: boolean
-  }> => {
+  }[] => {
     if (!currentGameRound) return []
-    const indicators: Array<{
+    const indicators: {
       type: "success" | "error" | "empty" | "filled"
       chordText?: string
       showIcon?: boolean
-    }> = []
+    }[] = []
 
     if (showResult && gameResult && gameResult.correctSequence) {
       // Sort correct sequence to ensure correct order for display
@@ -785,14 +808,14 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     return indicators
   }
 
-  // Organize sequence indicators into rows (max 4 per row)
-  const organizeIndicatorRows = (indicators: Array<{
+  // Organize sequence indicators into rows (max 6 per row)
+  const organizeIndicatorRows = (indicators: {
     type: "success" | "error" | "empty" | "filled"
     chordText?: string
     showIcon?: boolean
-  }>) => {
+  }[]) => {
     const rows = []
-    const indicatorsPerRow = 4
+    const indicatorsPerRow = 6
     
     for (let i = 0; i < indicators.length; i += indicatorsPerRow) {
       rows.push(indicators.slice(i, i + indicatorsPerRow))
@@ -954,9 +977,9 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         {currentGameRound && (
           <View className="mb-8">
             {organizeIndicatorRows(getSequenceIndicators()).map((row, rowIndex) => (
-              <View key={rowIndex} className="flex-row justify-center gap-x-4 mb-2">
+              <View key={rowIndex} className="flex-row justify-center gap-x-1 mb-2">
                 {row.map((indicator, index) => {
-                  const globalIndex = rowIndex * 4 + index
+                  const globalIndex = rowIndex * 6 + index
                   return (
                     <TouchableOpacity
                       key={globalIndex}
@@ -965,7 +988,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
                     >
                       <CircularIndicator
                         type={indicator.type}
-                        size={50}
+                        size={42}
                         chordText={indicator.chordText}
                         showIcon={indicator.showIcon}
                       />

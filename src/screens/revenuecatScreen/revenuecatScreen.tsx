@@ -51,6 +51,11 @@ export default function RevenueCatScreen() {
     await getOfferings();
   };
 
+  const handleDebugWebhook = async () => {
+    console.log('🔍 [RevenueCatScreen] Debug webhook triggered');
+    await revenueCatService.debugWebhookSetup();
+  };
+
   const handlePurchase = async (packageToPurchase: PurchasesPackage) => {
     try {
       setPurchasing(packageToPurchase.identifier);
@@ -117,6 +122,9 @@ export default function RevenueCatScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.retryButton} onPress={handleManualSetup}>
             <Text style={styles.retryButtonText}>Setup User</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.retryButton} onPress={handleDebugWebhook}>
+            <Text style={styles.retryButtonText}>Debug Webhook</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
             <Text style={styles.backButtonText}>Go Back</Text>
@@ -221,7 +229,7 @@ export default function RevenueCatScreen() {
         </View>
 
         {/* Restore Purchases Button */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.restoreButton}
           onPress={handleRestorePurchases}
           disabled={purchasing !== null}
@@ -231,7 +239,27 @@ export default function RevenueCatScreen() {
           ) : (
             <Text style={styles.restoreButtonText}>Restore Purchases</Text>
           )}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+
+        {/* Debug Buttons - Only show in DEV mode */}
+        {/* {__DEV__ && (
+          <View style={styles.debugContainer}>
+            <TouchableOpacity
+              style={styles.debugButton}
+              onPress={handleManualSetup}
+              disabled={purchasing !== null}
+            >
+              <Text style={styles.debugButtonText}>🔧 Setup User</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.debugButton}
+              onPress={handleDebugWebhook}
+              disabled={purchasing !== null}
+            >
+              <Text style={styles.debugButtonText}>🔍 Debug Webhook</Text>
+            </TouchableOpacity>
+          </View>
+        )} */}
 
         {/* Terms and Privacy */}
         <View style={styles.legalContainer}>
@@ -441,5 +469,25 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  debugContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+  debugButton: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  debugButtonText: {
+    color: '#374151',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

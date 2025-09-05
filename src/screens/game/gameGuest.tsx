@@ -5,7 +5,15 @@ import { View, Text, ScrollView, ActivityIndicator } from "react-native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
 
-import { startGame, submitAnswer, clearError, clearGameResult, clearGameRound, setCurrentLevel, resetGame } from "@/src/store/slices/gameSlice"
+import {
+  startGame,
+  submitAnswer,
+  clearError,
+  clearGameResult,
+  clearGameRound,
+  setCurrentLevel,
+  resetGame,
+} from "@/src/store/slices/gameSlice"
 import { audioService } from "@/src/services/audioService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import StatCard from "@/src/components/widgets/StatsCard"
@@ -26,7 +34,13 @@ interface GameGuestScreenProps {
   onSaveProgress?: () => void
 }
 
-const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, onBack, onMoreDetails, onSaveProgress }) => {
+const GameGuestScreen: React.FC<GameGuestScreenProps> = ({
+  navigation,
+  route,
+  onBack,
+  onMoreDetails,
+  onSaveProgress,
+}) => {
   const dispatch = useAppDispatch()
   // Get auth data
   const { guitarId, pianoId } = useAuth()
@@ -75,9 +89,9 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
   let finalInstrumentId = instrumentIdFromRoute
   if (!finalInstrumentId && instrumentFromRoute) {
     if (instrumentFromRoute === "guitar") {
-      finalInstrumentId = guitarId || 'cmdh5ji090002ta0boucdg1dd' // Fallback guitar ID
+      finalInstrumentId = guitarId || "cmdh5ji090002ta0boucdg1dd" // Fallback guitar ID
     } else if (instrumentFromRoute === "piano") {
-      finalInstrumentId = pianoId || 'cmdh5jjpq0003ta0bpxoplgsi' // Fallback piano ID
+      finalInstrumentId = pianoId || "cmdh5jjpq0003ta0bpxoplgsi" // Fallback piano ID
     }
   }
 
@@ -91,31 +105,36 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     loadGuestStats()
   }, [])
 
+  // State to track if we've initialized the game
+  const [hasInitialized, setHasInitialized] = useState(false)
+
   // Initialize game only once when component mounts
   useEffect(() => {
     console.log("🎮 GameGuestScreen: Component mounted, initializing...")
     // Clear any previous game state and stop audio when entering game screen fresh
     dispatch(clearGameRound())
-    dispatch(resetGame()) // Clear all game data for fresh start
+    dispatch(resetGame()) // Clear all game data for fresh start (this sets level to 1)
     audioService.stopAudio()
-    
+
     // Reset audio tracking refs to ensure fresh start
     lastPlayedRoundIdRef.current = null
     prevGameRoundIdRef.current = null
-    
+
     return () => {
       audioService.stopAudio()
     }
   }, [dispatch]) // Only run once on mount
 
-  // Separate effect to start game when instrumentId or level changes
+  // Separate effect to start game when instrumentId is available and we haven't initialized yet
   useEffect(() => {
-    // Don't start game if no instrumentId
-    if (!finalInstrumentId) {
-      console.error("❌ GameGuestScreen: Missing required instrumentId:", {
-        instrumentId: finalInstrumentId,
-      })
-      setShowGameErrorModal(true)
+    // Don't start game if no instrumentId or already initialized
+    if (!finalInstrumentId || hasInitialized) {
+      if (!finalInstrumentId) {
+        console.error("❌ GameGuestScreen: Missing required instrumentId:", {
+          instrumentId: finalInstrumentId,
+        })
+        setShowGameErrorModal(true)
+      }
       return
     }
 
@@ -131,7 +150,9 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
       level: currentLevel,
       isGuestMode: true,
     })
-    
+
+    setHasInitialized(true)
+
     dispatch(
       startGame({
         userId: null, // Guest mode - no userId
@@ -139,7 +160,7 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
         level: currentLevel,
       }),
     )
-  }, [dispatch, finalInstrumentId, currentLevel, instrumentFromRoute])
+  }, [dispatch, finalInstrumentId, currentLevel, instrumentFromRoute, hasInitialized])
 
   // Component unmount cleanup effect
   useEffect(() => {
@@ -160,11 +181,21 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
       setShowChords(true)
       setShowResult(false)
       setSelectedChordId(null)
-      
+
       // Auto-play audio for new rounds (but not on initial render with same round)
-      if (currentRoundId && currentRoundId !== prevRoundId && currentGameRound.targetChord?.name && currentGameRound.instrument?.name) {
+      if (
+        currentRoundId &&
+        currentRoundId !== prevRoundId &&
+        currentGameRound.targetChord?.name &&
+        currentGameRound.instrument?.name
+      ) {
         console.log("🎵 GameGuestScreen: Auto-playing chord audio for new round:", currentRoundId)
-        console.log("🎵 GameGuestScreen: Playing chord:", currentGameRound.targetChord.name, "instrument:", currentGameRound.instrument.name)
+        console.log(
+          "🎵 GameGuestScreen: Playing chord:",
+          currentGameRound.targetChord.name,
+          "instrument:",
+          currentGameRound.instrument.name,
+        )
         playChordAudioSafely(currentGameRound.targetChord.name, currentGameRound.instrument.name)
       }
     }
@@ -181,22 +212,22 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     if (gameResult) {
       setShowResult(true)
       setShowChords(false) // Hide chords after submitting answer
-      
+
       // Update guest stats
       const updateStats = async () => {
         const isCorrect = gameResult.isCorrect
         const isWin = gameResult.isCorrect // In regular game, correct answer = win
-        
+
         const updatedStats = await GuestStatsService.updateGameStats("regularGame", isCorrect, isWin)
         setGuestStats(updatedStats)
-        
+
         console.log("🎯 GameGuestScreen: Game result with updated guest stats:", {
           isCorrect,
           isWin,
           updatedStats,
         })
       }
-      
+
       updateStats()
     }
     return () => {
@@ -236,7 +267,12 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     if (showChords && currentGameRound?.targetChord?.name && currentGameRound.instrument?.name) {
       // If chords are visible, just replay the chord audio
       console.log("🔄 GameGuestScreen: Replaying chord audio for current round")
-      console.log("🔄 GameGuestScreen: Playing chord:", currentGameRound.targetChord.name, "instrument:", currentGameRound.instrument.name)
+      console.log(
+        "🔄 GameGuestScreen: Playing chord:",
+        currentGameRound.targetChord.name,
+        "instrument:",
+        currentGameRound.instrument.name,
+      )
       await playChordAudioSafely(currentGameRound.targetChord.name, currentGameRound.instrument.name)
     } else if (!showChords && finalInstrumentId) {
       // If chords are hidden (after submitting answer), start a new game round
@@ -278,37 +314,27 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     if (currentLevel > 1 && finalInstrumentId) {
       const newLevel = currentLevel - 1
       console.log("📉 GameGuestScreen: Level down to:", newLevel)
-      dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
-      dispatch(
-        startGame({
-          userId: null, // Guest mode
-          instrumentId: finalInstrumentId,
-          level: newLevel,
-        }),
-      )
+      // Reset initialization state and set new level - useEffect will handle starting the game
+      setHasInitialized(false)
+      dispatch(setCurrentLevel(newLevel))
     }
   }
 
   const handleLevelUp = () => {
-    // Check if trying to access level 3 or 4 (login required)
     if (currentLevel >= 2) {
+      console.log("🚫 GameGuestScreen: Level 3+ requires login, showing modal")
       setShowLoginPromptModal(true)
       return
     }
 
-    if (currentLevel < 4 && finalInstrumentId) {
+    if (currentLevel < 2 && finalInstrumentId) {
       const newLevel = currentLevel + 1
       console.log("📈 GameGuestScreen: Level up to:", newLevel)
-      dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
-      dispatch(
-        startGame({
-          userId: null, // Guest mode
-          instrumentId: finalInstrumentId,
-          level: newLevel,
-        }),
-      )
+      // Reset initialization state and set new level - useEffect will handle starting the game
+      setHasInitialized(false)
+      dispatch(setCurrentLevel(newLevel))
     }
   }
 
@@ -357,13 +383,8 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
     setShowGameErrorModal(false)
     dispatch(clearError())
     if (finalInstrumentId) {
-      dispatch(
-        startGame({
-          userId: null, // Guest mode
-          instrumentId: finalInstrumentId,
-          level: currentLevel,
-        }),
-      )
+      // Reset initialization state to allow retry
+      setHasInitialized(false)
     }
   }
 
@@ -455,25 +476,13 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({ navigation, route, on
             disabled={isSubmittingAnswer}
             showResult={showResult}
             correctChordId={gameResult?.correctChord?.id || undefined}
-            selectedChordStyle={{ borderColor: 'black', borderWidth: 2 }}
+            selectedChordStyle={{ borderColor: "black", borderWidth: 2 }}
           />
         )}
         {/* Level Control Buttons */}
         <View className="px-6 mb-4 items-center gap-y-3">
-          {currentLevel > 1 && (
-            <ActionButton
-              title="Level Down"
-              icon="arrow-down"
-              onPress={handleLevelDown}
-            />
-          )}
-          {currentLevel < 4 && (
-            <ActionButton
-              title="Level Up"
-              icon="arrow-up"
-              onPress={handleLevelUp}
-            />
-          )}
+          {currentLevel > 1 && <ActionButton title="Level Down" icon="arrow-down" onPress={handleLevelDown} />}
+          {currentLevel < 4 && <ActionButton title="Level Up" icon="arrow-up" onPress={handleLevelUp} />}
         </View>
         {/* Extra space to ensure content doesn't get hidden behind fixed button */}
         <View className="h-20" />

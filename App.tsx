@@ -43,7 +43,24 @@ const NavigationWrapper = ({
     const setupUserRevenueCat = async () => {
       if (isAuthenticated && token) {
         console.log('🎯 [NavigationWrapper] User is authenticated, setting up RevenueCat...');
-        await revenueCatService.setupRevenueCatUser();
+        
+        try {
+          await revenueCatService.setupRevenueCatUser();
+          console.log('✅ [NavigationWrapper] RevenueCat setup completed successfully');
+        } catch (error) {
+          console.error('💥 [NavigationWrapper] RevenueCat setup failed:', error);
+          
+          // Attempt retry after 5 seconds
+          setTimeout(async () => {
+            console.log('🔄 [NavigationWrapper] Retrying RevenueCat setup...');
+            try {
+              await revenueCatService.setupRevenueCatUser();
+              console.log('✅ [NavigationWrapper] RevenueCat setup succeeded on retry');
+            } catch (retryError) {
+              console.error('💥 [NavigationWrapper] RevenueCat setup retry also failed:', retryError);
+            }
+          }, 5000);
+        }
         
         // Clear guest mode if user becomes authenticated
         if (isGuestMode) {

@@ -2,6 +2,8 @@
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react"
 import { loadStoredAuth, logoutUser } from "../store/slices/authSlice"
+import { resetGame as resetRegularGame } from "../store/slices/gameSlice"
+import { resetGame as resetAdvancedGame } from "../store/slices/advancedGameSlice"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useClerk } from "@clerk/clerk-expo" // Import useClerk
 import { revenueCatService } from "../services/revenueCatService"
@@ -317,6 +319,16 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       } catch (instrumentError) {
         console.error("❌ AuthProvider: Error clearing instrument IDs:", instrumentError)
       }
+
+      // Reset both game states to level 1 when user logs out
+      try {
+        dispatch(resetRegularGame())
+        dispatch(resetAdvancedGame())
+        console.log("🎮 AuthProvider: Reset game states to level 1 on logout")
+      } catch (gameResetError) {
+        console.error("❌ AuthProvider: Error resetting game states:", gameResetError)
+      }
+
       console.log("🎯 AuthProvider: Logout process completed")
     } catch (error) {
       console.error("❌ AuthProvider: Overall logout error:", error)
@@ -325,6 +337,9 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         await AsyncStorage.multiRemove(["token", "refreshToken", "user", "userId", "guitarId", "pianoId"])
         setGuitarIdState(null)
         setPianoIdState(null)
+        // Reset game states even in emergency cleanup
+        dispatch(resetRegularGame())
+        dispatch(resetAdvancedGame())
         console.log("🧹 AuthProvider: Emergency cleanup completed")
       } catch (cleanupError) {
         console.error("❌ AuthProvider: Emergency cleanup failed:", cleanupError)

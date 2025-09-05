@@ -54,8 +54,24 @@ class RevenueCatService {
         try {
           const currentCustomerInfo = await Purchases.getCustomerInfo();
           console.log('🔍 [RevenueCat Service] Current customer before setup:', currentCustomerInfo.originalAppUserId);
+          
+          // If already configured for this user, skip configuration
+          if (this.isConfigured && currentCustomerInfo.originalAppUserId === userId) {
+            console.log('✅ [RevenueCat Service] Already configured for this user, ensuring backend sync...');
+            
+            // Still ensure backend is synced
+            if (token && token.trim() !== '') {
+              try {
+                await this.storeAppUserIdInBackend(userId, currentCustomerInfo.originalAppUserId, token);
+                console.log('✅ [RevenueCat Service] Backend sync completed');
+              } catch (backendError) {
+                console.error('💥 [RevenueCat Service] Backend sync failed:', backendError);
+              }
+            }
+            return;
+          }
         } catch (e) {
-          console.log('🔍 [RevenueCat Service] No current customer info available');
+          console.log('🔍 [RevenueCat Service] No current customer info available, proceeding with setup');
         }
 
         // 1. Configure RevenueCat with custom app user ID
@@ -86,6 +102,9 @@ class RevenueCatService {
         } catch (loginError) {
           console.error('❌ [RevenueCat Service] RevenueCat login failed:', loginError);
           console.log('🔍 [RevenueCat Service] Login error details:', JSON.stringify(loginError, null, 2));
+          
+          // Continue with setup even if login fails - might be first time user
+          console.log('⚠️ [RevenueCat Service] Continuing setup despite login failure...');
         }
 
         // 3. Fetch customer info to verify final state
@@ -99,14 +118,25 @@ class RevenueCatService {
           try {
             await this.storeAppUserIdInBackend(userId, appUserId, token);
             console.log('✅ [RevenueCat Service] Backend integration completed successfully');
+            
+            // Verify the storage by checking if we can retrieve it
+            console.log('🔍 [RevenueCat Service] Verifying backend storage...');
+            await this.verifyAppUserIdStorage(userId, token);
           } catch (backendError) {
             console.error('💥 [RevenueCat Service] Critical: Failed to store appUserId in backend');
             console.error('🚨 [RevenueCat Service] This may cause webhook processing issues');
             console.error('🔍 [RevenueCat Service] Backend error details:', backendError);
             
-            // Don't throw here - we want RevenueCat setup to succeed even if backend fails
-            // But log it prominently so it can be addressed
-            console.error('⚠️ [RevenueCat Service] RevenueCat is configured but backend sync failed');
+            // Attempt retry once
+            console.log('🔄 [RevenueCat Service] Attempting one retry...');
+            try {
+              await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+              await this.storeAppUserIdInBackend(userId, appUserId, token);
+              console.log('✅ [RevenueCat Service] Backend integration succeeded on retry');
+            } catch (retryError) {
+              console.error('💥 [RevenueCat Service] Retry also failed:', retryError);
+              console.error('⚠️ [RevenueCat Service] RevenueCat is configured but backend sync failed');
+            }
           }
         } else {
           console.error('🚨 [RevenueCat Service] Critical: No token available for backend integration');
@@ -122,6 +152,7 @@ class RevenueCatService {
     } catch (error) {
       console.error('❌ [RevenueCat Service] Error setting up RevenueCat user:', error);
       console.log('🔍 [RevenueCat Service] Full error:', JSON.stringify(error, null, 2));
+      throw error; // Re-throw so calling code knows setup failed
     }
   }
 
@@ -202,24 +233,26 @@ class RevenueCatService {
       console.log('💾 [RevenueCat Service] Storing appUserId in backend for user:', userId);
       console.log('🔍 [RevenueCat Service] AppUserId to store:', appUserId);
       
-      const response = await fetch(`${BASE_URL}api/users/${userId}/app-user-id`, {
+      // Use the new backend endpoint
+      const response = await fetch(`${BASE_URL}api/users/${userId}/set-app-user-id`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          appUserId: appUserId,
-        }),
       });
 
       console.log('📊 [RevenueCat Service] Store appUserId response status:', response.status);
 
       if (response.ok) {
-        const responseData = await response.json();
-        console.log('✅ [RevenueCat Service] AppUserId successfully stored in backend');
-        console.log('📥 [RevenueCat Service] Backend response:', responseData);
+        const result = await response.json();
+        if (result.success) {
+          console.log('✅ [RevenueCat Service] AppUserId successfully stored in backend');
+          console.log('📥 [RevenueCat Service] Backend response:', result);
+        } else {
+          console.error('❌ [RevenueCat Service] Backend returned success=false:', result.error?.message);
+          throw new Error(`Backend error: ${result.error?.message || 'Unknown error'}`);
+        }
       } else {
         // Log response details for debugging
         let errorData;
@@ -242,6 +275,39 @@ class RevenueCatService {
       // Re-throw the error since this is critical for webhook handling
       // The calling code should handle this appropriately
       throw error;
+    }
+  }
+
+  /**
+   * Verify that appUserId was successfully stored in backend
+   */
+  private async verifyAppUserIdStorage(userId: string, token: string): Promise<void> {
+    try {
+      console.log('🔍 [RevenueCat Service] Verifying appUserId storage for user:', userId);
+      
+      // For now, we'll skip verification since the new endpoint doesn't have a GET method
+      // The POST response already confirms success/failure
+      console.log('ℹ️ [RevenueCat Service] Skipping verification - POST response already confirmed status');
+      
+      // If you add a GET endpoint later, uncomment this:
+      /*
+      const response = await fetch(`${BASE_URL}api/users/${userId}/app-user-id`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ [RevenueCat Service] AppUserId verification successful:', data);
+      } else {
+        console.warn('⚠️ [RevenueCat Service] AppUserId verification failed:', response.status);
+      }
+      */
+    } catch (error) {
+      console.error('❌ [RevenueCat Service] Error verifying appUserId storage:', error);
     }
   }
 
@@ -412,10 +478,152 @@ class RevenueCatService {
   }
 
   /**
+   * Set appUserId in backend before subscription purchase
+   * Call this BEFORE starting any RevenueCat purchase
+   */
+  async setAppUserIdForPurchase(): Promise<boolean> {
+    try {
+      console.log('🔧 [RevenueCat Service] Setting appUserId before purchase...');
+      
+      const user = await this.retrieveUser();
+      const token = await this.retrieveAuthToken();
+      
+      console.log('🔍 [RevenueCat Service] Auth check:', {
+        hasUser: !!user,
+        userId: user?.id || user?.userId,
+        hasToken: !!token,
+        tokenLength: token?.length || 0,
+        userObject: user
+      });
+      
+      if (!user || !token) {
+        console.error('❌ [RevenueCat Service] Missing user or token for appUserId setup');
+        console.error('❌ [RevenueCat Service] User:', user);
+        console.error('❌ [RevenueCat Service] Token exists:', !!token);
+        return false;
+      }
+      
+      const userId = user.id ? user.id.toString() : user.userId?.toString();
+      if (!userId) {
+        console.error('❌ [RevenueCat Service] Invalid user ID');
+        console.error('❌ [RevenueCat Service] User object:', JSON.stringify(user, null, 2));
+        return false;
+      }
+      
+      // Get current RevenueCat appUserId
+      const customerInfo = await Purchases.getCustomerInfo();
+      const appUserId = customerInfo.originalAppUserId;
+      
+      console.log('🔍 [RevenueCat Service] Request details:', {
+        userId,
+        appUserId,
+        endpoint: `${BASE_URL}api/users/${userId}/set-app-user-id`,
+        isAnonymous: appUserId.includes('$RCAnonymousID')
+      });
+      
+      // Call the new backend endpoint
+      const response = await fetch(`${BASE_URL}api/users/${userId}/set-app-user-id`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      console.log('🔍 [RevenueCat Service] Response status:', response.status);
+      console.log('🔍 [RevenueCat Service] Response headers:', response.headers);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('🔍 [RevenueCat Service] Response body:', result);
+        
+        if (result.success) {
+          console.log('✅ [RevenueCat Service] AppUserId set successfully for purchase');
+          return true;
+        } else {
+          console.error('❌ [RevenueCat Service] Backend returned success=false');
+          console.error('❌ [RevenueCat Service] Error message:', result.error?.message);
+          console.error('❌ [RevenueCat Service] Full response:', result);
+          return false;
+        }
+      } else {
+        // Get detailed error information
+        let errorText;
+        try {
+          const errorJson = await response.json();
+          errorText = JSON.stringify(errorJson);
+          console.error('❌ [RevenueCat Service] Error JSON:', errorJson);
+        } catch (e) {
+          errorText = await response.text();
+          console.error('❌ [RevenueCat Service] Error text:', errorText);
+        }
+        
+        console.error('❌ [RevenueCat Service] HTTP error setting AppUserId');
+        console.error('❌ [RevenueCat Service] Status:', response.status);
+        console.error('❌ [RevenueCat Service] Status text:', response.statusText);
+        console.error('❌ [RevenueCat Service] Error body:', errorText);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ [RevenueCat Service] Exception setting AppUserId for purchase:', error);
+      console.error('❌ [RevenueCat Service] Error name:', error.name);
+      console.error('❌ [RevenueCat Service] Error message:', error.message);
+      console.error('❌ [RevenueCat Service] Error stack:', error.stack);
+      return false;
+    }
+  }
+
+  /**
+   * Ensure RevenueCat is properly configured before purchase
+   */
+  private async ensureRevenueCatSetup(): Promise<void> {
+    try {
+      console.log('🔍 [RevenueCat Service] Ensuring RevenueCat is properly set up before purchase...');
+      
+      // Check if we have customer info
+      const customerInfo = await Purchases.getCustomerInfo();
+      const isAnonymous = customerInfo.originalAppUserId.includes('$RCAnonymousID');
+      
+      if (isAnonymous) {
+        console.log('⚠️ [RevenueCat Service] User is anonymous, attempting to set up authenticated user...');
+        await this.setupRevenueCatUser();
+        
+        // Verify setup worked
+        const newCustomerInfo = await Purchases.getCustomerInfo();
+        const stillAnonymous = newCustomerInfo.originalAppUserId.includes('$RCAnonymousID');
+        
+        if (stillAnonymous) {
+          console.error('❌ [RevenueCat Service] Failed to set up authenticated user, purchases may not work correctly');
+        } else {
+          console.log('✅ [RevenueCat Service] Successfully set up authenticated user:', newCustomerInfo.originalAppUserId);
+        }
+      } else {
+        console.log('✅ [RevenueCat Service] User already authenticated:', customerInfo.originalAppUserId);
+      }
+      
+    } catch (error) {
+      console.error('❌ [RevenueCat Service] Error ensuring RevenueCat setup:', error);
+      // Don't throw - let the purchase attempt continue
+    }
+  }
+
+  /**
    * Handle subscription upgrade/downgrade with proper cancellation and window validation
    */
   async upgradeOrDowngradeSubscription(newPackage: any): Promise<{ success: boolean; message: string }> {
     try {
+      // 1. Set appUserId in backend first (critical for webhooks)
+      console.log('🔧 [RevenueCat Service] Setting appUserId in backend before purchase...');
+      const appUserIdSet = await this.setAppUserIdForPurchase();
+      if (!appUserIdSet) {
+        console.warn('⚠️ [RevenueCat Service] Failed to set appUserId, but continuing with purchase...');
+        console.warn('⚠️ [RevenueCat Service] Webhook processing may be affected');
+        // Don't block the purchase - let it proceed for now
+      }
+      
+      // 2. Ensure RevenueCat is properly set up
+      await this.ensureRevenueCatSetup();
+      
       console.log('🔄 [RevenueCat Service] Checking for existing subscription...');
       
       const currentSubscription = await this.getActiveSubscriptionInfo();
@@ -543,6 +751,74 @@ class RevenueCatService {
         success: false, 
         message: errorMessage
       };
+    }
+  }
+
+  /**
+   * Debug method to check RevenueCat and backend integration status
+   * Call this to diagnose webhook issues
+   */
+  async debugWebhookSetup(): Promise<void> {
+    try {
+      console.log('🔍 [RevenueCat Service] === WEBHOOK DEBUG REPORT ===');
+      
+      // 1. Check user authentication
+      const user = await this.retrieveUser();
+      const token = await this.retrieveAuthToken();
+      
+      console.log('🔍 [RevenueCat Service] Auth Status:', {
+        hasUser: !!user,
+        userId: user?.id || user?.userId,
+        hasToken: !!token,
+        tokenLength: token?.length || 0
+      });
+      
+      if (!user || !token) {
+        console.error('❌ [RevenueCat Service] Missing user or token - cannot proceed');
+        return;
+      }
+      
+      const userId = user.id ? user.id.toString() : user.userId?.toString();
+      
+      // 2. Check RevenueCat configuration
+      console.log('🔍 [RevenueCat Service] RevenueCat Config:', {
+        isConfigured: this.isConfigured,
+        platform: Platform.OS,
+        apiKey: Platform.OS === 'android' ? 'Android Key' : 'iOS Key'
+      });
+      
+      // 3. Get current customer info
+      try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        console.log('🔍 [RevenueCat Service] Customer Info:', {
+          originalAppUserId: customerInfo.originalAppUserId,
+          isAnonymous: customerInfo.originalAppUserId.includes('$RCAnonymousID'),
+          hasActiveEntitlements: Object.keys(customerInfo.entitlements.active).length > 0,
+          activeEntitlements: Object.keys(customerInfo.entitlements.active)
+        });
+      } catch (error) {
+        console.error('❌ [RevenueCat Service] Failed to get customer info:', error);
+      }
+      
+      // 4. Test backend integration
+      if (userId && token) {
+        try {
+          console.log('🔍 [RevenueCat Service] Testing backend integration by setting appUserId...');
+          const success = await this.setAppUserIdForPurchase();
+          if (success) {
+            console.log('✅ [RevenueCat Service] Backend integration working correctly');
+          } else {
+            console.error('❌ [RevenueCat Service] Backend integration failed');
+          }
+        } catch (error) {
+          console.error('❌ [RevenueCat Service] Backend integration test failed:', error);
+        }
+      }
+      
+      console.log('🔍 [RevenueCat Service] === END DEBUG REPORT ===');
+      
+    } catch (error) {
+      console.error('❌ [RevenueCat Service] Debug method failed:', error);
     }
   }
 }

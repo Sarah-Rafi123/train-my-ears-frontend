@@ -9,7 +9,7 @@ import LeaderboardRow from "@/src/components/widgets/LeaderBoardRow"
 import { leaderboardApi, leaderboardUtils, LeaderboardUser } from "@/src/services/leaderBoardApi"
 
 interface LeaderboardScreenProps {
-  navigation?: any // Replace with proper type from @react-navigation/native
+  navigation?: any
   route?: any 
   onBack?: () => void
 }
@@ -18,50 +18,25 @@ export default function LeaderboardScreen({ navigation, onBack }: LeaderboardScr
   const [selectedMode, setSelectedMode] = useState<"simple" | "advanced">("simple")
   const [selectedLevel, setSelectedLevel] = useState(1)
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // Start with loading true
   const [error, setError] = useState<string | null>(null)
 
-  // Handle level change function
-  const handleLevelChange = async (level: number) => {
+  const fetchLeaderboardData = useCallback(async (level: number) => {
     try {
-      console.log(`🎯 Level change requested: ${selectedLevel} → ${level}`)
-      
-      // Don't fetch if it's the same level
-      if (level === selectedLevel) {
-        console.log('Same level selected, skipping fetch')
-        return
-      }
-
-      // Validate level range
-      if (level < 1 || level > 4) {
-        console.error(`Invalid level: ${level}. Must be between 1 and 4`)
-        setError(`Invalid level: ${level}`)
-        return
-      }
-
-      // Clear any existing errors
-      setError(null)
-      
-      // Update selected level immediately for UI responsiveness
-      setSelectedLevel(level)
-      
-      // Set loading state
-      setLoading(true)
-      
       console.log(`📡 Fetching leaderboard data for level ${level}`)
+      setError(null)
+      setLoading(true)
       
       const response = await leaderboardApi.getLeaderboard(level, 'combined')
       
       if (response.success) {
         const userData = response.data.topUsers
-        // Limit to top 3 players only
         const top3Users = userData.slice(0, 3)
         setLeaderboardData(top3Users)
         console.log(`✅ Successfully loaded top ${top3Users.length} users for level ${level}`)
       } else {
         throw new Error('API returned unsuccessful response')
       }
-      
     } catch (err) {
       console.error(`❌ Error fetching level ${level} data:`, err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to load leaderboard data'
@@ -69,20 +44,33 @@ export default function LeaderboardScreen({ navigation, onBack }: LeaderboardScr
       setLeaderboardData([])
     } finally {
       setLoading(false)
-      console.log(`🏁 Level change completed for level ${level}`)
     }
-  }
-
-  // Load initial data
-  useEffect(() => {
-    handleLevelChange(1)
   }, [])
+
+  // Load initial data for level 1
+  useEffect(() => {
+    fetchLeaderboardData(1)
+  }, [fetchLeaderboardData])
+
+  const handleLevelChange = async (level: number) => {
+    // Don't fetch if it's the same level
+    if (level === selectedLevel) return
+    
+    // Validate level range
+    if (level < 1 || level > 4) {
+      console.error(`Invalid level: ${level}. Must be between 1 and 4`)
+      setError(`Invalid level: ${level}`)
+      return
+    }
+
+    setSelectedLevel(level)
+    await fetchLeaderboardData(level)
+  }
 
   const handleBack = useCallback(() => {
     if (onBack) {
       onBack()
     } else if (navigation) {
-      // Only use navigation if it's available
       navigation.goBack()
     } else {
       console.log("Back pressed, but navigation is not available")
@@ -160,7 +148,7 @@ export default function LeaderboardScreen({ navigation, onBack }: LeaderboardScr
           </View>
         )}
         
-        {!loading && (
+        {!loading && !error && (
           <View className="mx-6 bg-white rounded-2xl overflow-hidden shadow-sm">
             {/* Table Header */}
             <View className="bg-gray-100 flex-row py-4 px-6">

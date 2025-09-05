@@ -240,7 +240,7 @@ export const dailyProgressUtils = {
   convertToHistoryData: (
     progressDataArray: DailyProgressData[], 
     selectedLevel?: number
-  ): Array<{date: string, streak: number, accuracy: string}> => {
+  ): {date: string, streak: number, accuracy: string}[] => {
     return progressDataArray.map(data => {
       let streak = 0
       let accuracy = 0

@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, SafeAreaView, Image, Alert, Platform, Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
 import { useAuth } from '@/src/context/AuthContext';
 import BackButton from '@/src/components/ui/buttons/BackButton';
 import InstrumentCard from '@/src/components/widgets/InstrumentCard';

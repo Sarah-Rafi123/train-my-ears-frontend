@@ -5,7 +5,15 @@ import { View, Text, ScrollView, ActivityIndicator } from "react-native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
 
-import { startGame, submitAnswer, clearError, clearGameResult, clearGameRound, setCurrentLevel, resetGame } from "@/src/store/slices/gameSlice"
+import {
+  startGame,
+  submitAnswer,
+  clearError,
+  clearGameResult,
+  clearGameRound,
+  setCurrentLevel,
+  resetGame,
+} from "@/src/store/slices/gameSlice"
 import { audioService } from "@/src/services/audioService"
 import { LevelStatsService, type LevelStats } from "@/src/services/levelStatsService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
@@ -30,7 +38,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   const dispatch = useAppDispatch()
   // Get auth data
   const { userId, guitarId, pianoId } = useAuth()
-// Get current token
+  // Get current token
   // Get game state from Redux
   const {
     currentGameRound,
@@ -51,16 +59,20 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
   // Add state to track if chords should be visible
   const [showChords, setShowChords] = useState(true)
-  
+
   // Level-specific stats state for authenticated users
   const [levelStats, setLevelStats] = useState<LevelStats | null>(null)
 
   // Use a ref to track the previous game round ID to detect actual changes (simplified like gameGuest.tsx)
   const prevGameRoundIdRef = useRef<string | null>(null)
-  
-  // State to prevent multiple simultaneous game starts
+  // Ref to track pending audio timeout
+  const audioTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // State to prevent multiple simultaneous game starts and control loading UI
   const [gameInitialized, setGameInitialized] = useState(false)
   const [screenReady, setScreenReady] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true) // Start as true to prevent "Unable to load" message
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false) // Track audio playing state
 
   // Get route params
   const routeParams = route.params as any
@@ -72,9 +84,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   let finalInstrumentId = instrumentIdFromRoute
   if (!finalInstrumentId && instrumentFromRoute) {
     if (instrumentFromRoute === "guitar") {
-      finalInstrumentId = guitarId || 'cmdh5ji090002ta0boucdg1dd' // Fallback guitar ID
+      finalInstrumentId = guitarId || "cmdh5ji090002ta0boucdg1dd" // Fallback guitar ID
     } else if (instrumentFromRoute === "piano") {
-      finalInstrumentId = pianoId || 'cmdh5jjpq0003ta0bpxoplgsi' // Fallback piano ID
+      finalInstrumentId = pianoId || "cmdh5jjpq0003ta0bpxoplgsi" // Fallback piano ID
     }
   }
 
@@ -98,39 +110,44 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     console.log("🎮 GameScreen: Component mounted, initializing...")
     // Clear any previous game state and stop audio when entering game screen fresh
     dispatch(clearGameRound())
-    dispatch(resetGame()) // Clear all game data including stats 
+    dispatch(resetGame()) // Clear all game data including stats
     audioService.stopAudio()
-    
+
     // Reset audio tracking refs to ensure fresh start
     prevGameRoundIdRef.current = null
     setGameInitialized(false)
-    
+
     // Set screen ready after a small delay to ensure everything is loaded
     setTimeout(() => {
       setScreenReady(true)
     }, 500)
-    
+
     return () => {
-      audioService.stopAudio(); // Ensure the audio stops
-    };
+      audioService.stopAudio() // Ensure the audio stops
+    }
   }, [dispatch]) // Only run once on mount
 
   // Separate effect to start game when instrumentId, level, or user changes
   useEffect(() => {
+    // Check if we have required instrumentId first
+    if (!finalInstrumentId) {
+      console.error("❌ GameScreen: Missing required instrumentId:", {
+        userId: finalUserId,
+        instrumentId: finalInstrumentId,
+      })
+      setIsInitializing(false) // Stop loading since we can't proceed
+      setShowGameErrorModal(true)
+      return
+    }
+
     // Don't start game if conditions aren't met
-    if (!screenReady || gameInitialized || !finalInstrumentId) {
-      if (!finalInstrumentId) {
-        console.error("❌ GameScreen: Missing required instrumentId:", {
-          userId: finalUserId,
-          instrumentId: finalInstrumentId,
-        })
-        setShowGameErrorModal(true)
-      }
+    if (!screenReady || gameInitialized) {
       return
     }
 
     // Check if user is in guest mode (no token and no userId) and trying to access level 3 or 4
     if (!finalUserId && currentLevel >= 3) {
+      setIsInitializing(false) // Stop loading
       setShowSubscriptionModal(true)
       return
     }
@@ -142,9 +159,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       level: currentLevel,
       isGuestMode: !finalUserId,
     })
-    
+
     setGameInitialized(true)
-    
+
     dispatch(
       startGame({
         userId: finalUserId, // Can be null for guest mode
@@ -159,6 +176,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     // This cleanup function runs only when the component is unmounted
     return () => {
       console.log("🧹 GameScreen: Component unmounting - clearing session")
+      // Clear any pending audio timeout
+      if (audioTimeoutRef.current) {
+        clearTimeout(audioTimeoutRef.current)
+        audioTimeoutRef.current = null
+      }
       dispatch(clearGameRound()) // Use clearGameRound instead of resetGame to avoid infinite loops
       audioService.stopAudio()
     }
@@ -174,21 +196,44 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       setShowChords(true)
       setShowResult(false)
       setSelectedChordId(null)
-      
+      // Game loaded successfully, stop initializing
+      if (isInitializing) {
+        setIsInitializing(false)
+      }
+
       // Auto-play audio for new rounds (but not on initial render with same round)
-      if (screenReady && currentRoundId && currentRoundId !== prevRoundId && currentGameRound.targetChord?.name && currentGameRound.instrument?.name) {
+      if (
+        screenReady &&
+        currentRoundId &&
+        currentRoundId !== prevRoundId &&
+        currentGameRound.targetChord?.name &&
+        currentGameRound.instrument?.name
+      ) {
         console.log("🎵 GameScreen: Auto-playing chord audio for new round:", currentRoundId)
-        console.log("🎵 GameScreen: Playing chord:", currentGameRound.targetChord.name, "instrument:", currentGameRound.instrument.name)
+        console.log(
+          "🎵 GameScreen: Playing chord:",
+          currentGameRound.targetChord.name,
+          "instrument:",
+          currentGameRound.instrument.name,
+        )
+        
+        // Clear any existing audio timeout to prevent overlapping audio
+        if (audioTimeoutRef.current) {
+          clearTimeout(audioTimeoutRef.current)
+          audioTimeoutRef.current = null
+        }
+        
         // Add a small delay to ensure UI is fully rendered before playing audio
-        setTimeout(() => {
+        audioTimeoutRef.current = setTimeout(() => {
           playChordAudioSafely(currentGameRound.targetChord.name, currentGameRound.instrument.name)
-        }, 300)
+          audioTimeoutRef.current = null
+        }, 100)
       }
     }
 
     // Always update prevGameRoundIdRef to the current round ID for the next render cycle
     prevGameRoundIdRef.current = currentRoundId
-  }, [currentGameRound, screenReady])
+  }, [currentGameRound, screenReady, isInitializing])
 
   // Handle game result and update level-specific stats
   useEffect(() => {
@@ -196,18 +241,24 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       setShowResult(true)
       // Hide chords after submitting answer
       setShowChords(false)
-      
+
       // Update level-specific stats for authenticated users (non-blocking)
       if (finalUserId) {
         // Use Redux stats for immediate UI update (no dependency issues)
         const isCorrect = gameResult.isCorrect
-        
+
         // Update persistent storage in background and refresh levelStats when done
         const updateLevelStats = async () => {
           const isWin = gameResult.isCorrect // In regular game, correct answer = win
-          
+
           try {
-            const updatedStats = await LevelStatsService.updateUserGameStats(finalUserId, "regularGame", currentLevel, isCorrect, isWin)
+            const updatedStats = await LevelStatsService.updateUserGameStats(
+              finalUserId,
+              "regularGame",
+              currentLevel,
+              isCorrect,
+              isWin,
+            )
             setLevelStats(updatedStats)
           } catch (error) {
             console.error("Failed to update level stats:", error)
@@ -218,7 +269,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
       }
     }
   }, [gameResult, finalUserId, currentLevel])
-
 
   // Handle errors with appropriate modals
   useEffect(() => {
@@ -236,13 +286,25 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   }, [error, errorCode])
 
   const playChordAudioSafely = async (chordName: string, instrumentName: string) => {
+    // Prevent multiple simultaneous audio plays
+    if (isPlayingAudio) {
+      console.log("🎵 GameScreen: Audio already playing, skipping new audio request")
+      return
+    }
+
     try {
+      setIsPlayingAudio(true)
       setAudioError(null)
+      // Always stop any currently playing audio before starting new audio
+      await audioService.stopAudio()
+      console.log("🎵 GameScreen: Playing chord audio:", chordName, instrumentName)
       await audioService.playChordAudio(chordName, instrumentName)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown audio error"
       console.error("❌ GameScreen: Chord audio playback failed:", errorMessage)
       setAudioError(errorMessage)
+    } finally {
+      setIsPlayingAudio(false)
     }
   }
 
@@ -250,13 +312,24 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     if (showChords && currentGameRound?.targetChord?.name && currentGameRound.instrument?.name) {
       // If chords are visible, just replay the chord audio
       console.log("🔄 GameScreen: Replaying chord audio for current round")
-      console.log("🔄 GameScreen: Playing chord:", currentGameRound.targetChord.name, "instrument:", currentGameRound.instrument.name)
+      console.log(
+        "🔄 GameScreen: Playing chord:",
+        currentGameRound.targetChord.name,
+        "instrument:",
+        currentGameRound.instrument.name,
+      )
+      // Clear any pending auto-play timeout before manual play
+      if (audioTimeoutRef.current) {
+        clearTimeout(audioTimeoutRef.current)
+        audioTimeoutRef.current = null
+      }
       await playChordAudioSafely(currentGameRound.targetChord.name, currentGameRound.instrument.name)
     } else if (!showChords && finalInstrumentId) {
       // If chords are hidden (after submitting answer), start a new game round
       console.log("🔄 GameScreen: Starting new game round", {
         isGuestMode: !finalUserId,
       })
+      setIsInitializing(true) // Show loading for new game round
       dispatch(clearGameResult())
       // No need to manually reset UI states here, the useEffect for currentGameRound will handle it
       // No need to manually reset uiReadyForRoundId, it will be set by the useEffect
@@ -272,12 +345,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
 
   const handleChordSelect = (chordId: string) => {
     if (isSubmittingAnswer || !currentGameRound) return
-    
-    
+
     setSelectedChordId(chordId)
     // Calculate response time
     const responseTime = responseStartTime ? Date.now() - responseStartTime : 0
-    
+
     // Submit answer (works for both authenticated users and guests)
     dispatch(
       submitAnswer({
@@ -296,6 +368,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
         isGuestMode: !finalUserId,
       })
       setGameInitialized(false) // Allow new game start
+      setIsInitializing(true) // Show loading during level change
       dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
       dispatch(
@@ -310,7 +383,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
 
   const handleLevelUp = () => {
     // Check if user is in guest mode (no token and no userId) and trying to access level 3 or 4
-    if ( !finalUserId && currentLevel >= 2) {
+    if (!finalUserId && currentLevel >= 2) {
       setShowSubscriptionModal(true)
       return
     }
@@ -321,6 +394,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
         isGuestMode: !finalUserId,
       })
       setGameInitialized(false) // Allow new game start
+      setIsInitializing(true) // Show loading during level change
       dispatch(setCurrentLevel(newLevel))
       dispatch(clearGameResult())
       dispatch(
@@ -380,6 +454,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     setShowGameErrorModal(false)
     dispatch(clearError())
     if (finalInstrumentId) {
+      setIsInitializing(true) // Show loading during retry
       dispatch(
         startGame({
           userId: finalUserId, // Can be null for guest mode
@@ -391,7 +466,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
   }
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || isInitializing) {
     return (
       <SafeAreaView className="flex-1 bg-white">
         <View className="flex-row items-center px-6 py-4">
@@ -436,17 +511,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
           {/* Stats Row - Using Redux stats for immediate updates */}
           <View className="flex-row justify-center mb-6 gap-x-2">
-            <StatCard 
-              value={Math.round(currentStats.accuracy) + "%"} 
-              label="Accuracy" 
-              size="large" 
-            />
+            <StatCard value={Math.round(currentStats.accuracy) + "%"} label="Accuracy" size="large" />
             <StatCard value={currentLevel.toString()} label="Level" size="large" valueColor="dark" />
-            <StatCard 
-              value={currentStats.streak.toString()} 
-              label="Streaks" 
-              size="large" 
-            />
+            <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
             <StatCard
               value="" // Not used when showFraction is true
               label="Correct/Total"
@@ -495,25 +562,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
             disabled={isSubmittingAnswer}
             showResult={showResult}
             correctChordId={gameResult?.correctChord?.id || undefined}
-            selectedChordStyle={{ borderColor: 'black', borderWidth: 2 }} // Added this prop
+            selectedChordStyle={{ borderColor: "black", borderWidth: 2 }} // Added this prop
           />
         )}
         {/* Level Control Buttons */}
         <View className="px-6 mb-4 items-center gap-y-3">
-          {currentLevel > 1 && (
-            <ActionButton
-              title="Level Down"
-              icon="arrow-down"
-              onPress={handleLevelDown}
-            />
-          )}
-          {currentLevel < 4 && (
-            <ActionButton
-              title="Level Up"
-              icon="arrow-up"
-              onPress={handleLevelUp}
-            />
-          )}
+          {currentLevel > 1 && <ActionButton title="Level Down" icon="arrow-down" onPress={handleLevelDown} />}
+          {currentLevel < 4 && <ActionButton title="Level Up" icon="arrow-up" onPress={handleLevelUp} />}
         </View>
         {/* Extra space to ensure content doesn't get hidden behind fixed button */}
         <View className="h-20" />

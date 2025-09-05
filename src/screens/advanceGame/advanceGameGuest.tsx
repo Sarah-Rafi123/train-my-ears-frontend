@@ -1,5 +1,5 @@
 "use client"
-import { View, Text, ScrollView, ActivityIndicator, Dimensions } from "react-native"
+import { View, Text, ScrollView, ActivityIndicator, Dimensions , TouchableOpacity } from "react-native"
 import { useState, useEffect, useRef } from "react"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
@@ -14,6 +14,7 @@ import {
   addToSequence,
   removeFromSequence,
   clearRoundData,
+  resetGame,
 } from "@/src/store/slices/advancedGameSlice"
 import { audioService } from "@/src/services/audioService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
@@ -24,7 +25,6 @@ import SaveProgressButton from "@/src/components/ui/buttons/SaveProgressButton"
 import { LoginPromptModal } from "@/src/components/ui/modal/login-prompt-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { TouchableOpacity } from "react-native"
 import { Feather } from "@expo/vector-icons"
 import StatCard from "@/src/components/widgets/StatsCard"
 import { debounce } from "@/src/lib/utils"
@@ -78,7 +78,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
   })
 
   // Use simpler state tracking instead of complex refs
-  const [isInitializing, setIsInitializing] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true) // Start as true to prevent "Unable to load" message
   const [hasInitialized, setHasInitialized] = useState(false)
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false)
 
@@ -136,6 +136,14 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
     isGuestMode: true,
   })
 
+  // Initialize component and reset game state on mount
+  useEffect(() => {
+    console.log("🎮 AdvancedGameGuestScreen: Component mounted, initializing...")
+    // Reset game state to ensure guest starts at level 1
+    dispatch(resetGame()) // This sets level to 1 and clears all game data
+    audioService.stopAudio()
+  }, [dispatch]) // Only run once on mount
+
   // Load guest stats on component mount
   useEffect(() => {
     const loadGuestStats = async () => {
@@ -186,9 +194,17 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
   // Updated initialization logic for guest mode
   useEffect(() => {
     const initializeGame = async () => {
-      if (finalInstrumentId && !hasInitialized && !isInitializing && !currentGameRound && !isApiCallInProgress) {
+      // Check if we have the required instrumentId
+      if (!finalInstrumentId) {
+        console.error("❌ Missing required instrumentId for game initialization")
+        setIsInitializing(false) // Stop loading since we can't proceed
+        setShowGameErrorModal(true)
+        return
+      }
+
+      // Only initialize if we haven't already initialized and aren't in the middle of an API call
+      if (!hasInitialized && !isApiCallInProgress && !currentGameRound) {
         console.log("🎮 AdvancedGameGuestScreen: Initializing game for level:", currentLevel)
-        setIsInitializing(true)
         setHasInitialized(true)
         setIsApiCallInProgress(true)
         try {
@@ -207,20 +223,19 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
           setIsInitializing(false)
           setIsApiCallInProgress(false)
         }
-      } else if (!finalInstrumentId) {
-        console.error("❌ Missing required instrumentId for game initialization")
-        setShowGameErrorModal(true)
+      } else if (currentGameRound) {
+        // If we already have a game round, stop initializing
+        setIsInitializing(false)
       }
     }
     initializeGame()
   }, [
     finalInstrumentId,
     hasInitialized,
-    isInitializing,
+    isApiCallInProgress,
     currentGameRound,
     currentLevel,
     dispatch,
-    isApiCallInProgress,
   ])
 
   // Component unmount cleanup effect
@@ -566,17 +581,17 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
   }
 
   // Get sequence indicators based on current selection and result
-  const getSequenceIndicators = (): Array<{
+  const getSequenceIndicators = (): {
     type: "success" | "error" | "empty" | "filled"
     chordText?: string
     showIcon?: boolean
-  }> => {
+  }[] => {
     if (!currentGameRound) return []
-    const indicators: Array<{
+    const indicators: {
       type: "success" | "error" | "empty" | "filled"
       chordText?: string
       showIcon?: boolean
-    }> = []
+    }[] = []
 
     if (showResult && gameResult && gameResult.correctSequence) {
       const sortedCorrectSequence = [...gameResult.correctSequence].sort((a, b) => a.position - b.position)

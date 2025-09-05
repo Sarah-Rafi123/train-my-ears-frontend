@@ -28,6 +28,12 @@ interface GameState {
 const initialState: GameState = {
   currentGameRound: null,
   gameResult: null,
+  isLoading: false,
+  isSubmittingAnswer: false,
+  error: null,
+  errorCode: null,
+  currentLevel: 1,
+  responseStartTime: null,
   currentStats: {
     streak: 0,
     accuracy: 0,
@@ -132,6 +138,7 @@ const gameSlice = createSlice({
       state.gameResult = null
       state.error = null
       state.errorCode = null
+      state.currentLevel = 1
       state.responseStartTime = null
       // Reset stats when game is reset
       state.currentStats = {
