@@ -23,8 +23,7 @@ export default function RegisterLoginButton({ onPress, className = "" }: Registe
         paddingHorizontal: responsiveValue(24), // px-6 is 24px
       }}
     >
-      {/* Assuming PersonSvg accepts width and height props for scaling */}
-      <PersonSvg />
+      <PersonSvg width={responsiveValue(20)} height={responsiveValue(20)} />
       <Text
         className="text-white font-sans ml-2"
         style={{

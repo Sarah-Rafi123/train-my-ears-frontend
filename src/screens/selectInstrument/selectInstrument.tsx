@@ -43,6 +43,20 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   // Utility function to apply responsive scaling to a value
   const responsiveValue = (value: number) => Math.round(value * responsiveScale);
 
+  // Detect if device is tablet
+  const isTablet = screenWidth >= 768 || screenHeight >= 768;
+  const isLandscape = screenWidth > screenHeight;
+
+  // Get container styles based on device type
+  const getContainerWidth = () => {
+    if (isTablet) {
+      return Math.min(screenWidth * 0.8, 800); // 80% of screen width, max 800px
+    }
+    return screenWidth - 48; // Phone with padding
+  };
+
+  const containerWidth = getContainerWidth();
+
   const titleStyle = {
     fontSize: responsiveValue(32),
     lineHeight: responsiveValue(40),
@@ -50,7 +64,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
     color: '#003049',
     textAlign: 'center' as const,
     fontWeight: 'bold' as const,
-    paddingVertical: responsiveValue(Platform.OS === 'ios' ? 8 : 4),
+    paddingVertical: responsiveValue(Platform.OS === 'ios' ? 4 : 4),
     letterSpacing: responsiveValue(2),
   };
 
@@ -60,8 +74,8 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
     fontFamily: 'NATS-Regular',
     color: '#003049',
     textAlign: 'center' as const,
-    marginBottom: responsiveValue(6),
-    paddingVertical: responsiveValue(Platform.OS === 'ios' ? 3 : 3),
+    marginBottom: responsiveValue(15),
+    paddingVertical: responsiveValue(Platform.OS === 'ios' ? 6 : 3),
     paddingHorizontal: responsiveValue(8),
   };
 
@@ -275,14 +289,17 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       <View
         className="flex-1"
         style={{
-          paddingHorizontal: 24,
-          paddingTop: responsiveValue(32),
+          alignSelf: 'center',
+          width: isTablet ? containerWidth : '100%',
+          paddingHorizontal: isTablet ? 32 : 24,
+          paddingTop: responsiveValue(16),
         }}
       >
+        {/* Title and subtitle section */}
         <View
-          className="mb-8 mt-auto"
           style={{
-            marginBottom: responsiveValue(32), // mb-8
+            marginTop: responsiveValue(10),
+            marginBottom: responsiveValue(20),
           }}
         >
           <Text style={titleStyle} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.8}>
@@ -292,25 +309,34 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
             A simple tool to help recognize chords by ear.
           </Text>
         </View>
+
+        {/* Spacer to push buttons to bottom */}
+        <View style={{ flex: 1 }} />
         {loading && (
           <View
             style={{
-              marginBottom: responsiveValue(64),
-              flexDirection: 'column',
+              marginBottom: responsiveValue(32),
+              flexDirection: isTablet && isLandscape ? 'row' : 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 16,
+              gap: isTablet ? 24 : 16,
             }}
           >
-            <View style={{ width: '100%' }}>
+            <View style={{ 
+              width: isTablet && isLandscape ? '45%' : '100%',
+              maxWidth: isTablet ? 350 : undefined 
+            }}>
               <InstrumentCardSkeleton />
             </View>
-            <View style={{ width: '100%' }}>
+            <View style={{ 
+              width: isTablet && isLandscape ? '45%' : '100%',
+              maxWidth: isTablet ? 350 : undefined 
+            }}>
               <InstrumentCardSkeleton />
             </View>
             <View className='justify-center items-center mt-4 flex' style={{
               width: '100%',
-              marginTop: 16,
+              marginTop: isTablet && isLandscape ? 0 : 16,
             }}>
               {token && (
                 <TouchableOpacity style={styles.logoutButton} disabled>
@@ -325,7 +351,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
           <View
             className="mb-16 items-center"
             style={{
-              marginBottom: responsiveValue(64), // mb-16
+              marginBottom: responsiveValue(32), // mb-16
             }}
           >
             <Text
@@ -359,22 +385,28 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
         {!loading && !error && (
           <View
             style={{
-              marginBottom: responsiveValue(64),
-              flexDirection: 'column',
+              marginBottom: responsiveValue(32),
+              flexDirection: isTablet && isLandscape ? 'row' : 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 16,
+ 
             }}
           >
-            <View style={{ width: '100%' }}>
+            <View style={{ 
+              width: isTablet && isLandscape ? '45%' : '100%',
+              maxWidth: isTablet ? 700 : undefined 
+            }}>
               <InstrumentCard instrument="guitar" onPress={() => handleInstrumentSelect('guitar')} />
             </View>
-            <View style={{ width: '100%' }}>
+            <View style={{ 
+              width: isTablet && isLandscape ? '45%' : '100%',
+              maxWidth: isTablet ? 700 : undefined 
+            }}>
               <InstrumentCard instrument="piano" onPress={() => handleInstrumentSelect('piano')} />
             </View>
             <View className='justify-center items-center mt-4 flex' style={{
               width: '100%',
-              marginTop: 16,
+              marginTop: isTablet && isLandscape ? 0 : 16,
             }}>
               {token && (
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>

@@ -34,6 +34,20 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
 
   // Utility function to apply responsive scaling to a value
   const responsiveValue = (value: number) => Math.round(value * responsiveScale)
+
+  // Detect if device is tablet
+  const isTablet = screenWidth >= 768 || screenHeight >= 768
+  const isLandscape = screenWidth > screenHeight
+
+  // Get container styles based on device type
+  const getContainerWidth = () => {
+    if (isTablet) {
+      return Math.min(screenWidth * 0.8, 800) // 80% of screen width, max 800px
+    }
+    return screenWidth - 48 // Phone with padding
+  }
+
+  const containerWidth = getContainerWidth()
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null)
   const [todayProgressData, setTodayProgressData] = useState<DailyProgressData | null>(null)
   const [historicalProgressData, setHistoricalProgressData] = useState<DailyProgressData[]>([])
@@ -251,20 +265,22 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
   return (
     <SafeAreaView className="flex-1 pt-8 bg-[#F2F5F6]">
       {/* Header with back button */}
-      <BackButton onPress={handleBack} />
+      <View style={{ width: '100%', paddingHorizontal: 32, paddingVertical:24, zIndex: 1000 }}>
+        <BackButton onPress={handleBack} />
+      </View>
 
       {/* Blue background section with reduced height */}
-      <View style={{ height: responsiveValue(112) }} />
+      <View style={{ height: responsiveValue(132) }} />
 
       {/* Container for overlapping chord card and white section */}
       <View className="flex-1 relative">
         {/* Chord Card - positioned to overlap both sections */}
-        <View className="absolute -top-16 left-0 right-0 z-10" style={{ alignSelf: 'center', paddingHorizontal: 24 }}>
+        <View className="absolute -top-16 left-0 right-0 z-10" style={{ alignSelf: 'center', width: containerWidth }}>
           <ChordCard chord={userFirstLetter} className="w-32 h-32 self-center" /> {/* Use the first letter */}
         </View>
 
         {/* White background section stretching to end of screen */}
-        <View className="flex-1 bg-white rounded-t-3xl" style={{ alignSelf: 'center', flex: 1 }}>
+        <View className="flex-1 bg-white rounded-t-3xl" style={{ alignSelf: 'center', flex: 1, width: isTablet ? containerWidth : '100%' }}>
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
             {/* Top padding for chord card */}
             <View className="pt-24">
@@ -278,14 +294,14 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
 
               {/* Loading indicator for level changes */}
               {loading && (
-                <View style={{ alignSelf: 'center', paddingHorizontal: 24, marginBottom: responsiveValue(16) }}>
+                <View style={{ alignSelf: 'center', paddingHorizontal: isTablet ? 32 : 24, marginBottom: responsiveValue(16), width: '100%' }}>
                   <Text className="text-[#003049] text-center text-sm opacity-70">Updating data...</Text>
                 </View>
               )}
 
               {/* Error message */}
               {error && (
-                <View style={{ alignSelf: 'center', paddingHorizontal: 24, marginBottom: responsiveValue(16) }}>
+                <View style={{ alignSelf: 'center', paddingHorizontal: isTablet ? 32 : 24, marginBottom: responsiveValue(16), width: '100%' }}>
                   <View className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <Text className="text-red-600 text-center font-medium">Error</Text>
                     <Text className="text-red-500 text-center text-sm mt-1">{error}</Text>
@@ -294,7 +310,7 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
               )}
 
               {/* Today's Progress Section */}
-              <View style={{ alignSelf: 'center', paddingHorizontal: 24, marginBottom: responsiveValue(32) }}>
+              <View style={{ alignSelf: 'center', paddingHorizontal: isTablet ? 32 : 24, marginBottom: responsiveValue(32), width: '100%' }}>
                 <Text className="text-[#003049] text-xl font-bold mb-4">
                   Today's Progress
                 </Text>
@@ -324,15 +340,15 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
               </View>
 
               {/* History Table - Last 5 Days */}
-              <View style={{ width: '100%', paddingHorizontal: 24 }}>
+              <View style={{ width: '100%', paddingHorizontal: isTablet ? 32 : 24 }}>
                 <Text className="text-[#003049] text-xl font-bold mb-4">History</Text>
                 
                 <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
                   {/* Header */}
                   <View className="bg-gray-100 flex-row py-4 px-6">
-                    <Text className="flex-1 text-[#003049] text-lg font-semibold">Date</Text>
-                    <Text className="w-20 text-center text-[#003049] text-lg font-semibold">Streak</Text>
-                    <Text className="w-28 text-right text-[#003049] text-lg font-semibold">Accuracy</Text>
+                    <Text className="flex-1 text-[#003049] font-semibold" style={{ fontSize: isTablet ? 20 : 18 }}>Date</Text>
+                    <Text className="text-center text-[#003049] font-semibold" style={{ fontSize: isTablet ? 20 : 18, width: isTablet ? 100 : 80 }}>Streak</Text>
+                    <Text className="text-right text-[#003049] font-semibold" style={{ fontSize: isTablet ? 20 : 18, width: isTablet ? 120 : 100 }}>Accuracy</Text>
                   </View>
                   <View style={{ maxHeight: 300 }}>
                     <ScrollView 
@@ -350,9 +366,9 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
                             key={`${entry.date}-${index}`}
                             className={`flex-row py-4 px-6 ${index !== historyData.length - 1 ? "border-b border-gray-100" : ""}`}
                           >
-                            <Text className="flex-1 text-[#003049] text-base">{entry.date}</Text>
-                            <Text className="w-20 text-center text-[#003049] text-base font-medium">{entry.streak}</Text>
-                            <Text className="w-24 text-right text-[#003049] text-base font-medium">{entry.accuracy}</Text>
+                            <Text className="flex-1 text-[#003049] font-medium" style={{ fontSize: isTablet ? 18 : 16 }}>{entry.date}</Text>
+                            <Text className="text-center text-[#003049] font-medium" style={{ fontSize: isTablet ? 18 : 16, width: isTablet ? 100 : 80 }}>{entry.streak}</Text>
+                            <Text className="text-right text-[#003049] font-medium" style={{ fontSize: isTablet ? 18 : 16, width: isTablet ? 120 : 100 }}>{entry.accuracy}</Text>
                           </View>
                         ))
                       ) : (

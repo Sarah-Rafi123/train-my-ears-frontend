@@ -40,7 +40,7 @@ export default function InstrumentCard({ instrument, onPress, disabled = false }
       activeOpacity={disabled ? 1 : 0.8}
       style={{
         borderRadius: responsiveValue(8), // rounded-2xl
-        paddingVertical: responsiveValue(20), // py-5
+        paddingVertical: responsiveValue(15), // py-5
         paddingHorizontal: responsiveValue(32), // px-8
         marginBottom: responsiveValue(16), // mb-4
       }}
@@ -53,6 +53,9 @@ export default function InstrumentCard({ instrument, onPress, disabled = false }
             fontSize: responsiveValue(20), // text-xl
             marginLeft: responsiveValue(16), // ml-4
           }}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
         >
           {getInstrumentName()}
         </Text>
