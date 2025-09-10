@@ -4,12 +4,16 @@ import Purchases, { PurchasesOfferings, PurchasesPackage } from 'react-native-pu
 import { useNavigation } from '@react-navigation/native';
 import { revenueCatService } from '../../services/revenueCatService';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import PrivacyPolicyModal from '../../components/ui/modals/PrivacyPolicyModal';
+import TermsOfServiceModal from '../../components/ui/modals/TermsOfServiceModal';
 
 export default function RevenueCatScreen() {
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -155,8 +159,8 @@ export default function RevenueCatScreen() {
           <TouchableOpacity style={styles.closeButton} onPress={handleGoBack}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Upgrade to Premium</Text>
-          <Text style={styles.subtitle}>Unlock all levels and features</Text>
+          <Text style={styles.title}>More Chords. More Progress.</Text>
+          <Text style={styles.subtitle}>Get access to more chords and track your progress as you improve.</Text>
         </View>
 
         {/* Features */}
@@ -164,19 +168,19 @@ export default function RevenueCatScreen() {
           <Text style={styles.featuresTitle}>Premium Features:</Text>
           <View style={styles.featureItem}>
             <Text style={styles.featureIcon}>🎵</Text>
-            <Text style={styles.featureText}>Access all levels (3+)</Text>
+            <Text style={styles.featureText}>Access all levels</Text>
           </View>
           <View style={styles.featureItem}>
             <Text style={styles.featureIcon}>📊</Text>
-            <Text style={styles.featureText}>Detailed progress tracking</Text>
+            <Text style={styles.featureText}>Track accuracy & streaks</Text>
+          </View>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>🎯</Text>
+            <Text style={styles.featureText}>Chord progression training</Text>
           </View>
           <View style={styles.featureItem}>
             <Text style={styles.featureIcon}>🏆</Text>
             <Text style={styles.featureText}>Leaderboard rankings</Text>
-          </View>
-          <View style={styles.featureItem}>
-            <Text style={styles.featureIcon}>🎯</Text>
-            <Text style={styles.featureText}>Advanced training modes</Text>
           </View>
         </View>
 
@@ -200,16 +204,11 @@ export default function RevenueCatScreen() {
                 )}
                 
                 <Text style={[styles.packageTitle, isPopular && { color: '#ffffff' }]}>
-                  {pkg.packageType === 'ANNUAL' ? 'Annual Plan' : 'Monthly Plan'}
-                </Text>
-                
-                <Text style={[styles.packagePrice, isPopular && { color: '#ffffff' }]}>
-                  {pkg.product.priceString}
-                  {pkg.packageType === 'ANNUAL' ? '/year' : '/month'}
+                  {pkg.packageType === 'ANNUAL' ? 'Annual Plan: $19.99/year' : 'Monthly Plan: $2.99/month'}
                 </Text>
                 
                 {pkg.packageType === 'ANNUAL' && (
-                  <Text style={[styles.savingsText, isPopular && { color: '#10b981' }]}>Save 67%</Text>
+                  <Text style={[styles.savingsText, isPopular && { color: '#10b981' }]}>(Save 67%)</Text>
                 )}
                 
                 <Text style={[styles.packageDescription, isPopular && { color: '#d1d5db' }]}>
@@ -220,7 +219,7 @@ export default function RevenueCatScreen() {
                   <ActivityIndicator color={isPopular ? "#ffffff" : "#003049"} size="small" />
                 ) : (
                   <Text style={[styles.packageButtonText, isPopular && { color: '#ffffff' }]}>
-                    {isPopular ? 'Start Free Trial' : 'Subscribe Now'}
+                    {pkg.packageType === 'ANNUAL' ? 'Start Free Trial' : 'Start Monthly Plan'}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -266,11 +265,29 @@ export default function RevenueCatScreen() {
           <Text style={styles.legalText}>
             Subscriptions auto-renew unless cancelled. Cancel anytime in Settings.
           </Text>
-          <Text style={styles.legalText}>
-            By continuing, you agree to our Terms of Service and Privacy Policy.
-          </Text>
+          <View style={styles.legalLinksContainer}>
+            <Text style={styles.legalText}>By continuing, you agree to our </Text>
+            <TouchableOpacity onPress={() => setShowTermsModal(true)}>
+              <Text style={styles.legalLink}>Terms of Service</Text>
+            </TouchableOpacity>
+            <Text style={styles.legalText}> and </Text>
+            <TouchableOpacity onPress={() => setShowPrivacyModal(true)}>
+              <Text style={styles.legalLink}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <Text style={styles.legalText}>.</Text>
+          </View>
         </View>
       </ScrollView>
+      
+      {/* Modals */}
+      <PrivacyPolicyModal 
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+      />
+      <TermsOfServiceModal 
+        visible={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -419,6 +436,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
     marginBottom: 8,
+  },
+  legalLinksContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legalLink: {
+    fontSize: 12,
+    color: '#003049',
+    textDecorationLine: 'underline',
+    fontWeight: '500',
   },
   // Loading and error states
   loadingContainer: {

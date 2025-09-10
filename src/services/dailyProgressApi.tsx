@@ -5,12 +5,17 @@ export interface LevelProgress {
   levelId: number
   levelNumber: number
   levelName: string
-  gamesPlayed: number
-  questionsAnswered: number
-  correctAnswers: number
-  accuracy: number
+  currentStreak: number
   maxStreak: number
-  timePlayedMs: number
+  overallAccuracy: number
+  totalGamesPlayed: number
+  totalAttempts: number
+  correctAnswers: number
+  lastPlayedAt: string
+  dailyGamesPlayed: number
+  dailyAccuracy: number
+  dailyMaxStreak: number
+  dailyTimePlayedMs: number
 }
 
 export interface OverallDaily {
@@ -22,6 +27,16 @@ export interface OverallDaily {
   accuracy: number
 }
 
+export interface OverallUserStats {
+  totalAttempts: number
+  correctAnswers: number
+  overallAccuracy: number
+  currentStreak: number
+  maxStreak: number
+  totalGamesPlayed: number
+  lastPlayedAt: string
+}
+
 export interface ProgressSummary {
   levelsPlayed: number
   totalLevelsAvailable: number
@@ -30,6 +45,7 @@ export interface ProgressSummary {
 
 export interface DailyProgressData {
   date: string
+  overallUserStats: OverallUserStats
   levelProgress: LevelProgress[]
   overallDaily: OverallDaily
   summary: ProgressSummary
@@ -131,6 +147,15 @@ console
           // Add empty data for failed dates
           successfulResults.push({
             date: dates[index],
+            overallUserStats: {
+              totalAttempts: 0,
+              correctAnswers: 0,
+              overallAccuracy: 0,
+              currentStreak: 0,
+              maxStreak: 0,
+              totalGamesPlayed: 0,
+              lastPlayedAt: ""
+            },
             levelProgress: [],
             overallDaily: {
               totalGamesPlayed: 0,
@@ -248,7 +273,7 @@ export const dailyProgressUtils = {
       if (selectedLevel) {
         const levelProgress = dailyProgressUtils.getLevelProgress(data.levelProgress, selectedLevel)
         streak = levelProgress?.maxStreak || 0
-        accuracy = levelProgress?.accuracy || 0
+        accuracy = levelProgress?.overallAccuracy || 0
       } else {
         streak = data.overallDaily.maxStreak
         accuracy = data.overallDaily.accuracy
@@ -268,7 +293,7 @@ export const dailyProgressUtils = {
       const levelProgress = dailyProgressUtils.getLevelProgress(progressData.levelProgress, selectedLevel)
       return {
         streak: levelProgress?.maxStreak || 0,
-        accuracy: levelProgress?.accuracy || 0
+        accuracy: levelProgress?.overallAccuracy || 0
       }
     }
     

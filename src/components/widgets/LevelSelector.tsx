@@ -2,7 +2,7 @@ import { View, TouchableOpacity, Text } from "react-native"
 import { useState } from "react"
 
 interface LevelSelectorProps {
-  selectedLevel: number
+  selectedLevel: number | null
   onLevelChange: (level: number) => void
   maxLevel?: number
   disabled?: boolean

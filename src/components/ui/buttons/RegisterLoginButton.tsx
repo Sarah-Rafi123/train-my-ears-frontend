@@ -24,7 +24,7 @@ export default function RegisterLoginButton({ onPress, className = "" }: Registe
       }}
     >
       {/* Assuming PersonSvg accepts width and height props for scaling */}
-      <PersonSvg width={responsiveValue(20)} height={responsiveValue(20)} />
+      <PersonSvg />
       <Text
         className="text-white font-sans ml-2"
         style={{

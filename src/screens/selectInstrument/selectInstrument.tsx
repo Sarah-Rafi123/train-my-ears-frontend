@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, SafeAreaView, Image, Alert, Platform, Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, SafeAreaView, Image, Alert, Platform, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '@/src/context/AuthContext';
 import BackButton from '@/src/components/ui/buttons/BackButton';
 import InstrumentCard from '@/src/components/widgets/InstrumentCard';
+import InstrumentCardSkeleton from '@/src/components/ui/skeletons/InstrumentCardSkeleton';
 import { instrumentsApi, type Instrument } from '@/src/services/instrumentApi';
 import musicbg from '@/src/assets/images/musicbg.png';
 import LogoutSvg from '@/src/assets/svgs/Logout'; // Import LogoutSvg
@@ -25,15 +26,21 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   const [error, setError] = useState<string | null>(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
 
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
+  const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
 
-  const BASE_WIDTH = 375; // Base width for scaling (e.g., iPhone 8)
-  const BASE_HEIGHT = 667; // Base height for scaling
+  // Define a base width and height for scaling (e.g., iPhone 8 dimensions)
+  const BASE_WIDTH = 375;
+  const BASE_HEIGHT = 667;
+
+  // Calculate scale factors for width and height
   const widthScale = screenWidth / BASE_WIDTH;
   const heightScale = screenHeight / BASE_HEIGHT;
-  const responsiveScale = Math.min(widthScale, heightScale); // Use smaller scale for better fit
 
+  // Use the smaller scale factor to ensure elements don't become too large on very wide/tall screens
+  const responsiveScale = Math.min(widthScale, heightScale);
+
+  // Utility function to apply responsive scaling to a value
   const responsiveValue = (value: number) => Math.round(value * responsiveScale);
 
   const titleStyle = {
@@ -258,18 +265,18 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       <View
         className="w-full"
         style={{
-          height: responsiveValue(150), // h-64
-          marginTop: responsiveValue(112), // mt-28
+          height: responsiveValue(150),
+          marginTop: responsiveValue(112),
         }}
       >
         <Image source={musicbg} className="w-full h-full" resizeMode="contain" />
       </View>
 
       <View
-        className="flex-1 px-6 pt-8"
+        className="flex-1"
         style={{
-          paddingHorizontal: responsiveValue(24), // px-6
-          paddingTop: responsiveValue(32), // pt-8
+          paddingHorizontal: 24,
+          paddingTop: responsiveValue(32),
         }}
       >
         <View
@@ -287,19 +294,31 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
         </View>
         {loading && (
           <View
-            className="mb-16 items-center"
             style={{
-              marginBottom: responsiveValue(64), // mb-16
+              marginBottom: responsiveValue(64),
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 16,
             }}
           >
-            <Text
-              className="text-[#003049]"
-              style={{
-                fontSize: responsiveValue(18), // text-lg
-              }}
-            >
-              Loading instruments...
-            </Text>
+            <View style={{ width: '100%' }}>
+              <InstrumentCardSkeleton />
+            </View>
+            <View style={{ width: '100%' }}>
+              <InstrumentCardSkeleton />
+            </View>
+            <View className='justify-center items-center mt-4 flex' style={{
+              width: '100%',
+              marginTop: 16,
+            }}>
+              {token && (
+                <TouchableOpacity style={styles.logoutButton} disabled>
+                  <LogoutSvg />
+                  <Text style={[styles.logoutText, { opacity: 0.5 }]}>Logout</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
         {error && !loading && (
@@ -339,21 +358,31 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
         )}
         {!loading && !error && (
           <View
-            className="mb-16"
             style={{
-              marginBottom: responsiveValue(64), // mb-16
+              marginBottom: responsiveValue(64),
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 16,
             }}
           >
-            <InstrumentCard instrument="guitar" onPress={() => handleInstrumentSelect('guitar')} />
-            <InstrumentCard instrument="piano" onPress={() => handleInstrumentSelect('piano')} />
-              <View className='justify-center items-center mt-4 flex'>
-                  {token && (
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <LogoutSvg />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
-        )}
-              </View>
+            <View style={{ width: '100%' }}>
+              <InstrumentCard instrument="guitar" onPress={() => handleInstrumentSelect('guitar')} />
+            </View>
+            <View style={{ width: '100%' }}>
+              <InstrumentCard instrument="piano" onPress={() => handleInstrumentSelect('piano')} />
+            </View>
+            <View className='justify-center items-center mt-4 flex' style={{
+              width: '100%',
+              marginTop: 16,
+            }}>
+              {token && (
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                  <LogoutSvg />
+                  <Text style={styles.logoutText}>Logout</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
       </View>

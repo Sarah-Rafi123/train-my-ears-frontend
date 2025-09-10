@@ -159,11 +159,11 @@ export default function MenuScreen({
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="pt-4 px-4 gap-y-2">
           <MenuOption title="My Stats" onPress={handleViewStats} />
-          <MenuOption title="Advanced Play" onPress={handleAdvanceMode} />
+          <MenuOption title="Chord Progression" onPress={handleAdvanceMode} />
           <MenuOption title="Sample Chords" onPress={handleViewSample} />
           <MenuOption title="Leader Board" onPress={handleLeaderboard} />
           {user && <MenuOption title="Subscription" onPress={handleSubscription} />}
-          {user && canCancelSubscription && <MenuOption title="Cancel Subscription" onPress={handleCancelSubscription} />}
+          {/* {user && canCancelSubscription && <MenuOption title="Cancel Subscription" onPress={handleCancelSubscription} />} */}
           <MenuOption title="Share" onPress={handleShare} />
           <MenuOption title="Share Feedback" onPress={handleShareFeedback} />
           {/* Small text for View Feedback */}

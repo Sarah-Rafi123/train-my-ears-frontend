@@ -123,7 +123,7 @@ export default function FeedbackModal({ visible, onClose, userEmail }: FeedbackM
                   <Text className="text-sm text-gray-600">
                     {isAnonymous
                       ? "Your email will not be included with this feedback"
-                      : "Your email will be included so we can follow up if needed"}
+                      : "Include my email so the team can follow up if needed."}
                   </Text>
                 </View>
                 <Switch

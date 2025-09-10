@@ -25,6 +25,7 @@ import { SubscriptionModal } from "@/src/components/ui/modal/subscription-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
+import GameSkeleton from "@/src/components/ui/skeletons/GameSkeleton"
 
 interface GameScreenProps {
   navigation: any
@@ -472,10 +473,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
         <View className="flex-row items-center px-6 py-4">
           <BackButton onPress={onBack} />
         </View>
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#003049" />
-          <Text className="mt-4 text-[#003049] text-lg">Loading game...</Text>
-        </View>
+        <GameSkeleton />
       </SafeAreaView>
     )
   }
@@ -519,8 +517,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
               label="Correct/Total"
               size="large"
               showFraction={true}
-              numerator={currentStats.correctAnswers || 0}
-              denominator={currentStats.totalAttempts || 0}
+              numerator={currentStats.correctAnswers || currentStats.correctAnswers}
+              denominator={currentStats.totalAttempts || currentStats.totalAttempts}
             />
           </View>
           {/* Play Again Button */}

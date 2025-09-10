@@ -31,6 +31,7 @@ import StatCard from "@/src/components/widgets/StatsCard"
 import { debounce } from "@/src/lib/utils"
 import { LevelStatsService, type LevelStats } from "@/src/services/levelStatsService"
 import { BASE_URL } from "@/src/constants/urls.constant"
+import GameSkeleton from "@/src/components/ui/skeletons/GameSkeleton"
 
 interface AdvancedGameScreenProps {
   onBack?: () => void
@@ -886,10 +887,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
         <View className="flex-row items-center px-6 py-4">
           <BackButton onPress={onBack} />
         </View>
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#003049" />
-          <Text className="mt-4 text-[#003049] text-lg">Loading advanced game...</Text>
-        </View>
+        <GameSkeleton />
       </SafeAreaView>
     )
   }
@@ -938,7 +936,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
             />
             <StatCard
               showFraction={true}
-              numerator={levelStats?.wins || currentStats.correctAnswers}
+              numerator={levelStats?.correctAnswers || currentStats.correctAnswers}
               denominator={levelStats?.totalAttempts || currentStats.totalAttempts}
               label="Correct/Total"
               size="large"

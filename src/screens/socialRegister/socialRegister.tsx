@@ -8,6 +8,8 @@ import BackButton from "@/src/components/ui/buttons/BackButton"
 import SocialButton from "@/src/components/ui/buttons/SocialButton"
 import { useEffect, useState } from "react"
 import { useClerk } from "@clerk/clerk-expo"
+import PrivacyPolicyModal from "@/src/components/ui/modals/PrivacyPolicyModal"
+import TermsOfServiceModal from "@/src/components/ui/modals/TermsOfServiceModal"
 
 export const useWarmUpBrowser = () => {
   useEffect(() => {
@@ -26,6 +28,8 @@ export default function SocialRegisterScreen() {
   const navigation = useNavigation()
   const { signOut, user } = useClerk()
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
 
   const handleLoadingChange = (provider: string) => (loading: boolean) => {
     setLoadingProvider(loading ? provider : null)
@@ -105,14 +109,38 @@ export default function SocialRegisterScreen() {
                 <Text className="text-blue-500 text-2xl font-semibold">Sign In</Text>
               </TouchableOpacity>
             </View>
-            <Text className="text-[#797979] font-sans text-xl text-center mt-10">
-              By signing up you agree to our{"\n"}
-              Terms of Service and acknowledge that you have{"\n"}
-              read our Privacy Policy
-            </Text>
+            <View className="mt-10 items-center">
+              <Text className="text-[#797979] text-lg text-center px-4">
+                By signing up you agree to our{" "}
+                <Text 
+                  className="text-[#003049] text-lg underline font-medium"
+                  onPress={() => setShowTermsModal(true)}
+                >
+                  Terms of Service
+                </Text>
+                {" "}and acknowledge that you have read our{" "}
+                <Text 
+                  className="text-[#003049] text-lg underline font-medium"
+                  onPress={() => setShowPrivacyModal(true)}
+                >
+                  Privacy Policy
+                </Text>
+                .
+              </Text>
+            </View>
           </View>
         </View>
       </View>
+      
+      {/* Modals */}
+      <PrivacyPolicyModal 
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+      />
+      <TermsOfServiceModal 
+        visible={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
     </SafeAreaView>
   )
 }
