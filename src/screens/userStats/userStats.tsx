@@ -34,7 +34,7 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
 
   // Utility function to apply responsive scaling to a value
   const responsiveValue = (value: number) => Math.round(value * responsiveScale)
-  const [selectedLevel, setSelectedLevel] = useState<number | null>(null)
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(1)
   const [todayProgressData, setTodayProgressData] = useState<DailyProgressData | null>(null)
   const [historicalProgressData, setHistoricalProgressData] = useState<DailyProgressData[]>([])
   const [loading, setLoading] = useState(false)
@@ -141,9 +141,16 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
       
       console.log(`📊 [UserStats] Calling getMultipleDaysProgress...`)
       const historicalData = await dailyProgressApi.getMultipleDaysProgress(userId, last5Days, level)
-      console.log(`📊 [UserStats] getMultipleDaysProgress returned ${historicalData.length} items`)
+      console.log(`📊 [UserStats] getMultipleDaysProgress returned ${historicalData?.length || 0} items`)
       
-      setHistoricalProgressData(historicalData)
+      // Debug: log each historical data item
+      if (historicalData) {
+        historicalData.forEach((item, index) => {
+          console.log(`📊 [UserStats] Historical data ${index}: date=${item.date}, streak=${item.dailySummary?.maxStreak || 0}, accuracy=${item.dailySummary?.accuracy || 0}`)
+        })
+      }
+      
+      setHistoricalProgressData(historicalData || [])
       console.log(`✅ [UserStats] Successfully loaded last 5 days progress data`)
       
     } catch (err) {
@@ -162,11 +169,11 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
     if (userId) {
       console.log('📊 [UserStats] Starting initial data fetch for userId:', userId)
       
-      // Fetch today's progress first (fast)
-      fetchTodayProgress()
+      // Fetch today's progress for level 1 (fast)
+      fetchTodayProgress(1)
       
-      // Fetch history data separately (slower)
-      fetchHistoryData()
+      // Fetch history data for level 1 (slower)
+      fetchHistoryData(1)
       
       // Fallback to prevent infinite loading - set timeout for 10 seconds
       const loadingTimeout = setTimeout(() => {
@@ -205,17 +212,17 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
     
     if (selectedLevel) {
       // Get level-specific data
-      const levelProgress = todayProgressData.levelProgress.find(
+      const levelProgress = todayProgressData.dailyProgress?.find(
         level => level.levelId === selectedLevel
       )
       
       if (levelProgress) {
         return {
-          streak: levelProgress.maxStreak,
-          accuracy: levelProgress.overallAccuracy,
-          totalGamesPlayed: levelProgress.totalGamesPlayed,
-          totalAttempts: levelProgress.totalAttempts,
-          correctAnswers: levelProgress.correctAnswers
+          streak: levelProgress.dailyMaxStreak,
+          accuracy: levelProgress.dailyAccuracy,
+          totalGamesPlayed: levelProgress.dailyGamesPlayed,
+          totalAttempts: levelProgress.dailyTotalQuestions,
+          correctAnswers: levelProgress.dailyCorrectAnswers
         }
       } else {
         // Level data not found - return zeros for all fields
@@ -232,16 +239,24 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
     
     // Use overall stats when no level is selected
     return {
-      streak: todayProgressData.overallUserStats?.maxStreak || 0,
-      accuracy: todayProgressData.overallUserStats?.overallAccuracy || 0,
-      totalGamesPlayed: todayProgressData.overallUserStats?.totalGamesPlayed || 0,
-      totalAttempts: todayProgressData.overallUserStats?.totalAttempts || 0,
-      correctAnswers: todayProgressData.overallUserStats?.correctAnswers || 0
+      streak: todayProgressData.userOverallStats?.maxStreak || 0,
+      accuracy: todayProgressData.userOverallStats?.overallAccuracy || 0,
+      totalGamesPlayed: todayProgressData.userOverallStats?.totalGamesPlayed || 0,
+      totalAttempts: todayProgressData.userOverallStats?.totalAttempts || 0,
+      correctAnswers: todayProgressData.userOverallStats?.correctAnswers || 0
     }
   }
 
   // Convert historical data to history table format (last 5 days)
-  const historyData = dailyProgressUtils.convertToHistoryData(historicalProgressData, selectedLevel ?? undefined)
+  const historyData = dailyProgressUtils.convertToHistoryData(historicalProgressData, selectedLevel ?? undefined) || []
+  
+  // Debug: log the final history data that will be displayed
+  console.log(`📊 [UserStats] Final history data for display:`)
+  if (historyData && historyData.length > 0) {
+    historyData.forEach((entry, index) => {
+      console.log(`📊 [UserStats] History entry ${index}: date="${entry.date}", streak=${entry.streak}, accuracy="${entry.accuracy}"`)
+    })
+  }
 
   const todayProgressValues = getTodayProgressValues()
 
@@ -345,7 +360,7 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
                           <Text className="text-gray-500 text-center">Loading history...</Text>
                         </View>
                       ) : historyData.length > 0 ? (
-                        [...historyData].reverse().map((entry, index) => (
+                        historyData.map((entry, index) => (
                           <View
                             key={`${entry.date}-${index}`}
                             className={`flex-row py-4 px-6 ${index !== historyData.length - 1 ? "border-b border-gray-100" : ""}`}

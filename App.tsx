@@ -20,6 +20,29 @@ import AsyncStorage from "@react-native-async-storage/async-storage" // Import A
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av"
 
 Purchases.setLogLevel(Purchases.LOG_LEVEL.VERBOSE)
+
+// Disable development menu comprehensively
+try {
+  // Always try to disable dev menu regardless of environment
+  const DevMenu = require('expo-dev-menu')
+  if (DevMenu && DevMenu.disableMenu) {
+    DevMenu.disableMenu()
+    console.log('✅ Development menu disabled')
+  }
+} catch (error) {
+  console.log('ℹ️ Dev menu not available or already disabled')
+}
+
+// Also disable any development launcher overlays
+try {
+  const DevLauncher = require('expo-dev-launcher')
+  if (DevLauncher && DevLauncher.isDevLauncherEnabled) {
+    DevLauncher.isDevelopmentBuild = false
+  }
+} catch (error) {
+  console.log('ℹ️ Dev launcher not available')
+}
+
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync()
 

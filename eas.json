@@ -7,6 +7,10 @@
     "development": {
       "developmentClient": false,
       "distribution": "internal",
+      "env": {
+        "EXPO_NO_DEV_MENU": "1",
+        "EXPO_NO_DEV_LAUNCHER": "1"
+      },
       "android": {
         "buildType": "apk"
       },

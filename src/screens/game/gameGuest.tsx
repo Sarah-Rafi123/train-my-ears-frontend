@@ -1,7 +1,7 @@
 "use client"
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { View, Text, ScrollView, ActivityIndicator } from "react-native"
+import { View, Text, ScrollView } from "react-native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
 import { useAuth } from "@/src/context/AuthContext"
 
@@ -25,6 +25,7 @@ import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
 import { GuestStatsService, type GuestStats } from "@/src/services/guestStatsService"
+import GameSkeleton from "@/src/components/ui/skeletons/GameSkeleton"
 
 interface GameGuestScreenProps {
   navigation: any
@@ -226,6 +227,7 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({
           isWin,
           updatedStats,
         })
+        console.log(`🔥 GameGuestScreen: Setting guestStats.streak to: ${updatedStats.streak}`)
       }
 
       updateStats()
@@ -395,10 +397,7 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({
         <View className="flex-row items-center px-6 py-4">
           <BackButton onPress={onBack} />
         </View>
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#003049" />
-          <Text className="mt-4 text-[#003049] text-lg">Loading game...</Text>
-        </View>
+        <GameSkeleton />
       </SafeAreaView>
     )
   }

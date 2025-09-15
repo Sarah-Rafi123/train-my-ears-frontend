@@ -45,10 +45,15 @@ export interface ProgressSummary {
 
 export interface DailyProgressData {
   date: string
-  overallUserStats: OverallUserStats
-  levelProgress: LevelProgress[]
-  overallDaily: OverallDaily
-  summary: ProgressSummary
+  dateFormatted: string
+  userOverallStats: OverallUserStats
+  dailyProgress: LevelProgress[]
+  dailySummary: OverallDaily
+  metadata: {
+    requestedDate: string
+    levelFilter?: number
+    totalLevelsAvailable: number
+  }
 }
 
 export interface DailyProgressMetadata {
@@ -135,19 +140,29 @@ console
 
       const results = await Promise.allSettled(promises)
       
-      const successfulResults: DailyProgressData[] = []
+      const mappedResults: DailyProgressData[] = []
       
-      results.forEach((result, index) => {
+      // Create explicit mapping between requested dates and results
+      dates.forEach((requestedDate, index) => {
+        const result = results[index]
+        
         if (result.status === 'fulfilled' && result.value.success) {
-          successfulResults.push(result.value.data.progress)
-        } else {
-          console.warn(`❌ Failed to get progress for date ${dates[index]}:`, 
-            result.status === 'rejected' ? result.reason : 'API returned unsuccessful response')
+          console.log(`✅ Got data for ${requestedDate}:`, result.value.data.progress)
           
-          // Add empty data for failed dates
-          successfulResults.push({
-            date: dates[index],
-            overallUserStats: {
+          // Create a new object with the requested date to ensure correctness
+          const progressData: DailyProgressData = {
+            ...result.value.data.progress,
+            date: requestedDate // Force the date to be the requested date
+          }
+          mappedResults.push(progressData)
+        } else {
+          console.warn(`❌ No data for ${requestedDate}, using empty data`)
+          
+          // Add empty data for dates without data
+          mappedResults.push({
+            date: requestedDate,
+            dateFormatted: requestedDate,
+            userOverallStats: {
               totalAttempts: 0,
               correctAnswers: 0,
               overallAccuracy: 0,
@@ -156,8 +171,8 @@ console
               totalGamesPlayed: 0,
               lastPlayedAt: ""
             },
-            levelProgress: [],
-            overallDaily: {
+            dailyProgress: [],
+            dailySummary: {
               totalGamesPlayed: 0,
               totalQuestions: 0,
               totalCorrectAnswers: 0,
@@ -165,17 +180,20 @@ console
               totalTimePlayedMs: 0,
               accuracy: 0
             },
-            summary: {
-              levelsPlayed: 0,
-              totalLevelsAvailable: 4,
-              hasPlayedToday: false
+            metadata: {
+              requestedDate: requestedDate,
+              totalLevelsAvailable: 4
             }
           })
         }
       })
 
-      console.log(`✅ Retrieved progress for ${successfulResults.length}/${dates.length} days`)
-      return successfulResults
+      console.log(`✅ Mapped ${mappedResults.length}/${dates.length} days with correct dates`)
+      mappedResults.forEach(result => {
+        console.log(`📅 Date: ${result.date}, Max Streak: ${result.overallDaily?.maxStreak || 0}, Accuracy: ${result.overallDaily?.accuracy || 0}`)
+      })
+      
+      return mappedResults
     } catch (error) {
       console.error("💥 Get multiple days progress error:", error)
       throw error
@@ -257,8 +275,8 @@ export const dailyProgressUtils = {
   },
 
   // Get level-specific progress
-  getLevelProgress: (levelProgress: LevelProgress[], levelId: number): LevelProgress | null => {
-    return levelProgress.find(progress => progress.levelId === levelId) || null
+  getLevelProgress: (dailyProgress: LevelProgress[], levelId: number): LevelProgress | null => {
+    return dailyProgress.find(progress => progress.levelId === levelId) || null
   },
 
   // Convert progress data to history table format
@@ -266,40 +284,62 @@ export const dailyProgressUtils = {
     progressDataArray: DailyProgressData[], 
     selectedLevel?: number
   ): {date: string, streak: number, accuracy: string}[] => {
-    return progressDataArray.map(data => {
+    console.log(`📊 [convertToHistoryData] Processing ${progressDataArray.length} items, selectedLevel: ${selectedLevel}`)
+    
+    const result = progressDataArray.map((data, index) => {
       let streak = 0
       let accuracy = 0
       
+      console.log(`📊 [convertToHistoryData] Item ${index}: date=${data.date}, dailySummary=${JSON.stringify(data.dailySummary)}, dailyProgress.length=${data.dailyProgress.length}`)
+      
       if (selectedLevel) {
-        const levelProgress = dailyProgressUtils.getLevelProgress(data.levelProgress, selectedLevel)
-        streak = levelProgress?.maxStreak || 0
-        accuracy = levelProgress?.overallAccuracy || 0
+        const levelProgress = dailyProgressUtils.getLevelProgress(data.dailyProgress, selectedLevel)
+        console.log(`📊 [convertToHistoryData] Level ${selectedLevel} progress for date ${data.date}:`, levelProgress)
+        
+        if (levelProgress) {
+          // Use level-specific DAILY data for history (not overall cumulative data)
+          streak = levelProgress.dailyMaxStreak || 0
+          accuracy = levelProgress.dailyAccuracy || 0
+          console.log(`📊 [convertToHistoryData] Using level DAILY data: dailyMaxStreak=${streak}, dailyAccuracy=${accuracy}`)
+        } else {
+          // No data for this level on this date - use zeros
+          streak = 0
+          accuracy = 0
+          console.log(`📊 [convertToHistoryData] No level ${selectedLevel} data for ${data.date}, using zeros`)
+        }
       } else {
-        streak = data.overallDaily.maxStreak
-        accuracy = data.overallDaily.accuracy
+        streak = data.dailySummary.maxStreak
+        accuracy = data.dailySummary.accuracy
+        console.log(`📊 [convertToHistoryData] Using overall daily data: streak=${streak}, accuracy=${accuracy}`)
       }
       
-      return {
+      const formattedEntry = {
         date: dailyProgressUtils.formatDateForDisplay(data.date),
         streak,
         accuracy: dailyProgressUtils.formatAccuracy(accuracy)
       }
-    }).reverse() // Show most recent first
+      
+      console.log(`📊 [convertToHistoryData] Formatted entry ${index}:`, formattedEntry)
+      return formattedEntry
+    }) // Show most recent first (already in correct order from API)
+    
+    console.log(`📊 [convertToHistoryData] Final result:`, result)
+    return result
   },
 
   // Get display values for progress cards (today's data)
   getProgressCardValues: (progressData: DailyProgressData, selectedLevel?: number) => {
     if (selectedLevel) {
-      const levelProgress = dailyProgressUtils.getLevelProgress(progressData.levelProgress, selectedLevel)
+      const levelProgress = dailyProgressUtils.getLevelProgress(progressData.dailyProgress, selectedLevel)
       return {
-        streak: levelProgress?.maxStreak || 0,
-        accuracy: levelProgress?.overallAccuracy || 0
+        streak: levelProgress?.dailyMaxStreak || 0,
+        accuracy: levelProgress?.dailyAccuracy || 0
       }
     }
     
     return {
-      streak: progressData.overallDaily.maxStreak,
-      accuracy: progressData.overallDaily.accuracy
+      streak: progressData.dailySummary.maxStreak,
+      accuracy: progressData.dailySummary.accuracy
     }
   }
 }

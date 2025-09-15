@@ -1,5 +1,5 @@
 "use client"
-import { View, Text, ScrollView, ActivityIndicator, Dimensions , TouchableOpacity } from "react-native"
+import { View, Text, ScrollView, Dimensions , TouchableOpacity, ActivityIndicator } from "react-native"
 import { useState, useEffect, useRef } from "react"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { useAppDispatch, useAppSelector } from "@/src/hooks/redux"
@@ -29,6 +29,7 @@ import { Feather } from "@expo/vector-icons"
 import StatCard from "@/src/components/widgets/StatsCard"
 import { debounce } from "@/src/lib/utils"
 import { GuestStatsService, type GuestStats } from "@/src/services/guestStatsService"
+import GameSkeleton from "@/src/components/ui/skeletons/GameSkeleton"
 
 interface AdvancedGameGuestScreenProps {
   onBack?: () => void
@@ -323,30 +324,20 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
         const newWins = currentGuestStats.wins + correctChords // Each correct chord counts as a win
         const newAccuracy = newTotalAttempts > 0 ? Math.round((newCorrectAnswers / newTotalAttempts) * 100) : 0
         
-        // Handle streak logic
-        const today = new Date().toISOString().split("T")[0]
-        const lastPlayedDate = currentGuestStats.lastPlayedDate
+        // Handle consecutive correct answers streak logic
+        // For advanced game: if all chords in sequence are correct, increment streak
+        // If any chord is wrong, reset streak to 0
         let newStreak = currentGuestStats.streak
         
-        if (lastPlayedDate) {
-          const lastPlayed = new Date(lastPlayedDate)
-          const todayDate = new Date(today)
-          const daysDifference = Math.floor((todayDate.getTime() - lastPlayed.getTime()) / (1000 * 60 * 60 * 24))
-          
-          if (daysDifference === 0) {
-            // Same day, keep streak
-            newStreak = currentGuestStats.streak
-          } else if (daysDifference === 1 && correctChords > 0) {
-            // Next day and got at least one chord correct, increment streak
-            newStreak = currentGuestStats.streak + 1
-          } else if (daysDifference > 1 || correctChords === 0) {
-            // Skipped days or got no chords correct, reset streak
-            newStreak = correctChords > 0 ? 1 : 0
-          }
+        if (gameResult.isCorrect) {
+          // Full sequence correct: increment streak by 1
+          newStreak = currentGuestStats.streak + 1
         } else {
-          // First time playing
-          newStreak = correctChords > 0 ? 1 : 0
+          // Any chord wrong: reset streak to 0
+          newStreak = 0
         }
+        
+        const today = new Date().toISOString().split("T")[0]
         
         // Track games played separately (each sequence = 1 game)
         const newGamesPlayed = (currentGuestStats.gamesPlayed || 0) + 1
@@ -693,10 +684,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
         <View className="flex-row items-center px-6 py-4">
           <BackButton onPress={onBack} />
         </View>
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#003049" />
-          <Text className="mt-4 text-[#003049] text-lg">Loading advanced game...</Text>
-        </View>
+        <GameSkeleton />
       </SafeAreaView>
     )
   }
@@ -755,7 +743,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
               accessibilityLabel={showResult ? "Play Again" : "Play Sequence"}
             >
               {isPlayingSequence || isLoading || isInitializing ? (
-                <ActivityIndicator size="small" color="white" />
+                <GameSkeleton />
               ) : (
                 <Feather name={showResult ? "play" : "refresh-cw"} size={20} color="white" />
               )}
@@ -802,7 +790,6 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
               </View>
             </View>
           )}
-        {/* Game Result Feedback */}
         {showResult && gameResult && (
           <View className="px-6 mb-6">
             {(() => {
@@ -824,7 +811,6 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
             })()}
           </View>
         )}
-        {/* Chord Selection Grid */}
         {currentGameRound && (
           <View className="px-6 mb-6">
             {organizeChordRows(currentGameRound.chordPool).map((row, rowIndex) => (

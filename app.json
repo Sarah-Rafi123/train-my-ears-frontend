@@ -75,6 +75,13 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "developmentClient": {
+      "silentLaunch": true
+    },
+    "jsEngine": "hermes",
+    "__internal__": {
+      "isDebug": false
     }
   }
 }

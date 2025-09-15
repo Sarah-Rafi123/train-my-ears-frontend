@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export interface GuestStats {
   accuracy: number
-  streak: number
+  streak: number // Consecutive correct answers streak
   totalAttempts: number
   correctAnswers: number
   lastPlayedDate: string
@@ -84,30 +84,22 @@ export class GuestStatsService {
       // Calculate new accuracy
       const newAccuracy = newTotalAttempts > 0 ? Math.round((newCorrectAnswers / newTotalAttempts) * 100) : 0
 
-      // Handle streak logic
-      const today = new Date().toISOString().split("T")[0] // YYYY-MM-DD format
-      const lastPlayedDate = currentStats.lastPlayedDate
+      // Handle consecutive correct answers streak logic
       let newStreak = currentStats.streak
-
-      if (lastPlayedDate) {
-        const lastPlayed = new Date(lastPlayedDate)
-        const todayDate = new Date(today)
-        const daysDifference = Math.floor((todayDate.getTime() - lastPlayed.getTime()) / (1000 * 60 * 60 * 24))
-
-        if (daysDifference === 0) {
-          // Same day, keep streak
-          newStreak = currentStats.streak
-        } else if (daysDifference === 1 && isWin) {
-          // Next day and won, increment streak
-          newStreak = currentStats.streak + 1
-        } else if (daysDifference > 1 || !isWin) {
-          // Skipped days or lost, reset streak
-          newStreak = isWin ? 1 : 0
-        }
+      
+      console.log(`🔥 GuestStatsService: Streak logic - Current streak: ${currentStats.streak}, isCorrect: ${isCorrect}`)
+      
+      if (isCorrect) {
+        // Correct answer: increment streak by 1
+        newStreak = currentStats.streak + 1
+        console.log(`🔥 GuestStatsService: Correct answer! New streak: ${newStreak}`)
       } else {
-        // First time playing
-        newStreak = isWin ? 1 : 0
+        // Wrong answer: reset streak to 0
+        newStreak = 0
+        console.log(`🔥 GuestStatsService: Wrong answer! Reset streak to: ${newStreak}`)
       }
+
+      const today = new Date().toISOString().split("T")[0] // YYYY-MM-DD format
 
       // Create updated stats
       const updatedStats: GuestStats = {
@@ -129,6 +121,7 @@ export class GuestStatsService {
       await this.saveGuestStats(updatedGameStats)
 
       console.log(`📊 GuestStatsService: Updated ${gameMode} stats:`, updatedStats)
+      console.log(`🔥 GuestStatsService: Final streak being returned: ${updatedStats.streak}`)
       return updatedStats
     } catch (error) {
       console.error("❌ GuestStatsService: Error updating game stats:", error)
