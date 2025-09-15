@@ -414,9 +414,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
     })
     onMoreDetails?.()
     navigation.navigate("Menu" as never, {
-      accuracy: currentStats.accuracy.toFixed(1) + "%",
+      accuracy: (currentStats?.accuracy || 0).toFixed(1) + "%",
       level: currentLevel,
-      streaks: currentStats.streak,
+      streaks: currentStats?.streak || 0,
       selectedNote: selectedChordId,
       gameResult: gameResult?.isCorrect ? "correct" : "incorrect",
       isGuestMode: !finalUserId,
@@ -509,16 +509,16 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation, route, onBack, onMo
         <View className="bg-[#E5EAED80] rounded-3xl m-4">
           {/* Stats Row - Using Redux stats for immediate updates */}
           <View className="flex-row justify-center mb-6 gap-x-2">
-            <StatCard value={Math.round(currentStats.accuracy) + "%"} label="Accuracy" size="large" />
-            <StatCard value={currentLevel.toString()} label="Level" size="large" valueColor="dark" />
-            <StatCard value={currentStats.streak.toString()} label="Streaks" size="large" />
+            <StatCard value={Math.round(currentStats?.accuracy || 0) + "%"} label="Accuracy" size="large" />
+            <StatCard value={(currentLevel || 1).toString()} label="Level" size="large" valueColor="dark" />
+            <StatCard value={(currentStats?.streak || 0).toString()} label="Streaks" size="large" />
             <StatCard
               value="" // Not used when showFraction is true
               label="Correct/Total"
               size="large"
               showFraction={true}
-              numerator={currentStats.correctAnswers || currentStats.correctAnswers}
-              denominator={currentStats.totalAttempts || currentStats.totalAttempts}
+              numerator={currentStats?.correctAnswers || 0}
+              denominator={currentStats?.totalAttempts || 0}
             />
           </View>
           {/* Play Again Button */}
