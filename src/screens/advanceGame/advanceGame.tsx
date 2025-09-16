@@ -14,7 +14,6 @@ import {
   addToSequence,
   removeFromSequence,
   clearRoundData, // Import the new action
-  resetGame, // Import resetGame
 } from "@/src/store/slices/advancedGameSlice"
 import { audioService } from "@/src/services/audioService"
 import BackButton from "@/src/components/ui/buttons/BackButton"
@@ -84,8 +83,6 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const lastPlayedRoundIdRef = useRef<string | null>(null)
   // Use a ref to track the previous game round ID to detect actual changes
   const prevGameRoundIdRef = useRef<string | null>(null)
-  // NEW STATE: To signal when UI is ready for a specific game round
-  const [uiReadyForRoundId, setUiReadyForRoundId] = useState<string | null>(null)
 
   // Get route params
   const routeParams = route.params as any
@@ -154,11 +151,13 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }, [finalUserId, currentLevel])
 
-  // Component mount effect to reset state
+  // Component mount effect to reset state and ensure level 1 start
   useEffect(() => {
-    console.log("🎮 AdvancedGameScreen: Component mounted, resetting state...")
+    console.log("🎮 AdvancedGameScreen: Component mounted, resetting to level 1...")
     // Clear any previous game state
     dispatch(clearRoundData())
+    // Reset to level 1 whenever user navigates to this screen
+    dispatch(setCurrentLevel(1))
     audioService.stopAudio()
     
     return () => {
@@ -924,20 +923,20 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
           {/* Stats Row - Using level-specific stats for authenticated users */}
           <View className="flex-row justify-between mb-8 gap-x-1">
             <StatCard 
-              value={levelStats?.accuracy?.toFixed(1) + "%" || currentStats.accuracy.toFixed(1) + "%"} 
+              value={levelStats?.accuracy ? levelStats.accuracy.toFixed(1) + "%" : (currentStats.accuracy ? currentStats.accuracy.toFixed(1) + "%" : "0.0%")} 
               label="Accuracy" 
               size="large" 
             />
             <StatCard value={currentLevel.toString()} label="Level" size="large" />
             <StatCard 
-              value={levelStats?.streak?.toString() || currentStats.streak.toString()} 
+              value={levelStats?.streak?.toString() || (currentStats.streak ? currentStats.streak.toString() : "0")} 
               label="Streaks" 
               size="large" 
             />
             <StatCard
               showFraction={true}
-              numerator={levelStats?.correctAnswers || currentStats.correctAnswers}
-              denominator={levelStats?.totalAttempts || currentStats.totalAttempts}
+              numerator={levelStats?.correctAnswers || (currentStats.correctAnswers || 0)}
+              denominator={levelStats?.totalAttempts || (currentStats.totalAttempts || 0)}
               label="Correct/Total"
               size="large"
               value="" // Not used when showFraction is true
