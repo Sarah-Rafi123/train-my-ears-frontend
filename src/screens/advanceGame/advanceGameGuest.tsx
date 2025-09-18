@@ -21,7 +21,6 @@ import BackButton from "@/src/components/ui/buttons/BackButton"
 import CircularIndicator from "@/src/components/widgets/CircularIndicator"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
-import SaveProgressButton from "@/src/components/ui/buttons/SaveProgressButton"
 import { LoginPromptModal } from "@/src/components/ui/modal/login-prompt-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -29,15 +28,13 @@ import { Feather } from "@expo/vector-icons"
 import StatCard from "@/src/components/widgets/StatsCard"
 import { debounce } from "@/src/lib/utils"
 import { GuestStatsService, type GuestStats } from "@/src/services/guestStatsService"
-import GameSkeleton from "@/src/components/ui/skeletons/GameSkeleton"
 
 interface AdvancedGameGuestScreenProps {
   onBack?: () => void
   onMoreDetails?: () => void
-  onSaveProgress?: () => void
 }
 
-export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveProgress }: AdvancedGameGuestScreenProps) {
+export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: AdvancedGameGuestScreenProps) {
   const navigation = useNavigation()
   const route = useRoute()
   const dispatch = useAppDispatch()
@@ -538,12 +535,6 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
     })
   }
 
-  const handleSaveProgress = () => {
-    console.log("💾 AdvancedGameGuestScreen: Save Progress pressed")
-    onSaveProgress?.()
-    const nav = navigation as any
-    nav.navigate("Register")
-  }
 
   const handleLoginPrompt = () => {
     setShowLoginPromptModal(false)
@@ -684,7 +675,9 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
         <View className="flex-row items-center px-6 py-4">
           <BackButton onPress={onBack} />
         </View>
-        <GameSkeleton />
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#1e3a5f" />
+        </View>
       </SafeAreaView>
     )
   }
@@ -743,7 +736,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
               accessibilityLabel={showResult ? "Play Again" : "Play Sequence"}
             >
               {isPlayingSequence || isLoading || isInitializing ? (
-                <GameSkeleton />
+                <ActivityIndicator size="small" color="white" />
               ) : (
                 <Feather name={showResult ? "play" : "refresh-cw"} size={20} color="white" />
               )}
@@ -883,7 +876,6 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
       {/* Fixed Bottom Section */}
       <View className="px-6 pb-8 pt-4 items-center justify-center bg-white">
         <MoreDetailsButton onPress={handleMoreDetails} />
-        <SaveProgressButton onPress={handleSaveProgress} />
       </View>
       {/* Login Required Modal */}
       <LoginPromptModal

@@ -698,9 +698,9 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     // Fix navigation type issue by using proper typing
     const nav = navigation as any
     nav.navigate("Menu", {
-      accuracy: currentStats.accuracy.toFixed(1) + "%",
+      accuracy: currentStats?.accuracy ? currentStats.accuracy.toFixed(1) + "%" : "0.0%",
       level: currentLevel,
-      streaks: currentStats.streak,
+      streaks: currentStats?.streak || 0,
       gameType: "advanced",
       gameResult: gameResult?.isCorrect ? "correct" : "incorrect",
       isGuestMode: !finalUserId,

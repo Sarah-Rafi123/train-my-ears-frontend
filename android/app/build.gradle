@@ -92,10 +92,12 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 4
-        versionName "15.0.0"
+        versionName "18.0.0"
     }
     signingConfigs {
         debug {
+
+
             storeFile file('debug.keystore')
             storePassword 'android'
             keyAlias 'androiddebugkey'

@@ -154,7 +154,6 @@ export default function RevenueCatScreen() {
   return (
     <SafeAreaView style={styles.fullScreen}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.closeButton} onPress={handleGoBack}>
             <Text style={styles.closeButtonText}>✕</Text>
@@ -327,6 +326,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#003049',
     marginBottom: 8,
+    marginTop:16,
     textAlign: 'center',
   },
   subtitle: {

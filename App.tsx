@@ -180,6 +180,7 @@ const LoadingScreen = () => (
 )
 
 export default function RootLayout() {
+  //const publishableKey = "pk_live_Y2xlcmsudHJhaW5teWVhci5jb20k"
   const publishableKey = "pk_test_ZXRoaWNhbC10YWhyLTYxLmNsZXJrLmFjY291bnRzLmRldiQ"
   if (!publishableKey) {
     console.error("Clerk publishable key is missing")
