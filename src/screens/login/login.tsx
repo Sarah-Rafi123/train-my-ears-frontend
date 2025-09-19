@@ -292,6 +292,15 @@ export default function LoginScreen() {
                 <Text className="text-red-500 text-sm mt-1 ml-2">{validationErrors.password}</Text>
               )}
             </View>
+            <View className="mt-2">
+              <TouchableOpacity
+                onPress={() => navigation.navigate("ForgotPassword" as never)}
+                disabled={loadingSocialProvider !== null}
+                className={loadingSocialProvider ? 'opacity-50' : ''}
+              >
+                <Text className="text-[#006AE6] text-base text-right">Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <PrimaryButton
             title="Login"

@@ -9,6 +9,8 @@ import SampleScreen from '../screens/sample/sample';
 import ViewFeedbackScreen from '../screens/viewFeedback/viewFeedback';
 import RegisterScreen from '../screens/register/register';
 import LoginScreen from '../screens/login/login';
+import ForgotPasswordScreen from '../screens/forgotPassword/ForgotPassword';
+import ResetPasswordScreen from '../screens/resetPassword/ResetPassword';
 
 const Stack = createNativeStackNavigator();
 
@@ -29,6 +31,8 @@ export default function GuestStack() {
       <Stack.Screen name="Sample" component={SampleScreen} />
       <Stack.Screen name="ViewFeedback" component={ViewFeedbackScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </Stack.Navigator>
   );
 }
