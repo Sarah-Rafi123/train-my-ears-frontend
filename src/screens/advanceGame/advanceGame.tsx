@@ -83,6 +83,10 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
   const lastPlayedRoundIdRef = useRef<string | null>(null)
   // Use a ref to track the previous game round ID to detect actual changes
   const prevGameRoundIdRef = useRef<string | null>(null)
+  // Ref to track pending audio timeout
+  const audioTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // State to track if screen is ready for autoplay
+  const [screenReady, setScreenReady] = useState(false)
 
   // Get route params
   const routeParams = route.params as any
@@ -160,8 +164,22 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     dispatch(setCurrentLevel(1))
     audioService.stopAudio()
     
+    // Reset audio tracking refs to ensure fresh start
+    prevGameRoundIdRef.current = null
+    lastPlayedRoundIdRef.current = null
+    
+    // Set screen ready after a small delay to ensure everything is loaded
+    setTimeout(() => {
+      setScreenReady(true)
+    }, 500)
+    
     return () => {
       audioService.stopAudio()
+      // Clear any pending audio timeout
+      if (audioTimeoutRef.current) {
+        clearTimeout(audioTimeoutRef.current)
+        audioTimeoutRef.current = null
+      }
     }
   }, [dispatch])
 
@@ -480,31 +498,69 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }, [error, errorCode])
 
-  // Effect to reset UI states when a new round loads
+  // Effect to reset UI states when a new round loads and auto-play sequence audio
   useEffect(() => {
     const currentRoundId = currentGameRound?.gameSessionId || null
+    const prevRoundId = prevGameRoundIdRef.current
 
     if (currentGameRound) {
       // Reset UI states for a new round
       setShowResult(false)
-      // Reset the last played round ID so audio can be played manually
-      lastPlayedRoundIdRef.current = null
+      // Game loaded successfully, stop initializing
+      if (isInitializing) {
+        setIsInitializing(false)
+      }
+
+      // Auto-play sequence audio for new rounds (but not on initial render with same round)
+      if (
+        screenReady &&
+        currentRoundId &&
+        currentRoundId !== prevRoundId &&
+        currentGameRound.targetSequence &&
+        currentGameRound.targetSequence.length > 0 &&
+        currentGameRound.instrument?.name
+      ) {
+        console.log("🎵 AdvancedGameScreen: Auto-playing sequence audio for new round:", currentRoundId)
+        console.log(
+          "🎵 AdvancedGameScreen: Playing sequence with",
+          currentGameRound.targetSequence.length,
+          "chords on",
+          currentGameRound.instrument.name,
+        )
+        
+        // Clear any existing audio timeout to prevent overlapping audio
+        if (audioTimeoutRef.current) {
+          clearTimeout(audioTimeoutRef.current)
+          audioTimeoutRef.current = null
+        }
+        
+        // Add a small delay to ensure UI is fully rendered before playing audio
+        audioTimeoutRef.current = setTimeout(() => {
+          playSequenceAudio()
+          audioTimeoutRef.current = null
+        }, 100)
+      }
     }
 
     // Always update prevGameRoundIdRef to the current round ID for the next render cycle
     prevGameRoundIdRef.current = currentRoundId
-  }, [currentGameRound]) // Only depend on currentGameRound
-
-  // Removed automatic audio playback - audio will only play when user clicks "Play Sequence" button
+  }, [currentGameRound, screenReady, isInitializing]) // Added screenReady and isInitializing dependencies
 
   // Removed playAudioSafely function as it's not used in advanced game
 
   // Updated the playSequenceAudio function to use local assets like game.tsx
   const playSequenceAudio = async () => {
-    if (!currentGameRound?.targetSequence || isPlayingSequence) return
+    // Prevent multiple simultaneous audio plays
+    if (!currentGameRound?.targetSequence || isPlayingSequence) {
+      console.log("🎵 AdvancedGameScreen: Audio already playing or no sequence, skipping new audio request")
+      return
+    }
+    
     try {
       setIsPlayingSequence(true)
       setAudioError(null)
+      // Always stop any currently playing audio before starting new audio
+      await audioService.stopAudio()
       console.log("🎵 AdvancedGameScreen: Playing sequence audio using local assets...")
       
       // Sort the target sequence by position to play chords in the right order
@@ -547,14 +603,31 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
     }
   }
 
-  // Updated handlePlayAgain to start new game immediately
-  const handlePlayAgain = () => {
-    if (!finalInstrumentId) return
-    console.log("🔄 AdvancedGameScreen: Play Again clicked", {
-      isGuestMode: !finalUserId,
-    })
-    setHasInitialized(false) // Reset initialization flag
-    startNewGame(currentLevel)
+  // Updated handlePlayAgain to replay sequence or start new game based on current state
+  const handlePlayAgain = async () => {
+    if (!showResult && currentGameRound?.targetSequence && currentGameRound.instrument?.name) {
+      // If not showing results, just replay the sequence audio
+      console.log("🔄 AdvancedGameScreen: Replaying sequence audio for current round")
+      console.log(
+        "🔄 AdvancedGameScreen: Playing sequence with",
+        currentGameRound.targetSequence.length,
+        "chords on",
+        currentGameRound.instrument.name,
+      )
+      // Clear any pending auto-play timeout before manual play
+      if (audioTimeoutRef.current) {
+        clearTimeout(audioTimeoutRef.current)
+        audioTimeoutRef.current = null
+      }
+      await playSequenceAudio()
+    } else if (showResult && finalInstrumentId) {
+      // If showing results, start a new game round
+      console.log("🔄 AdvancedGameScreen: Starting new game round", {
+        isGuestMode: !finalUserId,
+      })
+      setHasInitialized(false) // Reset initialization flag
+      startNewGame(currentLevel)
+    }
   }
 
   const handleChordSelect = (chordId: string) => {
@@ -1023,7 +1096,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
 
               return (
                 <Text
-                  className={`text-2xl font-bold text-center mb-4 ${gameResult.isCorrect ? "text-green-600" : "text-red-600"}`}
+                  className={`text-lg font-bold text-center mb-4 ${gameResult.isCorrect ? "text-green-600" : "text-red-600"}`}
                 >
                   {gameResult.isCorrect ? "Perfect Sequence!" : `Sorry, the sequence was: ${correctSequenceDisplay}`}
                 </Text>

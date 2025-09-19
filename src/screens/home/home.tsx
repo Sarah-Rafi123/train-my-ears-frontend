@@ -101,7 +101,7 @@ const { signOut } = useClerk()
   }
 
   const subtitleStyle = {
-    fontSize: responsiveValue(20),
+    fontSize: responsiveValue(18),
     lineHeight: responsiveValue(28),
     fontFamily: "NATS-Regular",
     color: "#003049",
@@ -141,7 +141,7 @@ const { signOut } = useClerk()
         <Text style={titleStyle} adjustsFontSizeToFit numberOfLines={1}>
           TRAIN MY EAR
         </Text>
-        <Text style={subtitleStyle} adjustsFontSizeToFit>
+        <Text style={subtitleStyle} adjustsFontSizeToFit  numberOfLines={1}>
           A simple tool to help recognize chords by ear.
         </Text>
         <View style={{ marginBottom: responsiveValue(64) }}>

@@ -83,6 +83,10 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: Advan
   // Use a ref to track the ID of the round whose audio was last played
   const lastPlayedRoundIdRef = useRef<string | null>(null)
   const prevGameRoundIdRef = useRef<string | null>(null)
+  // Ref to track pending audio timeout
+  const audioTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // State to track if screen is ready for autoplay
+  const [screenReady, setScreenReady] = useState(false)
 
   // Get route params
   const routeParams = route.params as any
@@ -140,6 +144,24 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: Advan
     // Reset game state to ensure guest starts at level 1
     dispatch(resetGame()) // This sets level to 1 and clears all game data
     audioService.stopAudio()
+    
+    // Reset audio tracking refs to ensure fresh start
+    prevGameRoundIdRef.current = null
+    lastPlayedRoundIdRef.current = null
+    
+    // Set screen ready after a small delay to ensure everything is loaded
+    setTimeout(() => {
+      setScreenReady(true)
+    }, 500)
+    
+    return () => {
+      audioService.stopAudio()
+      // Clear any pending audio timeout
+      if (audioTimeoutRef.current) {
+        clearTimeout(audioTimeoutRef.current)
+        audioTimeoutRef.current = null
+      }
+    }
   }, [dispatch]) // Only run once on mount
 
   // Load guest stats on component mount
@@ -384,24 +406,67 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: Advan
     }
   }, [error, errorCode])
 
-  // Effect to reset UI states when a new round loads
+  // Effect to reset UI states when a new round loads and auto-play sequence audio
   useEffect(() => {
     const currentRoundId = currentGameRound?.gameSessionId || null
+    const prevRoundId = prevGameRoundIdRef.current
 
     if (currentGameRound) {
+      // Reset UI states for a new round
       setShowResult(false)
-      lastPlayedRoundIdRef.current = null // Reset for manual audio play
+      // Game loaded successfully, stop initializing
+      if (isInitializing) {
+        setIsInitializing(false)
+      }
+
+      // Auto-play sequence audio for new rounds (but not on initial render with same round)
+      if (
+        screenReady &&
+        currentRoundId &&
+        currentRoundId !== prevRoundId &&
+        currentGameRound.targetSequence &&
+        currentGameRound.targetSequence.length > 0 &&
+        currentGameRound.instrument?.name
+      ) {
+        console.log("🎵 AdvancedGameGuestScreen: Auto-playing sequence audio for new round:", currentRoundId)
+        console.log(
+          "🎵 AdvancedGameGuestScreen: Playing sequence with",
+          currentGameRound.targetSequence.length,
+          "chords on",
+          currentGameRound.instrument.name,
+        )
+        
+        // Clear any existing audio timeout to prevent overlapping audio
+        if (audioTimeoutRef.current) {
+          clearTimeout(audioTimeoutRef.current)
+          audioTimeoutRef.current = null
+        }
+        
+        // Add a small delay to ensure UI is fully rendered before playing audio
+        audioTimeoutRef.current = setTimeout(() => {
+          playSequenceAudio()
+          audioTimeoutRef.current = null
+        }, 100)
+      }
     }
 
+    // Always update prevGameRoundIdRef to the current round ID for the next render cycle
     prevGameRoundIdRef.current = currentRoundId
-  }, [currentGameRound])
+  }, [currentGameRound, screenReady, isInitializing]) // Added screenReady and isInitializing dependencies
 
-  // Audio playback function using local assets (no automatic playback)
+  // Audio playback function using local assets with enhanced error handling
   const playSequenceAudio = async () => {
-    if (!currentGameRound?.targetSequence || isPlayingSequence) return
+    // Prevent multiple simultaneous audio plays
+    if (!currentGameRound?.targetSequence || isPlayingSequence) {
+      console.log("🎵 AdvancedGameGuestScreen: Audio already playing or no sequence, skipping new audio request")
+      return
+    }
+    
     try {
       setIsPlayingSequence(true)
       setAudioError(null)
+      // Always stop any currently playing audio before starting new audio
+      await audioService.stopAudio()
       console.log("🎵 AdvancedGameGuestScreen: Playing sequence audio using local assets...")
       
       // Sort the target sequence by position to play chords in the right order
@@ -445,11 +510,28 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: Advan
     }
   }
 
-  const handlePlayAgain = () => {
-    if (!finalInstrumentId) return
-    console.log("🔄 AdvancedGameGuestScreen: Play Again clicked (guest mode)")
-    setHasInitialized(false)
-    startNewGame(currentLevel)
+  const handlePlayAgain = async () => {
+    if (!showResult && currentGameRound?.targetSequence && currentGameRound.instrument?.name) {
+      // If not showing results, just replay the sequence audio
+      console.log("🔄 AdvancedGameGuestScreen: Replaying sequence audio for current round")
+      console.log(
+        "🔄 AdvancedGameGuestScreen: Playing sequence with",
+        currentGameRound.targetSequence.length,
+        "chords on",
+        currentGameRound.instrument.name,
+      )
+      // Clear any pending auto-play timeout before manual play
+      if (audioTimeoutRef.current) {
+        clearTimeout(audioTimeoutRef.current)
+        audioTimeoutRef.current = null
+      }
+      await playSequenceAudio()
+    } else if (showResult && finalInstrumentId) {
+      // If showing results, start a new game round
+      console.log("🔄 AdvancedGameGuestScreen: Starting new game round (guest mode)")
+      setHasInitialized(false)
+      startNewGame(currentLevel)
+    }
   }
 
   const handleChordSelect = (chordId: string) => {
@@ -796,7 +878,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: Advan
 
               return (
                 <Text
-                  className={`text-2xl font-bold text-center mb-4 ${gameResult.isCorrect ? "text-green-600" : "text-red-600"}`}
+                  className={`text-lg font-bold text-center mb-4 ${gameResult.isCorrect ? "text-green-600" : "text-red-600"}`}
                 >
                   {gameResult.isCorrect ? "Perfect Sequence!" : `Sorry, the sequence was: ${correctSequenceDisplay}`}
                 </Text>
