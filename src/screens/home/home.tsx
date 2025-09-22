@@ -121,7 +121,7 @@ const { signOut } = useClerk()
             styles.backgroundImage,
             {
               width: screenWidth,
-              height: screenHeight * 0.6,
+              height: screenHeight * 0.7,
             }
           ]}
           resizeMode="cover"

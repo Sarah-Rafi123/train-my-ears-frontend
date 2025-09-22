@@ -239,12 +239,12 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   return (
     <SafeAreaView style={styles.safeArea}>
       <View
-        className="flex-row items-center"
+        className="flex-row  px-6 py-4 items-center"
         style={{
          
         }}
       >
-        {!token && <BackButton onPress={handleBack} />} {/* Show BackButton with custom back logic */}
+        {!token && <BackButton onPress={handleBack} />} 
 
         <View className="flex-1">
           <Text
@@ -394,6 +394,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: 'white',
+    marginTop: Platform.OS === 'android' ? 25 : 0, 
   },
   logoutButton: {
     top: 2,

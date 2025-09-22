@@ -2,11 +2,11 @@
   "expo": {
     "name": "Train My Ear",
     "slug": "frontend_trainmyears",
-    "version": "18.0.0",
+    "version": "20.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
-      "image": "./assets/images/icon.png",
+      "image": "./assets/images/splash-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -71,7 +71,8 @@
     "plugins": [
       "expo-font",
       "expo-secure-store",
-      "expo-av"
+      "expo-av",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true

@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "frontendtrainmyears.app"
-               BlueprintName = "frontendtrainmyears"
-               ReferencedContainer = "container:frontendtrainmyears.xcodeproj">
+               BuildableName = "TrainMyEar.app"
+               BlueprintName = "TrainMyEar"
+               ReferencedContainer = "container:TrainMyEar.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "frontendtrainmyearsTests.xctest"
-               BlueprintName = "frontendtrainmyearsTests"
-               ReferencedContainer = "container:frontendtrainmyears.xcodeproj">
+               BuildableName = "TrainMyEarTests.xctest"
+               BlueprintName = "TrainMyEarTests"
+               ReferencedContainer = "container:TrainMyEar.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "frontendtrainmyears.app"
-            BlueprintName = "frontendtrainmyears"
-            ReferencedContainer = "container:frontendtrainmyears.xcodeproj">
+            BuildableName = "TrainMyEar.app"
+            BlueprintName = "TrainMyEar"
+            ReferencedContainer = "container:TrainMyEar.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "frontendtrainmyears.app"
-            BlueprintName = "frontendtrainmyears"
-            ReferencedContainer = "container:frontendtrainmyears.xcodeproj">
+            BuildableName = "TrainMyEar.app"
+            BlueprintName = "TrainMyEar"
+            ReferencedContainer = "container:TrainMyEar.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
