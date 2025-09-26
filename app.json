@@ -2,7 +2,7 @@
   "expo": {
     "name": "Train My Ear",
     "slug": "frontend_trainmyears",
-    "version": "21.0.0",
+    "version": "22.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
@@ -64,8 +64,8 @@
       "bundler": "metro"
     },
     "extra": {
-    "eas": {
-        "projectId": "8463aea5-6e8e-44f7-b6cc-5291aa787d4d"
+      "eas": {
+        "projectId": "6a7ba359-637b-4c8f-a89e-e5c56f873354"
       }
     },
     "plugins": [
