@@ -1098,7 +1098,7 @@ export default function AdvancedGameScreen({ onBack, onMoreDetails, onSaveProgre
                 <Text
                   className={`text-lg font-bold text-center mb-4 ${gameResult.isCorrect ? "text-green-600" : "text-red-600"}`}
                 >
-                  {gameResult.isCorrect ? "Perfect Sequence!" : `Sorry, the sequence was: ${correctSequenceDisplay}`}
+                  {gameResult.isCorrect ? "Perfect Sequence!" : `Sorry, the sequence was:\n${correctSequenceDisplay}`}
                 </Text>
               )
             })()}

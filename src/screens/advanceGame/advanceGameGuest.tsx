@@ -32,9 +32,10 @@ import { GuestStatsService, type GuestStats } from "@/src/services/guestStatsSer
 interface AdvancedGameGuestScreenProps {
   onBack?: () => void
   onMoreDetails?: () => void
+  onSaveProgress?: () => void
 }
 
-export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: AdvancedGameGuestScreenProps) {
+export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveProgress }: AdvancedGameGuestScreenProps) {
   const navigation = useNavigation()
   const route = useRoute()
   const dispatch = useAppDispatch()
@@ -617,6 +618,11 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: Advan
     })
   }
 
+  const handleSaveProgress = () => {
+    console.log("💾 AdvancedGameGuestScreen: Save Progress pressed")
+    onSaveProgress?.()
+    navigation.navigate("Register" as never)
+  }
 
   const handleLoginPrompt = () => {
     setShowLoginPromptModal(false)
@@ -880,7 +886,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: Advan
                 <Text
                   className={`text-lg font-bold text-center mb-4 ${gameResult.isCorrect ? "text-green-600" : "text-red-600"}`}
                 >
-                  {gameResult.isCorrect ? "Perfect Sequence!" : `Sorry, the sequence was: ${correctSequenceDisplay}`}
+                  {gameResult.isCorrect ? "Perfect Sequence!" : `Sorry, the sequence was:\n${correctSequenceDisplay}`}
                 </Text>
               )
             })()}
@@ -958,6 +964,12 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails }: Advan
       {/* Fixed Bottom Section */}
       <View className="px-6 pb-8 pt-4 items-center justify-center bg-white">
         <MoreDetailsButton onPress={handleMoreDetails} />
+        {/* Save Progress Button for guest users */}
+        <View className="pt-4">
+          <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
+            Save your progress
+          </Text>
+        </View>
       </View>
       {/* Login Required Modal */}
       <LoginPromptModal
