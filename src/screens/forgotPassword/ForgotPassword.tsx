@@ -49,7 +49,7 @@ export default function ForgotPasswordScreen() {
   };
 
   const handleEmailChange = (value: string) => {
-    setEmail(value.toLowerCase().trim());
+    setEmail(value.trim());
     if (validationError) {
       setValidationError(null);
     }
@@ -74,7 +74,7 @@ export default function ForgotPasswordScreen() {
     console.log('🚀 ForgotPassword: Starting request for email:', email);
 
     try {
-      const requestBody = { email };
+      const requestBody = { email: email.toLowerCase() };
       console.log('📤 ForgotPassword: Request body:', requestBody);
       console.log('📤 ForgotPassword: Using BASE_URL:', BASE_URL);
       
@@ -103,10 +103,21 @@ export default function ForgotPasswordScreen() {
           throw new Error(`Server returned non-JSON response: ${textResponse.substring(0, 200)}...`);
         }
       } catch (jsonError) {
-        // If JSON parsing fails, get the text response for debugging
-        const textResponse = await response.text();
-        console.error('❌ ForgotPassword: JSON parse error. Response text:', textResponse);
-        throw new Error(`Failed to parse JSON response. Server returned: ${textResponse.substring(0, 200)}...`);
+        // If JSON parsing fails, try to get the text response for debugging
+        try {
+          const textResponse = await response.text();
+          console.error('❌ ForgotPassword: JSON parse error. Response text:', textResponse);
+          // Create a fallback data object with the text response as error message
+          data = { 
+            error: textResponse || 'Server returned an invalid response'
+          };
+        } catch (textError) {
+          console.error('❌ ForgotPassword: Failed to get text response:', textError);
+          // If we can't even get text, create a generic error
+          data = { 
+            error: 'Server returned an invalid response'
+          };
+        }
       }
       
       console.log('📥 ForgotPassword: Response data:', JSON.stringify(data, null, 2));
@@ -124,18 +135,106 @@ export default function ForgotPasswordScreen() {
           ]
         );
       } else {
-        console.log('❌ ForgotPassword: API Error:', data.error || 'Failed to send reset code');
-        const errorMessage = data.error || data.message || 'Failed to send reset code';
-        Alert.alert('Error', errorMessage);
+        console.log('❌ ForgotPassword: API Error Response Status:', response.status);
+        console.log('❌ ForgotPassword: Full API Error Data:', JSON.stringify(data, null, 2));
+        console.log('❌ ForgotPassword: data.error:', data.error);
+        console.log('❌ ForgotPassword: data.message:', data.message);
+        console.log('❌ ForgotPassword: typeof data.error:', typeof data.error);
+        console.log('❌ ForgotPassword: typeof data.message:', typeof data.message);
+        
+        // Safely extract error message, handling various response formats
+        let errorMessage = 'Failed to send reset code';
+        
+        if (data.error) {
+          if (typeof data.error === 'string') {
+            errorMessage = data.error;
+          } else if (typeof data.error === 'object' && data.error.message) {
+            errorMessage = data.error.message;
+          } else {
+            errorMessage = JSON.stringify(data.error);
+          }
+        } else if (data.message) {
+          if (typeof data.message === 'string') {
+            errorMessage = data.message;
+          } else if (typeof data.message === 'object' && data.message.message) {
+            errorMessage = data.message.message;
+          } else {
+            errorMessage = JSON.stringify(data.message);
+          }
+        }
+        
+        console.log('❌ ForgotPassword: Final errorMessage:', errorMessage);
+        console.log('❌ ForgotPassword: typeof errorMessage:', typeof errorMessage);
+        
+        // Handle specific error cases with user-friendly messages
+        const errorMessageStr = String(errorMessage).toLowerCase();
+        if (errorMessageStr.includes('social login')) {
+          Alert.alert(
+            'Social Login Account',
+            'This account uses social login (Google, Facebook, or Apple). Please use your social login provider to access your account instead of resetting the password.',
+            [
+              {
+                text: 'OK',
+                style: 'default'
+              }
+            ]
+          );
+        } else if (errorMessageStr.includes('not found') || errorMessageStr.includes('does not exist')) {
+          Alert.alert(
+            'Email Not Found',
+            'No account found with this email address. Please check your email or create a new account.',
+            [
+              {
+                text: 'OK',
+                style: 'default'
+              }
+            ]
+          );
+        } else {
+          Alert.alert(
+            'Error',
+            `${errorMessage}`,
+            [
+              {
+                text: 'OK',
+                style: 'default'
+              }
+            ]
+          );
+        }
       }
     } catch (error) {
       console.log('❌ ForgotPassword: Network/Fetch Error:', error);
+      console.log('❌ ForgotPassword: Error type:', typeof error);
       console.log('❌ ForgotPassword: Error details:', {
         message: (error as Error).message,
         stack: (error as Error).stack,
         name: (error as Error).name
       });
-      Alert.alert('Error', `Network error: ${(error as Error).message}. Please check if the server is running.`);
+      console.log('❌ ForgotPassword: Full error object:', JSON.stringify(error, null, 2));
+      
+      // Handle network errors gracefully
+      let errorMessage = 'An unexpected error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object') {
+        errorMessage = JSON.stringify(error);
+      }
+      
+      console.log('❌ ForgotPassword: Final catch errorMessage:', errorMessage);
+      
+      Alert.alert(
+        'Connection Error',
+        `Unable to connect to the server. Please check your internet connection and try again.\n\nDetailed Error: ${errorMessage}`,
+        [
+          {
+            text: 'Try Again',
+            style: 'default'
+          }
+        ]
+      );
     } finally {
       setLoading(false);
     }

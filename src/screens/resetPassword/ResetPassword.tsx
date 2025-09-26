@@ -174,9 +174,65 @@ export default function ResetPasswordScreen() {
           ]
         );
       } else {
-        console.log('❌ ResetPassword: API Error:', data.error || 'Failed to reset password');
-        const errorMessage = data.error || data.message || 'Failed to reset password';
-        Alert.alert('Error', errorMessage);
+        console.log('❌ ResetPassword: API Error Response Status:', response.status);
+        console.log('❌ ResetPassword: Full API Error Data:', JSON.stringify(data, null, 2));
+        console.log('❌ ResetPassword: data.error:', data.error);
+        console.log('❌ ResetPassword: data.message:', data.message);
+        console.log('❌ ResetPassword: typeof data.error:', typeof data.error);
+        console.log('❌ ResetPassword: typeof data.message:', typeof data.message);
+        
+        // Safely extract error message, handling various response formats
+        let errorMessage = 'Failed to reset password';
+        
+        if (data.error) {
+          if (typeof data.error === 'string') {
+            errorMessage = data.error;
+          } else if (typeof data.error === 'object' && data.error.message) {
+            errorMessage = data.error.message;
+          } else {
+            errorMessage = JSON.stringify(data.error);
+          }
+        } else if (data.message) {
+          if (typeof data.message === 'string') {
+            errorMessage = data.message;
+          } else if (typeof data.message === 'object' && data.message.message) {
+            errorMessage = data.message.message;
+          } else {
+            errorMessage = JSON.stringify(data.message);
+          }
+        }
+        
+        console.log('❌ ResetPassword: Final errorMessage:', errorMessage);
+        console.log('❌ ResetPassword: typeof errorMessage:', typeof errorMessage);
+        
+        // Check if the error is specifically about an incorrect reset code
+        const errorMessageStr = String(errorMessage).toLowerCase();
+        if (response.status === 400 && (
+          errorMessageStr.includes('invalid code') ||
+          errorMessageStr.includes('incorrect code') ||
+          errorMessageStr.includes('wrong code') ||
+          errorMessageStr.includes('expired code') ||
+          errorMessageStr.includes('code not found') ||
+          errorMessageStr.includes('invalid or expired')
+        )) {
+          Alert.alert(
+            'Invalid or Expired Code',
+            'The reset code you entered is invalid or has expired. Please check your email and try again.',
+            [
+              {
+                text: 'Try Again',
+                style: 'default',
+                onPress: () => {
+                  setCode('');
+                  setTouched((prev) => ({ ...prev, code: false }));
+                  setValidationErrors((prev) => ({ ...prev, code: undefined }));
+                }
+              }
+            ]
+          );
+        } else {
+          Alert.alert('Error', `${errorMessage}`);
+        }
       }
     } catch (error) {
       console.log('❌ ResetPassword: Network/Fetch Error:', error);
@@ -185,7 +241,19 @@ export default function ResetPasswordScreen() {
         stack: (error as Error).stack,
         name: (error as Error).name
       });
-      Alert.alert('Error', `Network error: ${(error as Error).message}. Please check if the server is running.`);
+      
+      // Handle network errors gracefully
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      Alert.alert(
+        'Connection Error',
+        `Unable to connect to the server. Please check your internet connection and try again.\n\nError: ${errorMessage}`,
+        [
+          {
+            text: 'Try Again',
+            style: 'default'
+          }
+        ]
+      );
     } finally {
       setLoading(false);
     }

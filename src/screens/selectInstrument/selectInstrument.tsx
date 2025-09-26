@@ -308,17 +308,20 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
             <View style={{ width: '100%' }}>
               <InstrumentCardSkeleton />
             </View>
-            <View className='justify-center items-center mt-4 flex' style={{
-              width: '100%',
-              marginTop: 16,
-            }}>
-              {token && (
+            
+            {/* Logout Button - positioned right after skeleton buttons */}
+            {token && (
+              <View style={{
+                width: '100%',
+                marginBottom: 80,
+                alignItems: 'center',
+              }}>
                 <TouchableOpacity style={styles.logoutButton} disabled>
                   <LogoutSvg />
                   <Text style={[styles.logoutText, { opacity: 0.5 }]}>Logout</Text>
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            )}
           </View>
         )}
         {error && !loading && (
@@ -372,17 +375,20 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
             <View style={{ width: '100%' }}>
               <InstrumentCard instrument="piano" onPress={() => handleInstrumentSelect('piano')} />
             </View>
-            <View className='justify-center items-center mt-4 flex' style={{
-              width: '100%',
-              marginTop: 16,
-            }}>
-              {token && (
+            
+            {/* Logout Button - positioned right after instrument buttons */}
+            {token && (
+              <View style={{
+                width: '100%',
+                marginBottom: 80,
+                alignItems: 'center',
+              }}>
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                   <LogoutSvg />
                   <Text style={styles.logoutText}>Logout</Text>
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -394,20 +400,23 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: 'white',
-    marginTop: Platform.OS === 'android' ? 25 : 0, 
+    paddingTop: Platform.OS === 'android' ? 25 : 25, 
+    paddingBottom: 120,
   },
   logoutButton: {
-    top: 2,
-    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 30,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#003049',
+    backgroundColor: 'transparent',
   },
   logoutText: {
     color: '#003049',
     fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 4, // Add space between the icon and the text
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });

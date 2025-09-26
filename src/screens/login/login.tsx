@@ -144,7 +144,7 @@ export default function LoginScreen() {
   const handleInputChange = (field: "email" | "password", value: string) => {
     switch (field) {
       case "email":
-        setEmail(value.toLowerCase().trim())
+        setEmail(value.trim())
         break
       case "password":
         setPassword(value)
@@ -192,7 +192,7 @@ export default function LoginScreen() {
     
     dispatch(
       loginUser({
-        email: email.trim(),
+        email: email.toLowerCase().trim(),
         password: password,
       }),
     )

@@ -120,7 +120,7 @@ export default function LeaderboardScreen({ navigation, onBack }: LeaderboardScr
         </View>
       </View>
 
-      <View className="flex-1 mt-12">
+      <View className="flex-1">
         <LevelSelector 
           selectedLevel={selectedLevel} 
           onLevelChange={handleLevelChange}
@@ -169,6 +169,17 @@ export default function LeaderboardScreen({ navigation, onBack }: LeaderboardScr
             ))}
           </View>
         )}
+      </View>
+
+      {/* Score Calculation Info at Bottom */}
+      <View className="mx-6 mb-6 bg-blue-50 rounded-lg p-4 border border-blue-100">
+        <View className="flex-row items-center mb-2">
+          <View className="w-3 h-3 rounded-full bg-blue-500 mr-2" />
+          <Text className="text-[#003049] font-semibold text-base">How Scores Are Calculated</Text>
+        </View>
+        <Text className="text-gray-700 text-sm leading-5">
+          Leaderboard Score = Chords Identified + Progressions Identified
+        </Text>
       </View>
     </SafeAreaView>
   )

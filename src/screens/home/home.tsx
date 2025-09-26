@@ -117,13 +117,7 @@ const { signOut } = useClerk()
       <View style={styles.backgroundContainer}>
         <Image
           source={Homebg}
-          style={[
-            styles.backgroundImage,
-            {
-              width: screenWidth,
-              height: screenHeight * 0.7,
-            }
-          ]}
+          style={styles.backgroundImage}
           resizeMode="cover"
         />
       </View>
@@ -132,7 +126,6 @@ const { signOut } = useClerk()
       <View style={[
         styles.contentContainer,
         {
-          height: screenHeight * 0.5,
           paddingTop: responsiveValue(40),
           borderTopLeftRadius: responsiveValue(30),
           borderTopRightRadius: responsiveValue(30),
@@ -163,10 +156,12 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    bottom: '30%', // Leave 30% at bottom for content overlay
     zIndex: 100,
   },
   backgroundImage: {
+    width: '100%',
+    height: '100%',
     position: 'absolute',
     top: 0,
     left: 0,
@@ -176,6 +171,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    top: '60%', 
     backgroundColor: 'white',
     paddingHorizontal: 24,
     zIndex: 200,

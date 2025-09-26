@@ -131,7 +131,7 @@ export default function RegisterScreen() {
         }
         break
       case "email":
-        setEmail(value.toLowerCase().trim())
+        setEmail(value.trim())
         break
       case "password":
         setPassword(value)
@@ -175,7 +175,7 @@ export default function RegisterScreen() {
     dispatch(
       registerUser({
         name: name.trim(),
-        email: email.trim(),
+        email: email.toLowerCase().trim(),
         password: password,
       }),
     )
