@@ -28,6 +28,18 @@
         "CFBundleShortVersionString": "4.0.0",
         "UIBackgroundModes": [
           "audio"
+        ],
+        "LSRequiresIPhoneOS": false,
+        "UIRequiresFullScreen": false,
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
         ]
       }
     },

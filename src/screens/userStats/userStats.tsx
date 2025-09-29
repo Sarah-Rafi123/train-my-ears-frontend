@@ -386,12 +386,12 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
   return (
     <SafeAreaView className="flex-1 bg-[#F2F5F6]" style={{ paddingTop: getResponsiveValue(32) }}>
       {/* Header with back button */}
-      <View style={{ paddingHorizontal: responsivePadding }}>
+      <View style={{ width: '100%', paddingHorizontal: 32, paddingVertical:24, zIndex: 1000 }}>
         <BackButton onPress={handleBack} />
       </View>
 
-      {/* Blue background section with responsive height */}
-      <View style={{ height: getResponsiveValue(112) }} />
+      {/* Blue background section with reduced height */}
+      <View style={{ height: responsiveValue(132) }} />
 
       {/* Container for overlapping chord card and white section */}
       <View className="flex-1 relative">
