@@ -23,6 +23,7 @@ import ActionButton from "@/src/components/ui/buttons/ActionButton"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
 import { LoginPromptModal } from "@/src/components/ui/modal/login-prompt-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
+import SuccessModal from "@/src/components/ui/modal/success-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Feather } from "@expo/vector-icons"
 import StatCard from "@/src/components/widgets/StatsCard"
@@ -63,6 +64,7 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
   const [audioError, setAudioError] = useState<string | null>(null)
   const [showLoginPromptModal, setShowLoginPromptModal] = useState(false)
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
+  const [showResetSuccessModal, setShowResetSuccessModal] = useState(false)
   const [isPlayingSequence, setIsPlayingSequence] = useState(false)
 
   // Guest mode stats state
@@ -624,6 +626,14 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
     navigation.navigate("Register" as never)
   }
 
+  const handleResetProgress = async () => {
+    console.log("🔄 AdvancedGameGuestScreen: Reset Progress pressed")
+    const resetStats = await GuestStatsService.resetGameModeStats("advancedGame")
+    setGuestStats(resetStats)
+    setShowResetSuccessModal(true)
+    console.log("✅ AdvancedGameGuestScreen: Progress reset successfully")
+  }
+
   const handleLoginPrompt = () => {
     setShowLoginPromptModal(false)
     dispatch(clearError())
@@ -647,6 +657,48 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
     dispatch(clearError())
     if (finalInstrumentId) {
       startNewGame(currentLevel)
+    }
+  }
+
+  const handleResetSuccessClose = () => {
+    setShowResetSuccessModal(false)
+    // Start a completely fresh new game after reset
+    console.log("🔄 AdvancedGameGuestScreen: Starting fresh new game after reset")
+    dispatch(clearRoundData())
+    dispatch(resetGame()) // Reset game state to level 1
+    audioService.stopAudio()
+    
+    // Reset UI states
+    setShowResult(false)
+    setAudioError(null)
+    setHasInitialized(false)
+    setIsInitializing(false)
+    setIsApiCallInProgress(false)
+    
+    // Start new game immediately if we have instrumentId
+    if (finalInstrumentId) {
+      console.log("🎮 AdvancedGameGuestScreen: Starting new game at level 1 after reset")
+      setTimeout(async () => {
+        setIsInitializing(true)
+        setIsApiCallInProgress(true)
+        try {
+          await dispatch(
+            startAdvancedGame({
+              userId: null, // Guest mode
+              instrumentId: finalInstrumentId,
+              level: 1, // Always start at level 1 after reset
+            }),
+          ).unwrap()
+          setHasInitialized(true)
+          console.log("✅ New game started successfully after reset")
+        } catch (error) {
+          console.error("❌ Error starting new game after reset:", error)
+          setShowGameErrorModal(true)
+        } finally {
+          setIsInitializing(false)
+          setIsApiCallInProgress(false)
+        }
+      }, 100) // Small delay to ensure state is cleared
     }
   }
 
@@ -964,8 +1016,14 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
       {/* Fixed Bottom Section */}
       <View className="px-6 pb-8 pt-4 items-center justify-center bg-white">
         <MoreDetailsButton onPress={handleMoreDetails} />
-        {/* Save Progress Button for guest users */}
+        {/* Reset Progress Button for guest users */}
         <View className="pt-4">
+          <Text className="text-red-600 text-base font-medium text-center" onPress={handleResetProgress}>
+            Reset Progress
+          </Text>
+        </View>
+        {/* Save Progress Button for guest users */}
+        <View className="pt-3">
           <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
             Save your progress
           </Text>
@@ -987,6 +1045,14 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
         onRetry={handleGameErrorRetry}
         onClose={handleGameErrorClose}
         showRetry={errorCode === "NETWORK_ERROR" || !errorCode}
+      />
+      {/* Reset Success Modal */}
+      <SuccessModal
+        visible={showResetSuccessModal}
+        title="Game Reset Successfully"
+        message="Your progress has been reset to 0. You can start fresh!"
+        buttonText="Continue"
+        onClose={handleResetSuccessClose}
       />
     </SafeAreaView>
   )

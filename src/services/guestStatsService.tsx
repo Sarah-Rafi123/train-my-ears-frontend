@@ -145,6 +145,29 @@ export class GuestStatsService {
     }
   }
 
+  // Reset stats for a specific game mode
+  static async resetGameModeStats(gameMode: "regularGame" | "advancedGame"): Promise<GuestStats> {
+    try {
+      const allStats = await this.getGuestStats()
+      const resetStats = { ...defaultStats }
+      
+      // Update the specific game mode with reset stats
+      const updatedGameStats: GuestGameStats = {
+        ...allStats,
+        [gameMode]: resetStats,
+      }
+
+      // Save to storage
+      await this.saveGuestStats(updatedGameStats)
+
+      console.log(`🔄 GuestStatsService: Reset ${gameMode} stats to default`)
+      return resetStats
+    } catch (error) {
+      console.error(`❌ GuestStatsService: Error resetting ${gameMode} stats:`, error)
+      return defaultStats
+    }
+  }
+
   // Debug function to log current stats
   static async logCurrentStats(): Promise<void> {
     const stats = await this.getGuestStats()

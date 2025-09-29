@@ -22,6 +22,7 @@ import NoteGrid from "@/src/components/widgets/NoteGrid"
 import ActionButton from "@/src/components/ui/buttons/ActionButton"
 import { LoginPromptModal } from "@/src/components/ui/modal/login-prompt-modal"
 import { GameErrorModal } from "@/src/components/ui/modal/game-error-modal"
+import SuccessModal from "@/src/components/ui/modal/success-modal"
 import { SafeAreaView } from "react-native-safe-area-context"
 import MoreDetailsButton from "@/src/components/ui/buttons/MoreDetailsButton"
 import { GuestStatsService, type GuestStats } from "@/src/services/guestStatsService"
@@ -63,6 +64,7 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({
   const [audioError, setAudioError] = useState<string | null>(null)
   const [showLoginPromptModal, setShowLoginPromptModal] = useState(false)
   const [showGameErrorModal, setShowGameErrorModal] = useState(false)
+  const [showResetSuccessModal, setShowResetSuccessModal] = useState(false)
   // Add state to track if chords should be visible
   const [showChords, setShowChords] = useState(true)
 
@@ -359,6 +361,14 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({
     navigation.navigate("Register" as never)
   }
 
+  const handleResetProgress = async () => {
+    console.log("🔄 GameGuestScreen: Reset Progress pressed")
+    const resetStats = await GuestStatsService.resetGameModeStats("regularGame")
+    setGuestStats(resetStats)
+    setShowResetSuccessModal(true)
+    console.log("✅ GameGuestScreen: Progress reset successfully")
+  }
+
   const handleLoginPrompt = () => {
     setShowLoginPromptModal(false)
     dispatch(clearError())
@@ -387,6 +397,36 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({
     if (finalInstrumentId) {
       // Reset initialization state to allow retry
       setHasInitialized(false)
+    }
+  }
+
+  const handleResetSuccessClose = () => {
+    setShowResetSuccessModal(false)
+    // Start a completely fresh new game after reset
+    console.log("🔄 GameGuestScreen: Starting fresh new game after reset")
+    dispatch(clearGameRound())
+    dispatch(resetGame()) // Reset game state to level 1
+    audioService.stopAudio()
+    
+    // Reset UI states
+    setShowResult(false)
+    setSelectedChordId(null)
+    setShowChords(true)
+    setHasInitialized(false)
+    
+    // Start new game immediately if we have instrumentId
+    if (finalInstrumentId) {
+      console.log("🎮 GameGuestScreen: Starting new game at level 1 after reset")
+      setTimeout(() => {
+        dispatch(
+          startGame({
+            userId: null, // Guest mode
+            instrumentId: finalInstrumentId,
+            level: 1, // Always start at level 1 after reset
+          }),
+        )
+        setHasInitialized(true)
+      }, 100) // Small delay to ensure state is cleared
     }
   }
 
@@ -489,8 +529,14 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({
       {/* Fixed More Details Button at bottom */}
       <View className="px-6 pb-8 pt-4 justify-center items-center">
         <MoreDetailsButton onPress={handleMoreDetails} />
-        {/* Save Progress Button for guest users */}
+        {/* Reset Progress Button for guest users */}
         <View className="pt-4">
+          <Text className="text-red-600 text-base font-medium text-center" onPress={handleResetProgress}>
+            Reset Progress
+          </Text>
+        </View>
+        {/* Save Progress Button for guest users */}
+        <View className="pt-3">
           <Text className="text-black text-lg font-semibold text-center" onPress={handleSaveProgress}>
             Save your progress
           </Text>
@@ -512,6 +558,14 @@ const GameGuestScreen: React.FC<GameGuestScreenProps> = ({
         onRetry={handleGameErrorRetry}
         onClose={handleGameErrorClose}
         showRetry={errorCode === "NETWORK_ERROR" || !errorCode}
+      />
+      {/* Reset Success Modal */}
+      <SuccessModal
+        visible={showResetSuccessModal}
+        title="Game Reset Successfully"
+        message="Your progress has been reset to 0. You can start fresh!"
+        buttonText="Continue"
+        onClose={handleResetSuccessClose}
       />
     </SafeAreaView>
   )
