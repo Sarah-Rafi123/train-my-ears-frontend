@@ -47,6 +47,14 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   const isTablet = screenWidth >= 768 || screenHeight >= 768;
   const isLandscape = screenWidth > screenHeight;
 
+  // Responsive bottom spacing for tablets
+  const getBottomSpacing = () => {
+    if (isTablet) {
+      return Math.max(responsiveValue(30), 40); // Increased spacing on tablets to prevent overlap
+    }
+    return Math.max(responsiveValue(25), 35); // Increased spacing on phones
+  };
+
   // Get container styles based on device type
   const getContainerWidth = () => {
     if (isTablet) {
@@ -287,19 +295,19 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
       </View>
 
       <View
-        className="flex-1"
         style={{
+          flex: 1,
           alignSelf: 'center',
           width: isTablet ? containerWidth : '100%',
           paddingHorizontal: isTablet ? 32 : 24,
-          paddingTop: responsiveValue(16),
+          paddingTop: responsiveValue(10),
         }}
       >
         {/* Title and subtitle section */}
         <View
           style={{
             marginTop: responsiveValue(10),
-            marginBottom: responsiveValue(20),
+            marginBottom: responsiveValue(10),
           }}
         >
           <Text style={titleStyle} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.8}>
@@ -310,26 +318,29 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
           </Text>
         </View>
 
-        {/* Spacer to push buttons to bottom */}
-        <View style={{ flex: 1 }} />
+        {/* Flexible spacer to push buttons down while preventing overlap */}
+        <View style={{ flex: 0.3, minHeight: responsiveValue(5) }} />
+        
+        {/* Button section */}
+        <View>
         {loading && (
           <View
             style={{
-              marginBottom: responsiveValue(32),
+              marginBottom: getBottomSpacing(),
               flexDirection: isTablet && isLandscape ? 'row' : 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: isTablet ? 24 : 16,
+              gap: isTablet ? 0 : 16,
+              paddingBottom: isTablet ? 20 : 10, // Extra padding for tablets
             }}
           >
-            <View style={{ 
-              width: isTablet && isLandscape ? '45%' : '100%',
-              maxWidth: isTablet ? 350 : undefined 
+            <View style={{
+              width: isTablet && isLandscape ? '100%' : '100%',
+              maxWidth: isTablet ? 350 : undefined
             }}>
               <InstrumentCardSkeleton />
             </View>
             <View style={{ 
-              width: isTablet && isLandscape ? '45%' : '100%',
+              width: isTablet && isLandscape ? '100%' : '100%',
               maxWidth: isTablet ? 350 : undefined 
             }}>
               <InstrumentCardSkeleton />
@@ -339,12 +350,23 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
             {token && (
               <View style={{
                 width: '100%',
-                marginBottom: 80,
+                marginTop: isTablet ? 20 : 30,
+                marginBottom: isTablet ? 20 : Math.max(getBottomSpacing(), 40), // Reduced bottom spacing for tablets
                 alignItems: 'center',
+                paddingHorizontal: 20, // Add side padding
               }}>
-                <TouchableOpacity style={styles.logoutButton} disabled>
+                <TouchableOpacity style={[
+                  styles.logoutButton, 
+                  { 
+                    opacity: 0.6,
+                    paddingHorizontal: isTablet ? 32 : 24,
+                    paddingVertical: isTablet ? 16 : 12,
+                    minHeight: isTablet ? 56 : 48,
+                    minWidth: isTablet ? 200 : 160
+                  }
+                ]} disabled>
                   <LogoutSvg />
-                  <Text style={[styles.logoutText, { opacity: 0.5 }]}>Logout</Text>
+                  <Text style={[styles.logoutText, { opacity: 0.5, fontSize: isTablet ? 20 : 16 }]}>Logout</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -388,16 +410,16 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
         {!loading && !error && (
           <View
             style={{
-              marginBottom: responsiveValue(32),
+              marginBottom: getBottomSpacing(),
               flexDirection: isTablet && isLandscape ? 'row' : 'column',
               alignItems: 'center',
               justifyContent: 'center',
- 
+              paddingBottom: isTablet ? 15 : 5, // Extra padding for tablets
             }}
           >
             <View style={{ 
               width: isTablet && isLandscape ? '45%' : '100%',
-              maxWidth: isTablet ? 700 : undefined 
+              maxWidth: isTablet ? 700 : 800 
             }}>
               <InstrumentCard instrument="guitar" onPress={() => handleInstrumentSelect('guitar')} />
             </View>
@@ -412,17 +434,23 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
             {token && (
               <View style={{
                 width: '100%',
-                marginBottom: 80,
+                marginTop: isTablet ? 0 : 30,
+                marginBottom: isTablet ? 40 : Math.max(getBottomSpacing(), 40), // Reduced bottom spacing for tablets
                 alignItems: 'center',
+                paddingHorizontal: 20, // Add side padding
               }}>
-                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <TouchableOpacity style={[
+                  styles.logoutButton, 
+                 
+                ]} onPress={handleLogout}>
                   <LogoutSvg />
-                  <Text style={styles.logoutText}>Logout</Text>
+                  <Text style={[styles.logoutText, { fontSize: isTablet ? 25 : 16 }]}>Logout</Text>
                 </TouchableOpacity>
               </View>
             )}
           </View>
         )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -433,20 +461,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
     paddingTop: Platform.OS === 'android' ? 25 : 25, 
-    paddingBottom: 120,
+    paddingBottom: 20, // Reduced bottom padding to prevent logout button being hidden
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,   
-    marginBottom: 80,
-    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    
+    marginBottom: 10, // Reduced margin to prevent button being pushed below view
+  
+    elevation: 5,
   },
   logoutText: {
     color: '#003049',
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 8,
+    fontSize: 20,
+    fontWeight: '700',
+    marginLeft: 10,
   },
 });

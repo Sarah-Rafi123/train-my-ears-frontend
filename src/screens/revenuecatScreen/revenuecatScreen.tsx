@@ -218,7 +218,7 @@ export default function RevenueCatScreen() {
                   <ActivityIndicator color={isPopular ? "#ffffff" : "#003049"} size="small" />
                 ) : (
                   <Text style={[styles.packageButtonText, isPopular && { color: '#ffffff' }]}>
-                    {pkg.packageType === 'ANNUAL' ? 'Start Free Trial' : 'Start Monthly Plan'}
+                    {pkg.packageType === 'ANNUAL' ? 'Start Annual Plan' : 'Start Monthly Plan'}
                   </Text>
                 )}
               </TouchableOpacity>

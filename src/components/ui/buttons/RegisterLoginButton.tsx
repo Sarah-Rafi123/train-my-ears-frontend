@@ -10,7 +10,12 @@ export default function RegisterLoginButton({ onPress, className = "" }: Registe
   const screenWidth = Dimensions.get("window").width
   const BASE_WIDTH = 375
   const scaleFactor = screenWidth / BASE_WIDTH
-  const responsiveValue = (value: number) => Math.round(value * scaleFactor)
+  const isTablet = screenWidth > 600
+  const responsiveValue = (value: number) => {
+    const scaled = Math.round(value * scaleFactor)
+    // On tablets, cap the scaling to keep buttons smaller
+    return isTablet ? Math.min(scaled, value * 1.1) : scaled
+  }
 
   return (
     <TouchableOpacity
@@ -19,15 +24,15 @@ export default function RegisterLoginButton({ onPress, className = "" }: Registe
       accessibilityRole="button"
       accessibilityLabel="Register or Login"
       style={{
-        paddingVertical: responsiveValue(6), // py-4 is 16px
-        paddingHorizontal: responsiveValue(24), // px-6 is 24px
+        paddingVertical: isTablet ? responsiveValue(8) : responsiveValue(8),
+        paddingHorizontal: isTablet ? responsiveValue(16) : responsiveValue(28),
       }}
     >
-      <PersonSvg width={responsiveValue(20)} height={responsiveValue(20)} />
+      <PersonSvg width={isTablet ? responsiveValue(14) : responsiveValue(20)} height={isTablet ? responsiveValue(14) : responsiveValue(20)} />
       <Text
         className="text-white font-sans ml-2"
         style={{
-          fontSize: responsiveValue(24), // text-2xl is 24px
+          fontSize: isTablet ? responsiveValue(16) : responsiveValue(22),
         }}
         adjustsFontSizeToFit
         numberOfLines={1}

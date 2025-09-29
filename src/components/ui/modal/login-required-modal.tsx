@@ -1,6 +1,5 @@
 import type React from "react"
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native"
-import ActionButton from "@/src/components/ui/buttons/ActionButton"
+import { Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native"
 
 interface LoginRequiredModalProps {
   visible: boolean
@@ -9,14 +8,28 @@ interface LoginRequiredModalProps {
 }
 
 export const LoginRequiredModal: React.FC<LoginRequiredModalProps> = ({ visible, onClose, onLogin }) => {
+  const { width: screenWidth } = Dimensions.get('window')
+  const modalWidth = Math.min(screenWidth * 0.9, 400) // Responsive width with max limit
+
   return (
     <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
       <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+        <View style={[styles.modalView, { width: modalWidth }]}>
           <Text style={styles.modalTitle}>Login Required</Text>
           <Text style={styles.modalText}>Please log in or register to view your stats and save your progress.</Text>
           <View style={styles.buttonContainer}>
-            <ActionButton title="Log In/Register" onPress={onLogin} />
+            <View style={styles.loginButtonWrapper}>
+              <TouchableOpacity 
+                onPress={onLogin} 
+                style={styles.loginButton}
+                accessibilityRole="button"
+                accessibilityLabel="Log In/Register"
+              >
+                <Text style={styles.loginButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                  Log In/Register
+                </Text>
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity onPress={onClose} style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
@@ -48,6 +61,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+    minWidth: 280, // Ensure minimum width for button
   },
   modalTitle: {
     fontSize: 22,
@@ -65,6 +79,25 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: "100%",
     gap: 10,
+  },
+  loginButtonWrapper: {
+    width: "100%",
+    alignItems: "center",
+  },
+  loginButton: {
+    backgroundColor: "#003049",
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    minWidth: 200, // Ensure minimum width to prevent wrapping
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loginButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
   },
   cancelButton: {
     marginTop: 10,

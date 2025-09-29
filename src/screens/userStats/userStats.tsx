@@ -1,6 +1,6 @@
 "use client"
 
-import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, StyleSheet, Image, Alert, Platform, Dimensions } from "react-native"
+import { View, Text, ScrollView, SafeAreaView, Dimensions } from "react-native"
 import { useState, useCallback, useEffect } from "react"
 import BackButton from "@/src/components/ui/buttons/BackButton"
 import ChordCard from "@/src/components/widgets/ChordCard"
@@ -391,7 +391,7 @@ export default function UserStatsScreen({ navigation, onBack }: StatsScreenProps
       </View>
 
       {/* Blue background section with reduced height */}
-      <View style={{ height: responsiveValue(132) }} />
+      <View style={{ height: getResponsiveValue(132) }} />
 
       {/* Container for overlapping chord card and white section */}
       <View className="flex-1 relative">

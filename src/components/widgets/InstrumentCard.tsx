@@ -12,15 +12,20 @@ export default function InstrumentCard({ instrument, onPress, disabled = false }
   const screenWidth = Dimensions.get("window").width
   const BASE_WIDTH = 375
   const scaleFactor = screenWidth / BASE_WIDTH
-  const responsiveValue = (value: number) => Math.round(value * scaleFactor)
+  const isTablet = screenWidth > 600
+  const responsiveValue = (value: number) => {
+    const scaled = Math.round(value * scaleFactor)
+    // On tablets, cap the scaling to keep buttons smaller
+    return isTablet ? Math.min(scaled, value * 1.1) : scaled
+  }
 
   const getInstrumentIcon = () => {
-    // Assuming GuitarSvg and PianoSvg accept width and height props for scaling
-    const iconSize = responsiveValue(30) // Example size, adjust as needed
+    // Bigger icons for phones, smaller for tablets
+    const iconSize = isTablet ? responsiveValue(20) : responsiveValue(28)
     return instrument === "guitar" ? (
-      <GuitarSvg width={iconSize} height={iconSize} />
+      <GuitarSvg />
     ) : (
-      <PianoSvg width={iconSize} height={iconSize} />
+      <PianoSvg />
     )
   }
 
@@ -39,10 +44,10 @@ export default function InstrumentCard({ instrument, onPress, disabled = false }
       accessibilityLabel={disabled ? `${getInstrumentName()} - Not available` : `Select ${getInstrumentName()}`}
       activeOpacity={disabled ? 1 : 0.8}
       style={{
-        borderRadius: responsiveValue(8), // rounded-2xl
-        paddingVertical: responsiveValue(15), // py-5
-        paddingHorizontal: responsiveValue(32), // px-8
-        marginBottom: responsiveValue(16), // mb-4
+        borderRadius: responsiveValue(8),
+        paddingVertical: isTablet ? responsiveValue(8) : responsiveValue(18),
+        paddingHorizontal: isTablet ? responsiveValue(16) : responsiveValue(32),
+        marginBottom: isTablet ? responsiveValue(8) : responsiveValue(16),
       }}
     >
       <View className="flex-row items-center justify-center">
@@ -50,8 +55,8 @@ export default function InstrumentCard({ instrument, onPress, disabled = false }
         <Text
           className={`font-semibold ml-4 ${disabled ? "text-gray-400" : "text-[#003049]"}`}
           style={{
-            fontSize: responsiveValue(20), // text-xl
-            marginLeft: responsiveValue(16), // ml-4
+            fontSize: isTablet ? responsiveValue(14) : responsiveValue(20),
+            marginLeft: isTablet ? responsiveValue(8) : responsiveValue(16),
           }}
           numberOfLines={1}
           adjustsFontSizeToFit

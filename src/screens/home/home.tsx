@@ -33,8 +33,15 @@ const { signOut } = useClerk()
   // Use the smaller scale factor to ensure elements don't become too large on very wide/tall screens
   const responsiveScale = Math.min(widthScale, heightScale)
 
+  // Check if device is tablet (wider than typical phone)
+  const isTablet = screenWidth > 600
+
   // Utility function to apply responsive scaling to a value
-  const responsiveValue = (value: number) => Math.round(value * responsiveScale)
+  const responsiveValue = (value: number) => {
+    const scaled = Math.round(value * responsiveScale)
+    // On tablets, cap the scaling to prevent elements from becoming too large
+    return isTablet ? Math.min(scaled, value * 1.3) : scaled
+  }
 
   const handleRegisterLogin = () => {
     console.log("Register or Login pressed")
@@ -90,7 +97,7 @@ const { signOut } = useClerk()
 
   // Create platform-specific and responsive text styles
   const titleStyle = {
-    fontSize: responsiveValue(32),
+    fontSize:isTablet ? responsiveValue(34) : responsiveValue(32),
     lineHeight: responsiveValue(40),
     fontFamily: "NATS-Regular",
     color: "#003049",
@@ -101,12 +108,12 @@ const { signOut } = useClerk()
   }
 
   const subtitleStyle = {
-    fontSize: responsiveValue(18),
+    fontSize: isTablet ? responsiveValue(25) : responsiveValue(18),
     lineHeight: responsiveValue(28),
     fontFamily: "NATS-Regular",
     color: "#003049",
     textAlign: "center" as const,
-    marginBottom: responsiveValue(30),
+    marginBottom: isTablet ? responsiveValue(60) : responsiveValue(30), // More space on tablets
     paddingVertical: responsiveValue(Platform.OS === "ios" ? 6 : 3),
     paddingHorizontal: responsiveValue(8),
   }
@@ -129,6 +136,8 @@ const { signOut } = useClerk()
           paddingTop: responsiveValue(40),
           borderTopLeftRadius: responsiveValue(30),
           borderTopRightRadius: responsiveValue(30),
+          // Adjust top position for tablets to give more space for buttons
+          top: isTablet ? '55%' : '60%',
         }
       ]}>
         <Text style={titleStyle} numberOfLines={1}>
@@ -137,7 +146,15 @@ const { signOut } = useClerk()
         <Text style={subtitleStyle} numberOfLines={1}>
           A simple tool to help recognize chords by ear.
         </Text>
-        <View style={{ marginBottom: responsiveValue(64) }}>
+        {/* Additional spacer for tablets */}
+        {isTablet && <View style={{ height: responsiveValue(40) }} />}
+        <View style={[
+          styles.buttonContainer,
+          {
+            marginBottom: Math.max(responsiveValue(64), isTablet ? 60 : 40), // More margin on tablets
+            paddingBottom: isTablet ? responsiveValue(40) : responsiveValue(20), // More padding for tablets
+          }
+        ]}>
           <GuestButton onPress={handleGuestStart} isLoading={isLoggingOut} />
           <RegisterLoginButton onPress={handleRegisterLogin} />
         </View>
@@ -175,5 +192,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingHorizontal: 24,
     zIndex: 200,
+    minHeight: 300, // Ensure minimum height for content
+    justifyContent: 'space-between', // Distribute content evenly
+  },
+  buttonContainer: {
+    flex: 1,
+    justifyContent: 'flex-end', // Push buttons to bottom
+    paddingBottom: 20, // Base padding at bottom
   },
 })
