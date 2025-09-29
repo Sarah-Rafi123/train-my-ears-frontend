@@ -131,10 +131,10 @@ const { signOut } = useClerk()
           borderTopRightRadius: responsiveValue(30),
         }
       ]}>
-        <Text style={titleStyle} adjustsFontSizeToFit numberOfLines={1}>
+        <Text style={titleStyle} numberOfLines={1}>
           TRAIN MY EAR
         </Text>
-        <Text style={subtitleStyle} adjustsFontSizeToFit  numberOfLines={1}>
+        <Text style={subtitleStyle} numberOfLines={1}>
           A simple tool to help recognize chords by ear.
         </Text>
         <View style={{ marginBottom: responsiveValue(64) }}>

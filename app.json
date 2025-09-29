@@ -34,7 +34,7 @@
     "android": {
       "icon": "./assets/images/icon.png",
       "package": "com.brianandrews.trainmyears",
-      "versionCode": 17,
+      "versionCode": 26,
       "intentFilters": [
         {
           "action": "VIEW",
