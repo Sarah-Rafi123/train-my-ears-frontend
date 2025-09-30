@@ -309,7 +309,7 @@ export default function RegisterScreen() {
           <View className="flex-row justify-center mt-auto mb-4">
             <Text className="text-black text-lg">Already have an account? </Text>
             <TouchableOpacity 
-              onPress={() => navigation.navigate("Login" as never)}
+              onPress={() => navigation.goBack()}
               disabled={loadingSocialProvider !== null}
               className={loadingSocialProvider ? 'opacity-50' : ''}
             >

@@ -169,7 +169,16 @@ export default function ResetPasswordScreen() {
           [
             {
               text: 'OK',
-              onPress: () => navigation.navigate('Login' as never)
+              onPress: () => {
+                // Reset navigation stack to clear forgot password flow
+                navigation.reset({
+                  index: 1,
+                  routes: [
+                    { name: 'Home' as never },
+                    { name: 'Login' as never }
+                  ],
+                });
+              }
             }
           ]
         );

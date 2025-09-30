@@ -14,11 +14,9 @@ export default function BackButton({ onPress }: BackButtonProps) {
   const responsiveValue = (value: number) => Math.round(value * scaleFactor)
 
   const handlePress = () => {
-    if (onPress) {
-      onPress()
-    } else {
+
       navigation.goBack()
-    }
+    
   }
 
   return (

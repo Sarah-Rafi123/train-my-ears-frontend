@@ -40,11 +40,17 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   // Use the smaller scale factor to ensure elements don't become too large on very wide/tall screens
   const responsiveScale = Math.min(widthScale, heightScale);
 
+  // Check if device is tablet (wider than typical phone)
+  const isTablet = screenWidth > 600;
+
   // Utility function to apply responsive scaling to a value
-  const responsiveValue = (value: number) => Math.round(value * responsiveScale);
+  const responsiveValue = (value: number) => {
+    const scaled = Math.round(value * responsiveScale);
+    // On tablets, cap the scaling to prevent elements from becoming too large
+    return isTablet ? Math.min(scaled, value * 1.3) : scaled;
+  };
 
   // Detect if device is tablet
-  const isTablet = screenWidth >= 768 || screenHeight >= 768;
   const isLandscape = screenWidth > screenHeight;
 
   // Responsive bottom spacing for tablets
@@ -283,6 +289,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
         {/* Show logout button in the top-right corner if token exists */}
       
       </View>
+      
 
       <View
         className="w-full"
@@ -352,21 +359,19 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
                 width: '100%',
                 marginTop: isTablet ? 20 : 30,
                 marginBottom: isTablet ? 20 : Math.max(getBottomSpacing(), 40), // Reduced bottom spacing for tablets
-                alignItems: 'center',
-                paddingHorizontal: 20, // Add side padding
               }}>
                 <TouchableOpacity style={[
                   styles.logoutButton, 
                   { 
+                    width: '100%',
                     opacity: 0.6,
-                    paddingHorizontal: isTablet ? 32 : 24,
-                    paddingVertical: isTablet ? 16 : 12,
-                    minHeight: isTablet ? 56 : 48,
-                    minWidth: isTablet ? 200 : 160
+                    paddingHorizontal: responsiveValue(24),
+                    paddingVertical: responsiveValue(12),
+                    borderRadius: responsiveValue(12),
                   }
                 ]} disabled>
                   <LogoutSvg />
-                  <Text style={[styles.logoutText, { opacity: 0.5, fontSize: isTablet ? 20 : 16 }]}>Logout</Text>
+                  <Text style={[styles.logoutText, { opacity: 0.5, fontSize: responsiveValue(18) }]}>Logout</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -391,20 +396,33 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
             <Text
               className="text-gray-600 text-center"
               style={{
+                fontSize: responsiveValue(14),
                 marginBottom: responsiveValue(16), // mb-4
               }}
             >
               {error}
             </Text>
-            <Text
-              className="text-[#006AE6] font-semibold"
+            <TouchableOpacity
               onPress={fetchInstruments}
               style={{
-                fontSize: responsiveValue(18), // text-lg
+                width: '100%',
+                paddingVertical: responsiveValue(12),
+                paddingHorizontal: responsiveValue(24),
+                backgroundColor: '#006AE6',
+                borderRadius: responsiveValue(12),
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              Retry
-            </Text>
+              <Text
+                className="text-white font-semibold"
+                style={{
+                  fontSize: responsiveValue(18),
+                }}
+              >
+                Retry
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
         {!loading && !error && (
@@ -436,15 +454,18 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
                 width: '100%',
                 marginTop: isTablet ? 0 : 30,
                 marginBottom: isTablet ? 40 : Math.max(getBottomSpacing(), 40), // Reduced bottom spacing for tablets
-                alignItems: 'center',
-                paddingHorizontal: 20, // Add side padding
               }}>
                 <TouchableOpacity style={[
-                  styles.logoutButton, 
-                 
+                  styles.logoutButton,
+                  {
+                    width: '100%',
+                    paddingVertical: responsiveValue(12),
+                    paddingHorizontal: responsiveValue(24),
+                    borderRadius: responsiveValue(12),
+                  }
                 ]} onPress={handleLogout}>
                   <LogoutSvg />
-                  <Text style={[styles.logoutText, { fontSize: isTablet ? 25 : 16 }]}>Logout</Text>
+                  <Text style={[styles.logoutText, { fontSize: responsiveValue(18) }]}>Logout</Text>
                 </TouchableOpacity>
               </View>
             )}

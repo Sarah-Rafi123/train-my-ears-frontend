@@ -2,7 +2,7 @@
   "expo": {
     "name": "Train My Ear",
     "slug": "frontend_trainmyears",
-    "version": "22.0.0",
+    "version": "23.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
@@ -31,15 +31,14 @@
         ],
         "LSRequiresIPhoneOS": false,
         "UIRequiresFullScreen": false,
+        "UIInterfaceOrientation": "UIInterfaceOrientationPortrait",
         "UISupportedInterfaceOrientations": [
           "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationPortraitUpsideDown"
         ],
         "UISupportedInterfaceOrientations~ipad": [
           "UIInterfaceOrientationPortrait",
-          "UIInterfaceOrientationPortraitUpsideDown",
-          "UIInterfaceOrientationLandscapeLeft",
-          "UIInterfaceOrientationLandscapeRight"
+          "UIInterfaceOrientationPortraitUpsideDown"
         ]
       }
     },
@@ -47,6 +46,7 @@
       "icon": "./assets/images/icon.png",
       "package": "com.brianandrews.trainmyears",
       "versionCode": 26,
+      "screenOrientation": "portrait",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -77,7 +77,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "6a7ba359-637b-4c8f-a89e-e5c56f873354"
+       "projectId": "6a7ba359-637b-4c8f-a89e-e5c56f873354"
       }
     },
     "plugins": [

@@ -801,12 +801,9 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
     return rows
   }
 
-  // Calculate button width for exactly 3 buttons per row
-  const calculateButtonWidth = () => {
-    const padding = 48
-    const gap = 8
-    const availableWidth = screenWidth - padding - gap
-    return Math.floor(availableWidth / 3)
+  // Use fixed button width to match gameGuest.tsx original sizing
+  const getButtonWidth = () => {
+    return 80 // Fixed minimum width matching NoteButton min-w-[80px]
   }
 
   if (isLoading || isInitializing) {
@@ -947,49 +944,46 @@ export default function AdvancedGameGuestScreen({ onBack, onMoreDetails, onSaveP
         {currentGameRound && (
           <View className="px-6 mb-6">
             {organizeChordRows(currentGameRound.chordPool).map((row, rowIndex) => (
-              <View key={rowIndex} className="flex-row justify-center gap-1 mb-2">
+              <View key={rowIndex} className="flex-row justify-center gap-x-4 mb-4">
                 {row.map((chord) => {
-                  const buttonWidth = calculateButtonWidth()
                   return (
-                    <TouchableOpacity
-                      key={chord.id}
-                      onPress={() => handleChordSelect(chord.id)}
-                      disabled={
-                        isSubmittingSequence ||
-                        selectedSequence.length >= currentGameRound.sequenceLength ||
-                        showResult ||
-                        isInitializing
-                      }
-                      className={`border-2 border-transparent rounded-2xl py-4 px-2 bg-[#E5EAED] items-center justify-center ${
-                        isSubmittingSequence ||
-                        selectedSequence.length >= currentGameRound.sequenceLength ||
-                        showResult ||
-                        isInitializing
-                          ? "opacity-50"
-                          : ""
-                      }`}
-                      style={{
-                        width: buttonWidth,
-                        minHeight: 60,
-                      }}
-                    >
-                      <Text
-                        className={`text-lg font-bold text-center text-[#003049] ${
+                    <View key={chord.id} className="flex-1 max-w-[120px]">
+                      <TouchableOpacity
+                        onPress={() => handleChordSelect(chord.id)}
+                        disabled={
                           isSubmittingSequence ||
                           selectedSequence.length >= currentGameRound.sequenceLength ||
                           showResult ||
                           isInitializing
-                            ? "opacity-50"
+                        }
+                        className={`rounded-xl py-3 px-3 items-center justify-center max-h-[50px] min-w-[80px] shadow-sm bg-[#E5EAED] ${
+                          isSubmittingSequence ||
+                          selectedSequence.length >= currentGameRound.sequenceLength ||
+                          showResult ||
+                          isInitializing
+                            ? "opacity-60"
                             : ""
                         }`}
-                        numberOfLines={2}
-                        adjustsFontSizeToFit
                       >
-                        {chord.displayName}
-                      </Text>
-                    </TouchableOpacity>
+                        <Text
+                          className={`text-lg text-center font-medium text-[#003049]`}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                        >
+                          {chord.displayName}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   )
                 })}
+                {/* Add empty spacers if the row has less than 3 items to maintain spacing */}
+                {row.length < 3 && (
+                  <>
+                    {Array.from({ length: 3 - row.length }).map((_, index) => (
+                      <View key={`spacer-${rowIndex}-${index}`} className="flex-1 max-w-[120px]" />
+                    ))}
+                  </>
+                )}
               </View>
             ))}
           </View>
