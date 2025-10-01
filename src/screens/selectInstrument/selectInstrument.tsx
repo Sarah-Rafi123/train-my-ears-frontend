@@ -242,7 +242,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
   };
 
   const handleBack = async () => {
-    console.log('🔙 [SelectInstrument] Back button pressed');
+    console.log('🔙 [SelectInstrument] Back button pressed - navigating to Home');
     
     if (isGuestMode) {
       console.log('🎭 [SelectInstrument] In guest mode, clearing guest mode to return to Home');
@@ -254,12 +254,15 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
         console.error('❌ [SelectInstrument] Error clearing guest mode:', error);
       }
     } else {
-      // If not in guest mode, use the provided onBack callback or default navigation
-      console.log('👤 [SelectInstrument] Not in guest mode, using default back behavior');
+      // Always navigate to Home screen
+      console.log('🏠 [SelectInstrument] Navigating to Home screen');
       if (onBack) {
         onBack();
       } else {
-        navigation.goBack();
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' as never }],
+        });
       }
     }
   };
@@ -272,7 +275,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
          
         }}
       >
-        {!token && <BackButton onPress={handleBack} />} 
+        {!token && <BackButton onPress={handleBack} />}
 
         <View className="flex-1">
           <Text
@@ -461,7 +464,7 @@ export default function SelectInstrumentScreen({ onBack, onInstrumentSelect }: S
                     width: '100%',
                     paddingVertical: responsiveValue(12),
                     paddingHorizontal: responsiveValue(24),
-                    borderRadius: responsiveValue(12),
+          
                   }
                 ]} onPress={handleLogout}>
                   <LogoutSvg />
